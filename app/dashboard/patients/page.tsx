@@ -1,60 +1,47 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import useSWR from 'swr'
 
-interface Patient {
+interface PatientData {
   id: string
-  name: string
+  doctorId: string
+  firstName: string
+  lastName: string
   email: string
-  phone: string
-  dateOfBirth: string
-  lastVisit: string
-  status: 'active' | 'inactive'
-  conditions: string[]
+  phone?: string
+  dateOfBirth?: string
+  allergies?: string[]
+  conditions?: string[]
+  createdAt: number
 }
 
-const mockPatients: Patient[] = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    phone: '(555) 123-4567',
-    dateOfBirth: '1965-03-15',
-    lastVisit: '2 days ago',
-    status: 'active',
-    conditions: ['Hypertension', 'Type 2 Diabetes'],
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    phone: '(555) 234-5678',
-    dateOfBirth: '1978-07-22',
-    lastVisit: '1 week ago',
-    status: 'active',
-    conditions: ['Migraine'],
-  },
-  {
-    id: '3',
-    name: 'Robert Johnson',
-    email: 'robert@example.com',
-    phone: '(555) 345-6789',
-    dateOfBirth: '1955-11-08',
-    lastVisit: '3 weeks ago',
-    status: 'inactive',
-    conditions: ['Arthritis', 'High Cholesterol'],
-  },
-]
+const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function PatientsPage() {
-  const [patients, setPatients] = useState(mockPatients)
+  const [doctorId, setDoctorId] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState('')
 
-  const filteredPatients = patients.filter(
+  // Fetch doctor ID from localStorage (would come from auth context)
+  useEffect(() => {
+    const storedDoctorId = localStorage.getItem('doctorId') || 'doctor-demo'
+    setDoctorId(storedDoctorId)
+  }, [])
+
+  // Fetch patients from DynamoDB
+  const { data: patientsData, isLoading: patientsLoading } = useSWR(
+    doctorId ? `/api/patients?doctorId=${doctorId}` : null,
+    fetcher,
+    { revalidateOnFocus: false, revalidateOnReconnect: true }
+  )
+
+  const allPatients: PatientData[] = patientsData?.patients || []
+
+  const filteredPatients = allPatients.filter(
     patient =>
-      patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
@@ -94,54 +81,60 @@ export default function PatientsPage() {
 
       {/* Patients Table */}
       <div className="bg-white rounded-3xl border border-deep-ink/10 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-deep-ink/10 bg-soft-meadow/50">
-                <th className="px-6 py-4 text-left text-sm font-semibold text-deep-ink">Name</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-deep-ink">Email</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-deep-ink">Phone</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-deep-ink">Last Visit</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-deep-ink">Conditions</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-deep-ink">Status</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-deep-ink">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPatients.map((patient) => (
-                <tr key={patient.id} className="border-b border-deep-ink/10 hover:bg-soft-meadow/30 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-deep-ink">{patient.name}</td>
-                  <td className="px-6 py-4 text-sm text-slate">{patient.email}</td>
-                  <td className="px-6 py-4 text-sm text-slate">{patient.phone}</td>
-                  <td className="px-6 py-4 text-sm text-slate">{patient.lastVisit}</td>
-                  <td className="px-6 py-4 text-sm text-slate">
-                    <div className="flex gap-1 flex-wrap">
-                      {patient.conditions.map((condition, idx) => (
-                        <span key={idx} className="bg-slate/10 text-slate text-xs px-2 py-1 rounded-full">
-                          {condition}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        patient.status === 'active' ? 'bg-moss-green/20 text-deep-ink' : 'bg-slate/10 text-slate'
-                      }`}
-                    >
-                      {patient.status === 'active' ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <Link href={`/dashboard/patients/${patient.id}`}>
-                      <button className="text-hi-yellow hover:underline text-sm font-medium">View</button>
-                    </Link>
-                  </td>
+        {patientsLoading ? (
+          <div className="p-8 text-center text-slate">Loading patients...</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-deep-ink/10 bg-soft-meadow/50">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-deep-ink">Name</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-deep-ink">Email</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-deep-ink">Phone</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-deep-ink">DOB</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-deep-ink">Conditions</th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-deep-ink">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredPatients.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-4 text-center text-slate">
+                      No patients found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredPatients.map((patient) => (
+                    <tr key={patient.id} className="border-b border-deep-ink/10 hover:bg-soft-meadow/30 transition-colors">
+                      <td className="px-6 py-4 text-sm font-medium text-deep-ink">
+                        {patient.firstName} {patient.lastName}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate">{patient.email}</td>
+                      <td className="px-6 py-4 text-sm text-slate">{patient.phone || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-slate">{patient.dateOfBirth || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-slate">
+                        <div className="flex gap-1 flex-wrap">
+                          {patient.conditions && patient.conditions.length > 0
+                            ? patient.conditions.slice(0, 2).map((condition, idx) => (
+                                <span key={idx} className="bg-slate/10 text-slate text-xs px-2 py-1 rounded-full">
+                                  {condition}
+                                </span>
+                              ))
+                            : '-'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Link href={`/dashboard/patients/${patient.id}`}>
+                          <button className="text-hi-yellow hover:underline text-sm font-medium">View</button>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Empty State */}

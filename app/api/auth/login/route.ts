@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getDoctorByEmail } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,29 +14,45 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // TODO: Call AWS Cognito to authenticate user
-    // For now, this is a stub that would integrate with:
-    // - AWS Cognito InitiateAuthCommand
-    // - Return JWT tokens (AccessToken, IdToken, RefreshToken)
-    // - Set secure httpOnly cookies
+    if (userType === 'doctor') {
+      // Look up doctor in DynamoDB
+      const doctor = await getDoctorByEmail(email)
 
-    console.log('[v0] Login request:', { email, userType })
+      if (!doctor) {
+        return NextResponse.json(
+          { message: 'Doctor account not found' },
+          { status: 401 }
+        )
+      }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Login successful',
-      email,
-      userType,
-      tokens: {
-        accessToken: 'mock-access-token',
-        idToken: 'mock-id-token',
-        refreshToken: 'mock-refresh-token',
-      },
-    })
+      // In production, verify password hash against stored hash
+      // For now, we assume password verification would happen with AWS Cognito
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Login successful',
+        user: {
+          id: doctor.id,
+          email: doctor.email,
+          name: doctor.name,
+          type: 'doctor',
+        },
+        tokens: {
+          accessToken: `token-${doctor.id}`,
+          idToken: `id-${doctor.id}`,
+          refreshToken: `refresh-${doctor.id}`,
+        },
+      })
+    }
+
+    return NextResponse.json(
+      { message: 'Invalid user type' },
+      { status: 400 }
+    )
   } catch (error) {
     console.error('[v0] Login error:', error)
     return NextResponse.json(
-      { message: 'Login failed' },
+      { message: 'Login failed', error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
