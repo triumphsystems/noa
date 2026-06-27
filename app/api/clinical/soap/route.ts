@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateSOAPNote } from '@/lib/bedrock-service'
-import { updateSession, getSessionById } from '@/lib/db'
+import { generateSOAPWithNova } from '@/lib/bedrock-nova'
+import { updateSession } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { transcript, patientInfo, sessionId } = body
+    const { transcript, patientInfo, sessionId, patientId } = body
 
     if (!transcript) {
       return NextResponse.json(
@@ -14,28 +14,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[v0] Generating SOAP note from transcript')
+    console.log('[v0] Generating SOAP note with Nova AI')
 
-    // Call Bedrock to generate SOAP note
-    const soapNote = await generateSOAPNote(transcript, patientInfo || '')
+    // Generate SOAP note using Nova Lite via Bedrock
+    const soapNote = await generateSOAPWithNova(transcript, patientInfo || '')
 
-    // If sessionId provided, update session with SOAP note in DynamoDB
+    // If sessionId provided, update session in DynamoDB
     if (sessionId) {
-      await updateSession(sessionId, {
-        soapNote: {
-          subjective: soapNote.subjective || '',
-          objective: soapNote.objective || '',
-          assessment: soapNote.assessment || '',
-          plan: soapNote.plan || '',
-          generatedAt: Date.now(),
-        },
-        transcript,
-      })
+      try {
+        await updateSession(sessionId, {
+          soapNote: {
+            subjective: soapNote.subjective || '',
+            objective: soapNote.objective || '',
+            assessment: soapNote.assessment || '',
+            plan: soapNote.plan || '',
+            generatedAt: Date.now(),
+          },
+          transcript,
+          status: 'completed',
+        })
+      } catch (dbError) {
+        console.error('[v0] Error updating session in DB:', dbError)
+        // Continue even if DB update fails - SOAP note still generated
+      }
     }
 
     return NextResponse.json({
       success: true,
       soapNote,
+      sessionId,
     })
   } catch (error) {
     console.error('[v0] Error generating SOAP note:', error)

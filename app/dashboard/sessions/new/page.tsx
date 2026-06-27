@@ -2,9 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import io, { Socket } from 'socket.io-client'
+import useSWR from 'swr'
 
 interface Transcript {
-  role: 'doctor' | 'patient' | 'system'
+  role: 'doctor' | 'patient' | 'system' | 'ai'
   text: string
   timestamp: string
 }
@@ -16,23 +18,91 @@ interface SOAPNote {
   plan: string
 }
 
+interface ClinicalSuggestion {
+  text: string
+  priority: 'high' | 'medium' | 'low'
+}
+
+const fetcher = (url: string) => fetch(url).then(res => res.json())
+
 export default function NewSessionPage() {
   const [isRecording, setIsRecording] = useState(false)
   const [transcripts, setTranscripts] = useState<Transcript[]>([])
   const [soapNote, setSoapNote] = useState<SOAPNote | null>(null)
   const [selectedPatient, setSelectedPatient] = useState<string>('')
   const [sessionDuration, setSessionDuration] = useState(0)
+  const [suggestions, setSuggestions] = useState<ClinicalSuggestion[]>([])
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [doctorId, setDoctorId] = useState<string>('')
+  const [sessionId, setSessionId] = useState<string>('')
+  const [socket, setSocket] = useState<Socket | null>(null)
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Mock patients
-  const mockPatients = [
-    { id: '1', name: 'John Doe', lastVisit: '2 weeks ago' },
-    { id: '2', name: 'Jane Smith', lastVisit: '1 month ago' },
-    { id: '3', name: 'Robert Johnson', lastVisit: '3 days ago' },
-  ]
+  // Fetch doctor's patients
+  useEffect(() => {
+    const storedDoctorId = localStorage.getItem('doctorId') || 'doctor-demo'
+    setDoctorId(storedDoctorId)
+  }, [])
 
+  const { data: patientsData } = useSWR(
+    doctorId ? `/api/patients?doctorId=${doctorId}` : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  )
+
+  const patients = patientsData?.patients || []
+
+  // Initialize WebSocket connection
+  useEffect(() => {
+    const newSocket = io('http://localhost:3000', {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+    })
+
+    newSocket.on('connect', () => {
+      console.log('[v0] Connected to WebSocket')
+    })
+
+    newSocket.on('suggestion-generated', (data: { suggestions: string[] }) => {
+      setSuggestions(
+        data.suggestions.map((text, idx) => ({
+          text,
+          priority: idx === 0 ? 'high' : idx === 1 ? 'medium' : 'low',
+        }))
+      )
+      setIsGenerating(false)
+    })
+
+    newSocket.on('transcript-updated', (data: { newLine: string }) => {
+      const now = new Date()
+      setTranscripts(prev => [
+        ...prev,
+        {
+          role: 'patient',
+          text: data.newLine,
+          timestamp: now.toLocaleTimeString(),
+        },
+      ])
+
+      // Request suggestions from Nova
+      if (data.newLine.length > 20) {
+        getAISuggestions(data.newLine)
+      }
+    })
+
+    setSocket(newSocket)
+
+    return () => {
+      newSocket.disconnect()
+    }
+  }, [])
+
+  // Cleanup timer
   useEffect(() => {
     return () => {
       if (timerRef.current) {
@@ -41,21 +111,96 @@ export default function NewSessionPage() {
     }
   }, [])
 
+  const getAISuggestions = async (transcript: string) => {
+    setIsGenerating(true)
+    try {
+      const response = await fetch('/api/clinical/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transcript,
+          sessionId,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setSuggestions(
+          data.suggestions.map((text: string, idx: number) => ({
+            text,
+            priority: idx === 0 ? 'high' : idx === 1 ? 'medium' : 'low',
+          }))
+        )
+      }
+    } catch (error) {
+      console.error('[v0] Error getting suggestions:', error)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const generateSOAPNote = async () => {
+    setIsGenerating(true)
+    try {
+      const fullTranscript = transcripts.map(t => `${t.role}: ${t.text}`).join('\n')
+
+      const response = await fetch('/api/clinical/soap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transcript: fullTranscript,
+          sessionId,
+          patientId: selectedPatient,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setSoapNote(data.soapNote)
+      }
+    } catch (error) {
+      console.error('[v0] Error generating SOAP note:', error)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
   const startRecording = async () => {
     try {
+      // Create new session
+      const newSessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      setSessionId(newSessionId)
+
+      // Join WebSocket session
+      if (socket) {
+        socket.emit('join-session', {
+          sessionId: newSessionId,
+          userId: doctorId,
+          userType: 'doctor',
+        })
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const mediaRecorder = new MediaRecorder(stream)
 
       mediaRecorder.ondataavailable = (event) => {
         audioChunksRef.current.push(event.data)
+
+        // Send audio chunk via WebSocket
+        if (socket) {
+          socket.emit('audio-chunk', {
+            sessionId: newSessionId,
+            chunk: event.data,
+            timestamp: Date.now(),
+          })
+        }
       }
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
         audioChunksRef.current = []
 
-        // Simulate transcription
-        simulateTranscription()
+        // Generate SOAP note with Nova
+        await generateSOAPNote()
 
         // Stop all tracks
         stream.getTracks().forEach(track => track.stop())
@@ -77,7 +222,7 @@ export default function NewSessionPage() {
         ...prev,
         {
           role: 'system',
-          text: 'Recording started',
+          text: 'Session started - Nova AI monitoring consultation',
           timestamp: now.toLocaleTimeString(),
         },
       ])
@@ -207,9 +352,9 @@ export default function NewSessionPage() {
               className="w-full px-4 py-3 border border-deep-ink/20 rounded-full text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow"
             >
               <option value="">Choose a patient...</option>
-              {mockPatients.map(patient => (
+              {patients.map((patient: any) => (
                 <option key={patient.id} value={patient.id}>
-                  {patient.name} - Last visit: {patient.lastVisit}
+                  {patient.firstName} {patient.lastName}
                 </option>
               ))}
             </select>
@@ -285,8 +430,37 @@ export default function NewSessionPage() {
           )}
         </div>
 
-        {/* SOAP Note Preview */}
+        {/* AI Suggestions & SOAP Note */}
         <div className="space-y-4">
+          {/* Nova Clinical Suggestions */}
+          {suggestions.length > 0 && (
+            <div className="bg-gradient-to-br from-moss-green/10 to-fuchsia/10 rounded-3xl p-6 border border-deep-ink/10">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-2 h-2 bg-moss-green rounded-full animate-pulse" />
+                <h3 className="text-lg font-semibold font-serif">Nova AI Suggestions</h3>
+              </div>
+              <div className="space-y-2">
+                {suggestions.map((suggestion, idx) => (
+                  <div key={idx} className="bg-white rounded-2xl p-3 border-l-4 border-moss-green">
+                    <p className="text-sm text-deep-ink">{suggestion.text}</p>
+                    <span
+                      className={`inline-block text-xs font-medium mt-2 px-2 py-1 rounded-full ${
+                        suggestion.priority === 'high'
+                          ? 'bg-red-100 text-red-700'
+                          : suggestion.priority === 'medium'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-green-100 text-green-700'
+                      }`}
+                    >
+                      {suggestion.priority} priority
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* SOAP Note Preview */}
           <div className="bg-white rounded-3xl p-6 border border-deep-ink/10 sticky top-32">
             <h3 className="text-lg font-semibold font-serif mb-4">SOAP Note Preview</h3>
 

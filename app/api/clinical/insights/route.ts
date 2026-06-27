@@ -1,31 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateClinicalInsights } from '@/lib/bedrock-service'
+import { generateClinicalInsights, generateFollowUpPlan } from '@/lib/bedrock-nova'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { transcript } = body
+    const { patientHistory, currentPresentation, previousFindings, medications, procedures } = body
 
-    if (!transcript) {
+    if (!currentPresentation) {
       return NextResponse.json(
-        { message: 'Transcript is required' },
+        { error: 'Current presentation is required' },
         { status: 400 }
       )
     }
 
-    console.log('[v0] Generating clinical insights')
+    console.log('[v0] Generating clinical insights with Nova')
 
-    // Call Bedrock to generate insights
-    const insights = await generateClinicalInsights(transcript)
+    // Generate clinical insights using Nova Pro
+    const insights = await generateClinicalInsights(
+      patientHistory || '',
+      currentPresentation,
+      previousFindings || ''
+    )
+
+    // Generate follow-up plan if medications or procedures provided
+    let followUpPlan = ''
+    if (medications || procedures) {
+      followUpPlan = await generateFollowUpPlan(
+        currentPresentation,
+        medications || [],
+        procedures
+      )
+    }
 
     return NextResponse.json({
       success: true,
       insights,
+      followUpPlan,
     })
   } catch (error) {
-    console.error('[v0] Error generating insights:', error)
+    console.error('[v0] Error generating clinical insights:', error)
     return NextResponse.json(
-      { message: 'Failed to generate insights' },
+      {
+        error: 'Failed to generate clinical insights',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     )
   }
