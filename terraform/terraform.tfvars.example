@@ -1,0 +1,18 @@
+aws_region       = "us-east-1"
+aws_account_id   = "123456789012"
+project_name     = "noa"
+environment      = "prod"
+app_url          = "https://noa.yourdomain.com"
+
+enable_bedrock         = true
+enable_monitoring      = true
+enable_s3_replication  = true
+s3_replication_region  = "us-west-2"
+log_retention_days     = 30
+
+tags = {
+  Component  = "NoaMedicalPlatform"
+  CostCenter = "Engineering"
+  Team       = "Platform"
+  Owner      = "DevOps"
+}
