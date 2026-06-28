@@ -72,10 +72,10 @@ export default function PatientsPage() {
       {/* Patient Count */}
       <div className="flex gap-4">
         <div className="bg-soft-meadow rounded-3xl px-6 py-3 text-sm font-medium text-deep-ink">
-          Total: {patients.length}
+          Total: {allPatients.length}
         </div>
         <div className="bg-moss-green/20 rounded-3xl px-6 py-3 text-sm font-medium text-deep-ink">
-          Active: {patients.filter(p => p.status === 'active').length}
+          With conditions: {allPatients.filter((patient: PatientData) => (patient.conditions?.length || 0) > 0).length}
         </div>
       </div>
 

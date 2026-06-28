@@ -4,7 +4,7 @@ import { awsCredentialsProvider } from '@vercel/functions/oidc'
 const client = new BedrockRuntimeClient({
   region: process.env.AWS_REGION || 'us-east-1',
   credentials: awsCredentialsProvider({
-    roleArn: process.env.AWS_ROLE_ARN,
+    roleArn: process.env.AWS_ROLE_ARN!,
     clientConfig: { region: process.env.AWS_REGION },
   }),
 })

@@ -71,6 +71,7 @@ export interface Session {
   endedAt?: number
   transcript?: string
   audioUrl?: string
+  realTimeNotes?: unknown
   status: 'active' | 'completed' | 'archived'
   soapNote?: SoapNote
   createdAt: number

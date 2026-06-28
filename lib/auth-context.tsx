@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         Password: password,
       })
 
-      return new Promise((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
         cognitoUser.authenticateUser(authDetails, {
           onSuccess: (result: any) => {
             setUser(cognitoUser)

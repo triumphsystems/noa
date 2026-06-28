@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSession, getSessionsByDoctor, getSessionsByPatient } from '@/lib/db'
+import { createSession, getSessionsByDoctor, getSessionsByPatient, Session } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    let sessions = []
+    let sessions: Session[] = []
 
     if (doctorId) {
       sessions = await getSessionsByDoctor(doctorId)

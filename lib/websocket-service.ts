@@ -32,12 +32,10 @@ export function initializeWebSocket(server: HTTPServer) {
   io.on('connection', socket => {
     console.log('[v0] WebSocket client connected:', socket.id)
 
-    // Join session
     socket.on('join-session', (data: { sessionId: string; userId: string; userType: string }) => {
       const { sessionId, userId, userType } = data
       socket.join(`session-${sessionId}`)
 
-      // Get or create session state
       let session = activeSessions.get(sessionId)
       if (!session) {
         session = {
@@ -63,7 +61,6 @@ export function initializeWebSocket(server: HTTPServer) {
       console.log(`[v0] User ${userId} joined session ${sessionId}`)
     })
 
-    // Receive transcript from doctor
     socket.on('transcript-update', (data: { sessionId: string; text: string }) => {
       const { sessionId, text } = data
       const session = activeSessions.get(sessionId)
@@ -79,11 +76,9 @@ export function initializeWebSocket(server: HTTPServer) {
       }
     })
 
-    // Receive audio chunk
     socket.on('audio-chunk', (data: { sessionId: string; chunk: Buffer; timestamp: number }) => {
       const { sessionId, chunk, timestamp } = data
 
-      // Broadcast audio to other participants in real-time
       io.to(`session-${sessionId}`).emit('audio-received', {
         sessionId,
         chunk,
@@ -91,7 +86,6 @@ export function initializeWebSocket(server: HTTPServer) {
       })
     })
 
-    // Clinical suggestion request
     socket.on('get-suggestion', (data: { sessionId: string; transcript: string }) => {
       const { sessionId, transcript } = data
       const session = activeSessions.get(sessionId)
@@ -109,7 +103,6 @@ export function initializeWebSocket(server: HTTPServer) {
       }
     })
 
-    // Recording control
     socket.on('start-recording', (data: { sessionId: string }) => {
       const { sessionId } = data
       const session = activeSessions.get(sessionId)
@@ -140,7 +133,6 @@ export function initializeWebSocket(server: HTTPServer) {
       })
     })
 
-    // End session
     socket.on('end-session', (data: { sessionId: string }) => {
       const { sessionId } = data
       const session = activeSessions.get(sessionId)
@@ -156,15 +148,13 @@ export function initializeWebSocket(server: HTTPServer) {
 
         // Clean up
         activeSessions.delete(sessionId)
-        socket.leaveAll()
+        socket.leave(`session-${sessionId}`)
       }
     })
 
-    // Disconnect
     socket.on('disconnect', () => {
       console.log('[v0] WebSocket client disconnected:', socket.id)
 
-      // Remove from all sessions
       for (const [sessionId, session] of activeSessions.entries()) {
         const index = session.clientIds.indexOf(socket.id)
         if (index > -1) {

@@ -5,7 +5,7 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 const bedrockClient = new BedrockRuntimeClient({
   region: process.env.AWS_REGION || 'us-east-1',
   credentials: awsCredentialsProvider({
-    roleArn: process.env.AWS_ROLE_ARN,
+    roleArn: process.env.AWS_ROLE_ARN!,
     clientConfig: { region: process.env.AWS_REGION },
   }),
 })
@@ -13,7 +13,7 @@ const bedrockClient = new BedrockRuntimeClient({
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'us-east-1',
   credentials: awsCredentialsProvider({
-    roleArn: process.env.AWS_ROLE_ARN,
+    roleArn: process.env.AWS_ROLE_ARN!,
     clientConfig: { region: process.env.AWS_REGION },
   }),
 })
