@@ -44,7 +44,7 @@ export default function LoginForm({ userType }: LoginFormProps) {
         throw new Error(data.message || 'Login failed')
       }
 
-      router.push(userType === 'doctor' ? '/dashboard' : '/patient-dashboard')
+      router.push(userType === 'doctor' ? '/dashboard/doctor' : '/dashboard/patient')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {

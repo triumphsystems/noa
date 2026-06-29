@@ -1,21 +1,19 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
-import { awsCredentialsProvider } from '@vercel/functions/oidc'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { getAwsCredentials } from './aws-config'
+
+const region = process.env.AWS_REGION || 'us-east-1'
+const bedrockCredentials = getAwsCredentials(region)
+const s3Credentials = getAwsCredentials(region)
 
 const bedrockClient = new BedrockRuntimeClient({
-  region: process.env.AWS_REGION || 'us-east-1',
-  credentials: awsCredentialsProvider({
-    roleArn: process.env.AWS_ROLE_ARN!,
-    clientConfig: { region: process.env.AWS_REGION },
-  }),
+  region,
+  ...(bedrockCredentials ? { credentials: bedrockCredentials } : {}),
 })
 
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'us-east-1',
-  credentials: awsCredentialsProvider({
-    roleArn: process.env.AWS_ROLE_ARN!,
-    clientConfig: { region: process.env.AWS_REGION },
-  }),
+  region,
+  ...(s3Credentials ? { credentials: s3Credentials } : {}),
 })
 
 // Sonic model ID for real-time voice conversations

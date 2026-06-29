@@ -1,7 +1,28 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { S3Client } from '@aws-sdk/client-s3'
 import { BedrockRuntimeClient } from '@aws-sdk/client-bedrock-runtime'
-import { awsCredentialsProvider } from '@vercel/functions/oidc'
+
+export type AwsCredentials = {
+  accessKeyId: string
+  secretAccessKey: string
+  sessionToken?: string
+}
+
+export function getAwsCredentials(_region?: string): AwsCredentials | undefined {
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
+  const sessionToken = process.env.AWS_SESSION_TOKEN
+
+  if (!accessKeyId || !secretAccessKey) {
+    return undefined
+  }
+
+  return {
+    accessKeyId,
+    secretAccessKey,
+    ...(sessionToken ? { sessionToken } : {}),
+  }
+}
 
 // ============================================
 // AWS Region Configuration
@@ -14,31 +35,22 @@ const bedrockRegion = process.env.BEDROCK_REGION || region
 // AWS Client Initialization
 // ============================================
 
-// DynamoDB Client (Vercel-managed via OIDC)
+// DynamoDB Client
 export const dynamodbClient = new DynamoDBClient({
   region,
-  credentials: awsCredentialsProvider({
-    roleArn: process.env.AWS_ROLE_ARN,
-    clientConfig: { region },
-  }),
+  ...(getAwsCredentials(region) ? { credentials: getAwsCredentials(region) } : {}),
 })
 
 // S3 Client (Terraform-provisioned)
 export const s3Client = new S3Client({
   region,
-  credentials: awsCredentialsProvider({
-    roleArn: process.env.AWS_ROLE_ARN,
-    clientConfig: { region },
-  }),
+  ...(getAwsCredentials(region) ? { credentials: getAwsCredentials(region) } : {}),
 })
 
 // Bedrock Runtime Client (for Nova & Sonic models)
 export const bedrockClient = new BedrockRuntimeClient({
   region: bedrockRegion,
-  credentials: awsCredentialsProvider({
-    roleArn: process.env.AWS_ROLE_ARN,
-    clientConfig: { region: bedrockRegion },
-  }),
+  ...(getAwsCredentials(bedrockRegion) ? { credentials: getAwsCredentials(bedrockRegion) } : {}),
 })
 
 // ============================================
@@ -50,9 +62,8 @@ export const awsConfig = {
   region,
   bedrockRegion,
   accountId: process.env.AWS_ACCOUNT_ID,
-  roleArn: process.env.AWS_ROLE_ARN,
 
-  // DynamoDB Configuration (Vercel-managed)
+  // DynamoDB Configuration (Terraform-provisioned)
   dynamodb: {
     tableName: process.env.DYNAMODB_TABLE_NAME || 'noa-data',
     partitionKey: process.env.DYNAMODB_TABLE_PARTITION_KEY || 'id',
@@ -122,7 +133,6 @@ export const awsConfig = {
 const requiredVars = [
   'AWS_REGION',
   'AWS_ACCOUNT_ID',
-  'AWS_ROLE_ARN',
   'DYNAMODB_TABLE_NAME',
   'S3_BUCKET',
 ]

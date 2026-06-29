@@ -1,4 +1,3 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import {
   DynamoDBDocumentClient,
   PutCommand,
@@ -8,21 +7,13 @@ import {
   UpdateCommand,
   DeleteCommand,
 } from '@aws-sdk/lib-dynamodb'
-import { awsCredentialsProvider } from '@vercel/functions/oidc'
 import { nanoid } from 'nanoid'
+import { awsConfig, dynamodbClient } from './aws-config'
 
-export const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || 'noa-data'
+export const TABLE_NAME = awsConfig.dynamodb.tableName
 const PK = 'id'
 
-const client = new DynamoDBClient({
-  region: process.env.AWS_REGION || 'us-east-1',
-  credentials: awsCredentialsProvider({
-    roleArn: process.env.AWS_ROLE_ARN || '',
-    clientConfig: { region: process.env.AWS_REGION || 'us-east-1' },
-  }),
-})
-
-const docClient = DynamoDBDocumentClient.from(client, {
+const docClient = DynamoDBDocumentClient.from(dynamodbClient, {
   marshallOptions: {
     removeUndefinedValues: true,
   },
