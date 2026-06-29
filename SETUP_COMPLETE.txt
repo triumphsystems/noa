@@ -1,0 +1,290 @@
+================================================================================
+AWS OIDC SETUP - IMPLEMENTATION COMPLETE
+================================================================================
+
+Your app encountered an "InvalidIdentityToken" error because AWS hadn't been 
+configured to trust Vercel's OIDC provider. I've created everything you need 
+to fix this in ~5 minutes.
+
+================================================================================
+WHAT WAS CREATED
+================================================================================
+
+1. SETUP SCRIPTS (Automated)
+   ├── scripts/setup-aws-oidc.py     ← Python setup (RECOMMENDED - 2 min)
+   └── scripts/setup-aws-oidc.sh     ← Bash setup (alternative - 2 min)
+
+2. DOCUMENTATION (Guides)
+   ├── AWS_SETUP_README.md           ← Start here (2 min read)
+   ├── QUICK_START.md                ← Quick reference (5 min read)
+   ├── AWS_SETUP_GUIDE.md            ← Detailed manual setup (15 min read)
+   ├── AWS_OIDC_SETUP_SUMMARY.md     ← Full explanation (10 min read)
+   └── TROUBLESHOOTING.md            ← Debug guide (reference)
+
+================================================================================
+QUICK START - 4 STEPS
+================================================================================
+
+STEP 1: Run Setup Script
+  $ python scripts/setup-aws-oidc.py
+  (or: bash scripts/setup-aws-oidc.sh)
+  
+  This creates:
+  ✓ OIDC Provider in AWS
+  ✓ IAM Role with permissions
+  ✓ DynamoDB table with indexes
+  ✓ Bedrock access permissions
+  
+  Time: ~2 minutes
+
+STEP 2: Copy Environment Variables
+  The script prints 7 environment variables. Save them:
+  
+  AWS_REGION=us-east-1
+  AWS_ACCOUNT_ID=123456789012
+  AWS_ROLE_ARN=arn:aws:iam::123456789012:role/vercel-noa-app-role
+  DYNAMODB_TABLE_NAME=noa-data
+  BEDROCK_REGION=us-east-1
+  BEDROCK_NOVA_LITE_MODEL=amazon.nova-lite-v1:0
+  BEDROCK_NOVA_PRO_MODEL=amazon.nova-pro-v1:0
+
+STEP 3: Add to Vercel
+  Go to: https://vercel.com/leoemaxie/noa
+  Settings → Environment Variables
+  Add all 7 variables above
+  
+  Time: ~1 minute
+
+STEP 4: Deploy
+  $ git add .
+  $ git commit -m "Add AWS OIDC setup"
+  $ git push
+  
+  Wait for deployment to complete. Then test at:
+  https://noa-[team].vercel.app/auth/signup
+  
+  Time: ~2 minutes
+
+Total time: ~5 minutes ✓
+
+================================================================================
+FILE DESCRIPTIONS
+================================================================================
+
+SETUP SCRIPTS:
+  setup-aws-oidc.py
+    - Python automation (requires: boto3)
+    - Creates OIDC provider, IAM role, DynamoDB table
+    - Attaches all policies automatically
+    - Prints environment variables
+    - Recommended: This is fastest and most reliable
+
+  setup-aws-oidc.sh
+    - Bash automation (requires: AWS CLI)
+    - Same as Python version but in shell
+    - Good if you prefer bash scripting
+    - Alternative to Python version
+
+QUICK GUIDES:
+  AWS_SETUP_README.md
+    - Start here!
+    - Overview of the problem and solution
+    - Links to other resources
+    - Perfect for first-time readers
+
+  QUICK_START.md
+    - Quick reference card
+    - 5-minute setup checklist
+    - Both automated and manual options
+    - Copy-paste commands included
+
+DETAILED GUIDES:
+  AWS_SETUP_GUIDE.md
+    - Complete step-by-step manual setup
+    - Explains each AWS component created
+    - Useful for understanding what the script does
+    - Includes IAM trust policy and permissions
+    - Lists all DynamoDB indexes needed
+
+  AWS_OIDC_SETUP_SUMMARY.md
+    - Full technical explanation
+    - Explains why the error happens
+    - How OIDC authentication works
+    - Security benefits
+    - Cost implications
+    - Detailed component descriptions
+
+DEBUGGING:
+  TROUBLESHOOTING.md
+    - Solutions for 8+ common errors
+    - "InvalidIdentityToken" → how to fix
+    - "AccessDenied" → check IAM policies
+    - "ResourceNotFound" → create DynamoDB table
+    - Debug logging tips
+    - Verification checklist
+
+================================================================================
+WHAT THE SETUP DOES
+================================================================================
+
+The scripts automate creation of these 5 AWS resources:
+
+1. OIDC PROVIDER
+   - URL: https://oidc.vercel.com/leoemaxie
+   - Purpose: Tells AWS to trust Vercel
+   - Created in: AWS IAM Console
+
+2. IAM ROLE
+   - Name: vercel-noa-app-role
+   - Purpose: Grants permissions to your app
+   - Trust policy: Only Vercel can assume this role
+
+3. DYNAMODB POLICY
+   - Permissions: Read/write patient data
+   - Resources: noa-data table + all indexes
+   - Actions: GetItem, PutItem, Query, Scan, etc.
+
+4. BEDROCK POLICY
+   - Permissions: Call AI models
+   - Resources: Nova Lite, Nova Pro, Claude
+   - Actions: InvokeModel, InvokeModelWithResponseStream
+
+5. DYNAMODB TABLE
+   - Name: noa-data
+   - Primary key: id (String)
+   - Global Secondary Indexes:
+     • email-index (query by email + type)
+     • doctorId-index (query by doctor + type)
+     • patientId-index (query by patient + type)
+   - Billing: On-demand (pay only for usage)
+
+================================================================================
+HOW IT WORKS
+================================================================================
+
+Old way (fails with InvalidIdentityToken):
+  Your app tries to access AWS
+    → Looks for AWS credentials in environment
+    → AWS doesn't trust the request
+    → Error: InvalidIdentityToken
+    → Request fails ✗
+
+New way (after setup):
+  Your app tries to access AWS
+    → @vercel/functions/oidc gets token from Vercel
+    → Vercel token is verified by AWS OIDC provider
+    → AWS issues temporary credentials (1 hour)
+    → App uses credentials to access DynamoDB/Bedrock
+    → Request succeeds ✓
+    → Credentials auto-expire
+
+Security benefits:
+  ✓ No stored credentials anywhere
+  ✓ Automatic rotation every hour
+  ✓ AWS knows exactly who's asking (Vercel project ID)
+  ✓ Fine-grained permissions per app
+  ✓ Easy to revoke (delete the role)
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. Run the setup script:
+   $ python scripts/setup-aws-oidc.py
+
+2. Add environment variables to Vercel
+
+3. Deploy:
+   $ git push
+
+4. Test at /auth/signup endpoint
+
+5. If issues, check TROUBLESHOOTING.md
+
+================================================================================
+IMPORTANT NOTES
+================================================================================
+
+✓ AWS REQUIREMENTS:
+  - You need AWS account with appropriate IAM permissions
+  - AWS CLI must be configured locally
+  - Python: boto3 library (pip install boto3)
+  - Bash: AWS CLI tool
+
+✓ VERCEL REQUIREMENTS:
+  - Vercel account (already have this)
+  - Connected to GitHub (already done)
+  - Can add environment variables (in settings)
+
+✓ TIMING:
+  - Setup: ~2-5 minutes
+  - Adding env vars: ~1 minute
+  - Deployment: ~2-3 minutes
+  - Testing: ~1 minute
+  - Total: ~10 minutes
+
+✓ COST:
+  - AWS: ~$0 for development (within free tier)
+  - AWS: ~$5-100/month for production
+  - DynamoDB: Pay-per-request (cheap for low usage)
+  - Bedrock: Pay-per-token (around $0.003-0.01 per 1000 tokens)
+
+✓ REVERSIBILITY:
+  - If something goes wrong, you can delete the role
+  - Command: aws iam delete-role --role-name vercel-noa-app-role
+  - Run setup script again to recreate
+
+================================================================================
+HELPFUL COMMANDS
+================================================================================
+
+Verify setup worked:
+  aws iam list-open-id-connect-providers | grep leoemaxie
+  aws iam get-role --role-name vercel-noa-app-role
+  aws dynamodb describe-table --table-name noa-data
+
+Check environment variables in Vercel:
+  vercel env list
+
+View recent deployments:
+  vercel deployments
+
+View deployment logs:
+  vercel logs production
+
+Test DynamoDB connection locally:
+  AWS_PROFILE=default npm run dev
+
+Check what your role can do:
+  aws iam list-role-policies --role-name vercel-noa-app-role
+
+================================================================================
+GETTING HELP
+================================================================================
+
+1. Read QUICK_START.md for common problems
+2. Check TROUBLESHOOTING.md for specific errors
+3. Review AWS_SETUP_GUIDE.md for manual setup help
+4. See AWS_OIDC_SETUP_SUMMARY.md for full explanation
+
+Error matching:
+  "InvalidIdentityToken" → See TROUBLESHOOTING.md, Error #1
+  "AccessDenied" → See TROUBLESHOOTING.md, Error #2
+  "ResourceNotFound" → See TROUBLESHOOTING.md, Error #3
+  "NoCredentialsProvider" → See TROUBLESHOOTING.md, Error #4
+
+================================================================================
+YOU'RE READY!
+================================================================================
+
+Everything is set up. Just run:
+
+  $ python scripts/setup-aws-oidc.py
+  
+Then add the environment variables to Vercel and deploy. That's it!
+
+Questions? Start with AWS_SETUP_README.md or QUICK_START.md.
+
+Good luck! 🚀
+
+================================================================================
