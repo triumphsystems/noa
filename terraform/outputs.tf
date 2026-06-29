@@ -3,6 +3,16 @@ output "s3_bucket_name" {
   value       = aws_s3_bucket.audio_bucket.id
 }
 
+output "dynamodb_table_name" {
+  description = "DynamoDB table for application data"
+  value       = aws_dynamodb_table.noa_db.name
+}
+
+output "dynamodb_table_arn" {
+  description = "ARN of the DynamoDB table"
+  value       = aws_dynamodb_table.noa_db.arn
+}
+
 output "s3_bucket_arn" {
   description = "ARN of the S3 audio bucket"
   value       = aws_s3_bucket.audio_bucket.arn
@@ -44,6 +54,7 @@ output "environment_variables" {
     AWS_REGION           = var.aws_region
     AWS_ACCOUNT_ID       = var.aws_account_id
     AWS_ROLE_ARN         = aws_iam_role.bedrock_role.arn
+    DYNAMODB_TABLE_NAME  = aws_dynamodb_table.noa_db.name
     S3_BUCKET            = aws_s3_bucket.audio_bucket.id
     S3_BACKUP_BUCKET     = try(aws_s3_bucket.backup_bucket[0].id, "")
     CLOUDWATCH_LOG_GROUP = try(aws_cloudwatch_log_group.noa_logs[0].name, "")
@@ -58,16 +69,20 @@ output "deployment_instructions" {
        AWS_REGION=${var.aws_region}
        AWS_ACCOUNT_ID=${var.aws_account_id}
        AWS_ROLE_ARN=${aws_iam_role.bedrock_role.arn}
+       DYNAMODB_TABLE_NAME=${aws_dynamodb_table.noa_db.name}
        S3_BUCKET=${aws_s3_bucket.audio_bucket.id}
        S3_BACKUP_BUCKET=${try(aws_s3_bucket.backup_bucket[0].id, "")}
     
-    2. Verify Bedrock access:
+     2. Verify DynamoDB access:
+       aws dynamodb describe-table --table-name ${aws_dynamodb_table.noa_db.name} --region ${var.aws_region}
+
+     3. Verify Bedrock access:
        aws bedrock list-foundation-models --region ${var.aws_region}
     
-    3. Test S3 bucket access:
+     4. Test S3 bucket access:
        aws s3 ls s3://${aws_s3_bucket.audio_bucket.id} --region ${var.aws_region}
     
-    4. Deploy to Vercel:
+     5. Deploy to Vercel:
        git push origin main
   EOT
   sensitive   = true

@@ -1,12 +1,13 @@
 # Noa Infrastructure as Code (Terraform)
 
-This directory contains Terraform configurations to provision AWS infrastructure for the Noa medical platform. **Note: DynamoDB is managed by Vercel and not provisioned here.**
+This directory contains Terraform configurations to provision AWS infrastructure for the Noa medical platform, including the application DynamoDB table.
 
 ## Overview
 
 This Terraform configuration provisions:
 
 - **S3 Buckets**: Audio storage and backup buckets with encryption and versioning
+- **DynamoDB**: Pay-per-request application table with the indexes the app queries
 - **IAM Roles**: Bedrock and S3 access roles with minimal permissions
 - **CloudWatch**: Log groups and monitoring (optional)
 - **SNS Topics**: Alert notifications (optional)
@@ -17,6 +18,7 @@ This Terraform configuration provisions:
 ```
 AWS Account (Separate)
 ├── S3 Buckets (Audio + Backup)
+├── DynamoDB Table (application data)
 ├── IAM Roles
 │   ├── Bedrock Role
 │   └── S3 Role
@@ -25,8 +27,8 @@ AWS Account (Separate)
 
 ↓ 
 
-Vercel Project (DynamoDB managed separately)
-└── Application uses resources from above
+Vercel Project (configured with Terraform outputs)
+└── Application uses AWS resources from above
 ```
 
 ## Prerequisites
@@ -46,7 +48,7 @@ Vercel Project (DynamoDB managed separately)
 
 ### Vercel
 
-- Vercel project with DynamoDB integration
+- Vercel project ready for AWS environment variables
 - GitHub repository connected
 
 ## Quick Start
@@ -125,6 +127,24 @@ resource "aws_s3_bucket" "audio_bucket"
 - Public access blocked
 - Lifecycle policies (archive to Glacier after 90 days)
 - Automatic expiration after 1 year
+
+### DynamoDB Table
+
+Stores doctors, patients, sessions, and intakes.
+
+```hcl
+resource "aws_dynamodb_table" "noa_data"
+```
+
+**Cost controls:**
+- `PAY_PER_REQUEST` billing mode for no idle provisioned capacity
+- No streams, PITR, or backups enabled by default
+- Uses AWS-managed encryption at rest
+
+**Indexes:**
+- `email-index`
+- `doctorId-index`
+- `patientId-index`
 
 ### S3 Backup Bucket (Optional)
 
@@ -210,7 +230,9 @@ After running `terraform apply`, add these to your Vercel project:
 # Copy from terraform output
 AWS_REGION=us-east-1
 AWS_ACCOUNT_ID=123456789012
-AWS_ROLE_ARN=arn:aws:iam::123456789012:role/noa-bedrock-role-prod
+AWS_ACCESS_KEY_ID=your-access-key-id
+AWS_SECRET_ACCESS_KEY=your-secret-access-key
+DYNAMODB_TABLE_NAME=noa-data
 S3_BUCKET=noa-audio-prod-123456789012
 S3_BACKUP_BUCKET=noa-backup-prod-123456789012
 CLOUDWATCH_LOG_GROUP=/aws/noa/prod
