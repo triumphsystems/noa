@@ -162,7 +162,7 @@ Comprehensive checklist for deploying Noa with Terraform infrastructure and Verc
 - [ ] Add to `.env.local`:
   - [ ] `AWS_REGION`
   - [ ] `AWS_ACCOUNT_ID`
-  - [ ] `AWS_ROLE_ARN`
+  - [ ] `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`
   - [ ] `DYNAMODB_TABLE_NAME`
   - [ ] `S3_BUCKET`
   - [ ] `S3_BACKUP_BUCKET`
@@ -170,7 +170,7 @@ Comprehensive checklist for deploying Noa with Terraform infrastructure and Verc
 - [ ] Verify variables
   ```bash
   source .env.local
-  echo $AWS_ROLE_ARN
+  echo $AWS_ACCESS_KEY_ID
   echo $S3_BUCKET
   ```
 
@@ -224,11 +224,11 @@ Comprehensive checklist for deploying Noa with Terraform infrastructure and Verc
 - [ ] Add for Production environment:
   - [ ] `AWS_REGION` = terraform output
   - [ ] `AWS_ACCOUNT_ID` = terraform output
-  - [ ] `AWS_ROLE_ARN` = terraform output
   - [ ] `S3_BUCKET` = terraform output
   - [ ] `S3_BACKUP_BUCKET` = terraform output
   - [ ] `CLOUDWATCH_LOG_GROUP` = terraform output
-  - [ ] `DYNAMODB_TABLE_NAME` = from Vercel
+  - [ ] `DYNAMODB_TABLE_NAME` = terraform output
+  - [ ] `DYNAMODB_TABLE_PARTITION_KEY` = `id`
   - [ ] All `BEDROCK_*` variables
   - [ ] `NODE_ENV` = production
   - [ ] `NEXT_PUBLIC_APP_URL` = your domain
@@ -237,18 +237,11 @@ Comprehensive checklist for deploying Noa with Terraform infrastructure and Verc
 - [ ] Add for Development environment:
   - [ ] Same variables, with dev values
 
-### Vercel DynamoDB Integration
-- [ ] Go to Vercel Integrations
-- [ ] Add DynamoDB
-  - [ ] Select AWS account
-  - [ ] Choose region
-  - [ ] Configure table settings
-- [ ] Verify DYNAMODB_TABLE_NAME set
-  - [ ] Check Environment Variables
-  - [ ] Should be automatically populated
-- [ ] Test connection
-  - [ ] Deploy preview
-  - [ ] Run API tests
+### DynamoDB Verification
+- [ ] Confirm Terraform created the table
+- [ ] Verify the three indexes exist
+- [ ] Check the table name matches `DYNAMODB_TABLE_NAME`
+- [ ] Test connection from a deployed preview or local environment
 
 ## Phase 4: Deployment (Days 6-7)
 
@@ -438,7 +431,7 @@ Once all checks pass:
 🚀 NOA IS NOW LIVE! 🚀
 
 Infrastructure: ✅ AWS (Terraform-provisioned)
-Database: ✅ DynamoDB (Vercel-managed)
+Database: ✅ DynamoDB (Terraform-provisioned)
 Application: ✅ Deployed to Vercel
 Monitoring: ✅ CloudWatch active
 

@@ -9,8 +9,11 @@ This document details the complete AWS integration for the Noa medical platform,
 ### AWS Authentication
 ```
 AWS_REGION=us-east-1
-AWS_ROLE_ARN=arn:aws:iam::ACCOUNT_ID:role/noa-service-role
-DYNAMODB_TABLE_NAME=noa-data
+AWS_ACCOUNT_ID=123456789012
+AWS_ACCESS_KEY_ID=your-access-key-id
+AWS_SECRET_ACCESS_KEY=your-secret-access-key
+DYNAMODB_TABLE_NAME=noa-db
+DYNAMODB_TABLE_PARTITION_KEY=id
 AWS_S3_BUCKET=noa-medical
 ```
 
@@ -39,7 +42,7 @@ The platform uses three Bedrock models:
 Create a table with the following schema:
 
 ```
-Table Name: noa-data
+Table Name: noa-db
 Partition Key: id (String)
 Sort Key: type (String)
 
@@ -368,8 +371,8 @@ All Lambda functions and API calls log to CloudWatch:
 
 ### "InvalidSignatureException" Error
 - Verify AWS credentials in environment
-- Check AWS_ROLE_ARN is correct
-- Ensure role has proper permissions
+- Check AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are correct
+- Ensure the AWS principal has proper permissions
 
 ### "ValidationException" from Bedrock
 - Check model ID is correct

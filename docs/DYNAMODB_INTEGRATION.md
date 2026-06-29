@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Noa medical intelligence platform is now fully integrated with AWS DynamoDB. All data including doctors, patients, sessions, and patient intakes are persisted in DynamoDB using real queries and IAM authentication.
+The Noa medical intelligence platform stores doctors, patients, sessions, and patient intakes in a single AWS DynamoDB table provisioned by Terraform.
 
 ## Database Schema
 
@@ -96,7 +96,7 @@ import {
 
 **Key Features:**
 - Uses `@aws-sdk/lib-dynamodb` DocumentClient for simplified data handling
-- AWS IAM authentication via `@vercel/functions/oidc` with `AWS_ROLE_ARN` and `AWS_REGION`
+- AWS credentials resolved from standard AWS environment variables such as `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_SESSION_TOKEN`
 - Automatic `updatedAt` timestamp management on all updates
 - Parameterized expressions to prevent SQL injection
 - `nanoid` for unique ID generation
@@ -145,11 +145,11 @@ const { data: sessionsData, isLoading } = useSWR(
 ```env
 # AWS Configuration
 AWS_REGION=us-east-1
-AWS_ROLE_ARN=arn:aws:iam::ACCOUNT_ID:role/ROLE_NAME
 DYNAMODB_TABLE_NAME=noa-data
 ```
 
 These are automatically set when you connect the Amazon DynamoDB integration.
+DYNAMODB_TABLE_PARTITION_KEY=id
 
 ## Error Handling
 
@@ -244,8 +244,8 @@ const intakes = await getIntakesByPatient(patientId)
 ## Troubleshooting
 
 ### "Credentials not found"
-- Verify `AWS_ROLE_ARN` is correctly set
-- Check IAM role has permissions to DynamoDB table
+- Verify `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are set for the runtime
+- Check the AWS principal has permissions to DynamoDB table and indexes
 - Ensure environment variables are loaded
 
 ### "Table not found"

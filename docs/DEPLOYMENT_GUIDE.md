@@ -68,11 +68,14 @@ nano .env.local
 ```env
 # AWS Configuration
 AWS_REGION=us-east-1
-AWS_ROLE_ARN=arn:aws:iam::ACCOUNT_ID:role/noa-service-role
+AWS_ACCOUNT_ID=123456789012
+AWS_ACCESS_KEY_ID=your-access-key-id
+AWS_SECRET_ACCESS_KEY=your-secret-access-key
 AWS_S3_BUCKET=noa-medical-dev
 
 # DynamoDB
-DYNAMODB_TABLE_NAME=noa-data
+DYNAMODB_TABLE_NAME=noa-db
+DYNAMODB_TABLE_PARTITION_KEY=id
 
 # Application
 NODE_ENV=development
@@ -195,7 +198,8 @@ docker build -t noa-platform:latest .
 # Run Docker container
 docker run -p 3000:3000 \
   -e AWS_REGION=us-east-1 \
-  -e AWS_ROLE_ARN=arn:aws:iam::... \
+  -e AWS_ACCESS_KEY_ID=... \
+  -e AWS_SECRET_ACCESS_KEY=... \
   noa-platform:latest
 ```
 
@@ -488,7 +492,7 @@ pnpm test:smoke
 
 **Issue**: "NoCredentialsError" from AWS
 ```
-Solution: Verify AWS_ROLE_ARN and AWS_REGION in .env
+Solution: Verify AWS credentials and AWS_REGION in .env
 Check IAM role has proper permissions
 Restart application after env changes
 ```
