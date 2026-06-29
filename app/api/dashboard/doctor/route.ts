@@ -1,0 +1,57 @@
+import { NextRequest, NextResponse } from 'next/server'
+
+import type { ApiSuccess, DoctorDashboardPayload } from '@/lib/contracts/doctor-dashboard'
+import { getDoctorById, getPatientsByDoctor, getSessionsByDoctor } from '@/lib/db'
+
+export async function GET(request: NextRequest) {
+  try {
+    const doctorId = request.nextUrl.searchParams.get('doctorId')
+
+    if (!doctorId) {
+      return NextResponse.json({ message: 'doctorId is required' }, { status: 400 })
+    }
+
+    const [doctor, patients, sessions] = await Promise.all([
+      getDoctorById(doctorId),
+      getPatientsByDoctor(doctorId),
+      getSessionsByDoctor(doctorId),
+    ])
+
+    if (!doctor) {
+      return NextResponse.json({ message: 'Doctor not found' }, { status: 404 })
+    }
+
+    const today = new Date()
+    const stats = {
+      totalPatients: patients.length,
+      totalSessions: sessions.length,
+      completedSessions: sessions.filter(session => session.status === 'completed').length,
+      activeSessions: sessions.filter(session => session.status === 'active').length,
+      pendingNotes: sessions.filter(session => session.status === 'active' && !session.soapNote).length,
+      todaySessions: sessions.filter(session => new Date(session.startedAt).toDateString() === today.toDateString()).length,
+    }
+
+    const dashboard: DoctorDashboardPayload = {
+      doctor,
+      patients,
+      sessions: [...sessions].sort((a, b) => b.startedAt - a.startedAt),
+      stats,
+    }
+
+    const response: ApiSuccess<DoctorDashboardPayload> = {
+      success: true,
+      data: dashboard,
+    }
+
+    return NextResponse.json(response)
+  } catch (error) {
+    console.error('[v0] Error loading doctor dashboard:', error)
+    return NextResponse.json(
+      {
+        message: 'Failed to load doctor dashboard',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    )
+  }
+}

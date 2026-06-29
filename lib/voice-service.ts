@@ -32,6 +32,44 @@ interface VoiceSessionState {
   sessionId: string
 }
 
+export interface IntakeConversationMessage {
+  role: 'assistant' | 'patient' | 'system'
+  content: string
+  timestamp: number
+}
+
+export interface IntakeConversationDraft {
+  firstName?: string
+  lastName?: string
+  dateOfBirth?: string
+  gender?: string
+  email?: string
+  phone?: string
+  address?: string
+  medicalConditions?: string[]
+  surgeries?: string
+  allergies?: string[]
+  currentMedications?: string[]
+  familyHistory?: string
+  smokingStatus?: string
+  alcoholUse?: string
+  exerciseFrequency?: string
+  emergencyContactName?: string
+  emergencyContactPhone?: string
+  emergencyContactRelation?: string
+  consentRead?: boolean
+}
+
+export interface IntakeConversationResult {
+  assistantMessage: string
+  detectedLanguage: string
+  normalizedTranscript: string
+  draft: IntakeConversationDraft
+  missingFields: string[]
+  isComplete: boolean
+  summary: string
+}
+
 /**
  * Process voice input and generate AI response for real-time consultation
  */
@@ -298,6 +336,120 @@ Respond as JSON:
       sentiment: 'neutral',
       urgency: 'medium',
       concerns: [],
+    }
+  }
+}
+
+export async function generateIntakeConversationTurn({
+  transcript,
+  language,
+  history,
+  draft,
+}: {
+  transcript: string
+  language: string
+  history: IntakeConversationMessage[]
+  draft: IntakeConversationDraft
+}): Promise<IntakeConversationResult> {
+  const conversationHistory = history
+    .slice(-12)
+    .map(message => `${message.role}: ${message.content}`)
+    .join('\n')
+
+  const prompt = `You are Noa, a warm voice-first medical intake assistant.
+
+Rules:
+- Ask one concise question at a time.
+- Keep the tone calm, clinical, and human.
+- Support translation naturally: understand the user's language and respond in ${language}.
+- If the user gives information in another language, normalize it into the intake JSON in English when useful, but keep the spoken assistant response in ${language}.
+- Do not produce markdown.
+- Return STRICT JSON only.
+
+Current draft:
+${JSON.stringify(draft)}
+
+Conversation so far:
+${conversationHistory || 'No prior conversation.'}
+
+Latest user transcript:
+${transcript}
+
+Return JSON with this shape:
+{
+  "assistantMessage": "one short next question or acknowledgement in ${language}",
+  "detectedLanguage": "best guess language name",
+  "normalizedTranscript": "a clean English version of the latest user response",
+  "draft": {
+    "firstName": "...",
+    "lastName": "...",
+    "dateOfBirth": "...",
+    "gender": "...",
+    "email": "...",
+    "phone": "...",
+    "address": "...",
+    "medicalConditions": ["..."],
+    "surgeries": "...",
+    "allergies": ["..."],
+    "currentMedications": ["..."],
+    "familyHistory": "...",
+    "smokingStatus": "...",
+    "alcoholUse": "...",
+    "exerciseFrequency": "...",
+    "emergencyContactName": "...",
+    "emergencyContactPhone": "...",
+    "emergencyContactRelation": "...",
+    "consentRead": true
+  },
+  "missingFields": ["firstName", "lastName"],
+  "isComplete": false,
+  "summary": "short summary of what has been captured so far in English"
+}
+
+Completion criteria:
+- Mark isComplete true only when the intake has enough information to be clinically useful and the user has agreed to proceed.
+- If consent has not been collected, ask for consent.
+- Prefer asking for the biggest missing piece next.
+- The latest user response may contain multiple answers; extract them.`
+
+  try {
+    const response = await bedrockClient.send(
+      new InvokeModelCommand({
+        modelId: SONIC_MODEL,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          prompt: `${prompt}\n\nIntake assistant response:`,
+          max_tokens: 900,
+          temperature: 0.2,
+          top_p: 0.9,
+        }),
+      })
+    )
+
+    const responseBody = JSON.parse(new TextDecoder().decode(response.body))
+    const text = responseBody.content[0]?.text || '{}'
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text)
+
+    return {
+      assistantMessage: parsed.assistantMessage || 'Please tell me the next detail.',
+      detectedLanguage: parsed.detectedLanguage || language,
+      normalizedTranscript: parsed.normalizedTranscript || transcript,
+      draft: parsed.draft || draft,
+      missingFields: Array.isArray(parsed.missingFields) ? parsed.missingFields : [],
+      isComplete: Boolean(parsed.isComplete),
+      summary: parsed.summary || 'Intake captured.',
+    }
+  } catch (error) {
+    console.error('[v0] Error generating intake conversation turn:', error)
+    return {
+      assistantMessage: 'I’m sorry, I missed that. Please repeat your answer or speak a little more slowly.',
+      detectedLanguage: language,
+      normalizedTranscript: transcript,
+      draft,
+      missingFields: [],
+      isComplete: false,
+      summary: 'Unable to process the latest response.',
     }
   }
 }

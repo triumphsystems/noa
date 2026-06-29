@@ -1,9 +1,44 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
+type IntakeCompletionState = {
+  summary?: string
+  language?: string
+  doctorId?: string
+  patientId?: string
+  draft?: {
+    firstName?: string
+    lastName?: string
+    email?: string
+    phone?: string
+    medicalConditions?: string[]
+    allergies?: string[]
+    currentMedications?: string[]
+  }
+}
+
 export default function ConfirmationPage() {
+  const [completionState, setCompletionState] = useState<IntakeCompletionState | null>(null)
+
+  useEffect(() => {
+    const raw = window.sessionStorage.getItem('intake-completion')
+    if (!raw) {
+      return
+    }
+
+    try {
+      setCompletionState(JSON.parse(raw) as IntakeCompletionState)
+    } catch {
+      setCompletionState(null)
+    }
+  }, [])
+
+  const summary = completionState?.summary || 'Your intake conversation was completed and securely stored.'
+  const patientName = [completionState?.draft?.firstName, completionState?.draft?.lastName].filter(Boolean).join(' ') || 'Patient'
+
   return (
     <div className="min-h-screen bg-canvas text-deep-ink flex items-center justify-center p-8">
       <div className="max-w-md w-full text-center">
@@ -19,30 +54,39 @@ export default function ConfirmationPage() {
           </div>
         </div>
 
-        <h1 className="text-3xl font-bold font-serif mb-3">Intake Form Submitted</h1>
+        <h1 className="text-3xl font-bold font-serif mb-3">Intake Conversation Complete</h1>
         <p className="text-slate mb-8">
-          Thank you for completing your patient intake form. Your information has been securely stored and will be
-          reviewed by our medical team shortly.
+          Thank you, {patientName}. Noa captured your answers conversationally and stored the intake securely.
         </p>
+
+        <div className="bg-white rounded-3xl p-6 mb-8 text-left border border-deep-ink/10 shadow-sm">
+          <h3 className="font-semibold text-deep-ink mb-2">Conversation summary</h3>
+          <p className="text-sm text-slate leading-6">{summary}</p>
+          {completionState?.language && (
+            <p className="mt-4 text-xs uppercase tracking-[0.25em] text-hi-yellow font-semibold">
+              Captured in {completionState.language}
+            </p>
+          )}
+        </div>
 
         <div className="bg-soft-meadow rounded-3xl p-6 mb-8 text-left">
           <h3 className="font-semibold text-deep-ink mb-4">What Happens Next?</h3>
           <ol className="space-y-3 text-sm text-slate">
             <li className="flex gap-3">
               <span className="text-hi-yellow font-bold">1</span>
-              <span>Your information will be reviewed by our clinical team within 24 hours</span>
+              <span>Your intake is ready for clinical review.</span>
             </li>
             <li className="flex gap-3">
               <span className="text-hi-yellow font-bold">2</span>
-              <span>You will receive an email with appointment scheduling instructions</span>
+              <span>You can continue to the portal or wait for a follow-up message.</span>
             </li>
             <li className="flex gap-3">
               <span className="text-hi-yellow font-bold">3</span>
-              <span>Schedule your first consultation at a time that works for you</span>
+              <span>Your clinician can review the structured intake fields and transcript summary.</span>
             </li>
             <li className="flex gap-3">
               <span className="text-hi-yellow font-bold">4</span>
-              <span>Access your patient portal to communicate with your healthcare provider</span>
+              <span>Access your patient portal to continue the conversation.</span>
             </li>
           </ol>
         </div>

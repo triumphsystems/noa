@@ -1,11 +1,37 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { FileText, LayoutDashboard, Mic, Settings, Users } from 'lucide-react'
+
+import { useDoctorDashboardStore } from '@/lib/stores/doctor-dashboard-store'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const doctor = useDoctorDashboardStore(state => state.doctor)
+  const doctorId = useDoctorDashboardStore(state => state.doctorId)
+  const setDoctorId = useDoctorDashboardStore(state => state.setDoctorId)
+  const loadDashboard = useDoctorDashboardStore(state => state.loadDashboard)
+
+  useEffect(() => {
+    const storedDoctorId = window.localStorage.getItem('doctorId')
+
+    if (storedDoctorId && storedDoctorId !== doctorId) {
+      setDoctorId(storedDoctorId)
+      void loadDashboard(storedDoctorId)
+      return
+    }
+
+    if (storedDoctorId && !doctor && doctorId === storedDoctorId) {
+      void loadDashboard(storedDoctorId)
+    }
+  }, [doctor, doctorId, loadDashboard, setDoctorId])
+
+  const doctorInitial = useMemo(() => {
+    const source = doctor?.name?.trim() || 'Doctor'
+    return source.charAt(0).toUpperCase()
+  }, [doctor?.name])
 
   return (
     <div className="min-h-screen bg-canvas text-deep-ink flex">
@@ -14,7 +40,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-soft-meadow border-r border-deep-ink/20 transition-all duration-300 flex flex-col`}
       >
         <div className="p-6 flex items-center justify-between">
-          {sidebarOpen && <h1 className="text-2xl font-bold font-serif">Noa</h1>}
+          {sidebarOpen && (
+            <div>
+              <h1 className="text-2xl font-bold font-serif">Noa</h1>
+              <p className="text-xs text-slate mt-1">{doctor?.name || 'Doctor dashboard'}</p>
+            </div>
+          )}
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1 hover:bg-deep-ink/10 rounded">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -23,11 +54,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-2">
-          <NavItem href="/dashboard" icon="📊" label="Dashboard" sidebarOpen={sidebarOpen} />
-          <NavItem href="/dashboard/sessions" icon="🎤" label="Sessions" sidebarOpen={sidebarOpen} />
-          <NavItem href="/dashboard/patients" icon="👥" label="Patients" sidebarOpen={sidebarOpen} />
-          <NavItem href="/dashboard/summaries" icon="📄" label="Summaries" sidebarOpen={sidebarOpen} />
-          <NavItem href="/dashboard/settings" icon="⚙️" label="Settings" sidebarOpen={sidebarOpen} />
+          <NavItem href="/dashboard/doctor" icon={<LayoutDashboard className="h-5 w-5" />} label="Dashboard" sidebarOpen={sidebarOpen} />
+          <NavItem href="/dashboard/doctor/sessions/new" icon={<Mic className="h-5 w-5" />} label="Sessions" sidebarOpen={sidebarOpen} />
+          <NavItem href="/dashboard/doctor/patients" icon={<Users className="h-5 w-5" />} label="Patients" sidebarOpen={sidebarOpen} />
+          <NavItem href="/dashboard/doctor/summaries" icon={<FileText className="h-5 w-5" />} label="Summaries" sidebarOpen={sidebarOpen} />
+          <NavItem href="/dashboard/doctor/settings" icon={<Settings className="h-5 w-5" />} label="Settings" sidebarOpen={sidebarOpen} />
         </nav>
 
         <div className="border-t border-deep-ink/20 p-4">
@@ -51,7 +82,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </svg>
               </button>
               <div className="w-10 h-10 rounded-full bg-hi-yellow flex items-center justify-center font-semibold text-deep-ink">
-                D
+                {doctorInitial}
               </div>
             </div>
           </div>
@@ -63,11 +94,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   )
 }
 
-function NavItem({ href, icon, label, sidebarOpen }: { href: string; icon: string; label: string; sidebarOpen: boolean }) {
+function NavItem({ href, icon, label, sidebarOpen }: { href: string; icon: React.ReactNode; label: string; sidebarOpen: boolean }) {
   return (
     <Link href={href}>
       <button className="w-full flex items-center gap-3 px-4 py-3 rounded-full hover:bg-deep-ink/10 transition-colors">
-        <span className="text-xl">{icon}</span>
+        <span className="text-deep-ink">{icon}</span>
         {sidebarOpen && <span className="text-sm font-medium">{label}</span>}
       </button>
     </Link>

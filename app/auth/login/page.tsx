@@ -2,13 +2,14 @@ import { Suspense } from 'react'
 import LoginForm from './login-form'
 
 type LoginPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     type?: string
-  }
+  }>
 }
 
-export default function LoginPage({ searchParams }: LoginPageProps) {
-  const userType = searchParams?.type === 'patient' ? 'patient' : 'doctor'
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const params = await searchParams
+  const userType = params?.type === 'patient' ? 'patient' : 'doctor'
 
   return (
     <Suspense fallback={<div className="space-y-6" />}>
