@@ -52,6 +52,13 @@ export default function SignupForm({ userType }: SignupFormProps) {
         throw new Error(data.message || 'Signup failed')
       }
 
+      if (typeof window !== 'undefined') {
+        if (data.doctor?.id) {
+          window.localStorage.setItem('doctorId', data.doctor.id)
+        }
+        window.localStorage.setItem('userType', userType)
+      }
+
       router.push(`/auth/verify?email=${encodeURIComponent(formData.email)}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')

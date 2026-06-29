@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import useSWR from 'swr'
+
+import { useDoctorDashboardStore } from '@/lib/stores/doctor-dashboard-store'
 
 interface PatientData {
   id: string
@@ -18,26 +19,21 @@ interface PatientData {
   createdAt: number
 }
 
-const fetcher = (url: string) => fetch(url).then(res => res.json())
-
 export default function PatientsPage() {
-  const [doctorId, setDoctorId] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Fetch doctor ID from localStorage (would come from auth context)
+  const doctorId = useDoctorDashboardStore(state => state.doctorId)
+  const patients = useDoctorDashboardStore(state => state.patients)
+  const isLoading = useDoctorDashboardStore(state => state.isLoading)
+  const loadDashboard = useDoctorDashboardStore(state => state.loadDashboard)
+
   useEffect(() => {
-    const storedDoctorId = localStorage.getItem('doctorId') || 'doctor-demo'
-    setDoctorId(storedDoctorId)
-  }, [])
+    if (doctorId && patients.length === 0 && !isLoading) {
+      void loadDashboard(doctorId)
+    }
+  }, [doctorId, patients.length, isLoading, loadDashboard])
 
-  // Fetch patients from DynamoDB
-  const { data: patientsData, isLoading: patientsLoading } = useSWR(
-    doctorId ? `/api/patients?doctorId=${doctorId}` : null,
-    fetcher,
-    { revalidateOnFocus: false, revalidateOnReconnect: true }
-  )
-
-  const allPatients: PatientData[] = patientsData?.patients || []
+  const allPatients: PatientData[] = patients
 
   const filteredPatients = allPatients.filter(
     patient =>
@@ -81,7 +77,7 @@ export default function PatientsPage() {
 
       {/* Patients Table */}
       <div className="bg-white rounded-3xl border border-deep-ink/10 overflow-hidden">
-        {patientsLoading ? (
+        {isLoading ? (
           <div className="p-8 text-center text-slate">Loading patients...</div>
         ) : (
           <div className="overflow-x-auto">

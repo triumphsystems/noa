@@ -3,6 +3,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { CognitoUser, CognitoUserPool, AuthenticationDetails } from 'amazon-cognito-identity-js'
 
+import { useDoctorDashboardStore } from '@/lib/stores/doctor-dashboard-store'
+import { useSessionStore } from '@/lib/stores/session-store'
+
 interface AuthContextType {
   user: CognitoUser | null
   isAuthenticated: boolean
@@ -115,6 +118,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user) {
       user.signOut()
     }
+
+    if (typeof window !== 'undefined') {
+      ;['doctorId', 'patientId', 'userType', 'accessToken', 'idToken', 'refreshToken'].forEach(key => {
+        window.localStorage.removeItem(key)
+      })
+    }
+
+    useDoctorDashboardStore.getState().clearDashboard()
+    useSessionStore.getState().resetSession()
+
     setUser(null)
     setIsAuthenticated(false)
     setUserType(null)

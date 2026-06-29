@@ -12,6 +12,7 @@ import { awsConfig, dynamodbClient } from './aws-config'
 
 export const TABLE_NAME = awsConfig.dynamodb.tableName
 const PK = 'id'
+const SK = 'type'
 
 const docClient = DynamoDBDocumentClient.from(dynamodbClient, {
   marshallOptions: {
@@ -118,7 +119,7 @@ export async function getDoctorById(id: string): Promise<Doctor | null> {
   const result = await docClient.send(
     new GetCommand({
       TableName: TABLE_NAME,
-      Key: { [PK]: id },
+      Key: { [PK]: id, [SK]: 'doctor' },
     }),
   )
 
@@ -164,7 +165,7 @@ export async function updateDoctor(id: string, updates: Partial<Doctor>): Promis
   const result = await docClient.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
-      Key: { [PK]: id },
+      Key: { [PK]: id, [SK]: 'doctor' },
       UpdateExpression: `SET ${expressionParts.join(', ')}`,
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
@@ -199,7 +200,7 @@ export async function getPatientById(id: string): Promise<Patient | null> {
   const result = await docClient.send(
     new GetCommand({
       TableName: TABLE_NAME,
-      Key: { [PK]: id },
+      Key: { [PK]: id, [SK]: 'patient' },
     }),
   )
 
@@ -245,7 +246,7 @@ export async function updatePatient(id: string, updates: Partial<Patient>): Prom
   const result = await docClient.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
-      Key: { [PK]: id },
+      Key: { [PK]: id, [SK]: 'patient' },
       UpdateExpression: `SET ${expressionParts.join(', ')}`,
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
@@ -280,7 +281,7 @@ export async function getSessionById(id: string): Promise<Session | null> {
   const result = await docClient.send(
     new GetCommand({
       TableName: TABLE_NAME,
-      Key: { [PK]: id },
+      Key: { [PK]: id, [SK]: 'session' },
     }),
   )
 
@@ -351,7 +352,7 @@ export async function updateSession(id: string, updates: Partial<Session>): Prom
   const result = await docClient.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
-      Key: { [PK]: id },
+      Key: { [PK]: id, [SK]: 'session' },
       UpdateExpression: `SET ${expressionParts.join(', ')}`,
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
@@ -386,7 +387,7 @@ export async function getIntakeById(id: string): Promise<PatientIntake | null> {
   const result = await docClient.send(
     new GetCommand({
       TableName: TABLE_NAME,
-      Key: { [PK]: id },
+      Key: { [PK]: id, [SK]: 'intake' },
     }),
   )
 
@@ -432,7 +433,7 @@ export async function updateIntake(id: string, updates: Partial<PatientIntake>):
   const result = await docClient.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
-      Key: { [PK]: id },
+      Key: { [PK]: id, [SK]: 'intake' },
       UpdateExpression: `SET ${expressionParts.join(', ')}`,
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
