@@ -1,6 +1,6 @@
 # Infrastructure Configuration Guide
 
-Complete guide to configure the Noa application to use Terraform-provisioned AWS resources and Vercel-managed DynamoDB.
+Complete guide to configure the Noa application to use Terraform-provisioned AWS resources, including DynamoDB.
 
 ## Architecture Overview
 
@@ -17,9 +17,9 @@ Complete guide to configure the Noa application to use Terraform-provisioned AWS
     ┌─────────┼──────────────────────┐
     │         │                      │
     │    ┌────▼────┐          ┌─────▼──┐
-    │    │Vercel   │          │AWS     │
+    │    │AWS      │          │AWS     │
     │    │DynamoDB │          │Account │
-    │    │Managed  │          │(via    │
+    │    │(Tf)     │          │(via    │
     │    │         │          │IAM)    │
     │    └─────────┘          └────┬───┘
     │                             │
@@ -91,8 +91,10 @@ cat terraform-outputs.json | jq '.environment_variables.value'
 # Edit .env.local with:
 AWS_REGION=us-east-1
 AWS_ACCOUNT_ID=123456789012
-AWS_ROLE_ARN=arn:aws:iam::123456789012:role/noa-bedrock-role-prod
+AWS_ACCESS_KEY_ID=your-access-key-id
+AWS_SECRET_ACCESS_KEY=your-secret-access-key
 DYNAMODB_TABLE_NAME=noa-data
+DYNAMODB_TABLE_PARTITION_KEY=id
 S3_BUCKET=noa-audio-prod-123456789012
 S3_BACKUP_BUCKET=noa-backup-prod-123456789012
 ```
@@ -103,7 +105,8 @@ S3_BACKUP_BUCKET=noa-backup-prod-123456789012
 # Method 1: Using Vercel CLI
 vercel env add AWS_REGION
 vercel env add AWS_ACCOUNT_ID
-vercel env add AWS_ROLE_ARN
+vercel env add AWS_ACCESS_KEY_ID
+vercel env add AWS_SECRET_ACCESS_KEY
 vercel env add S3_BUCKET
 vercel env add DYNAMODB_TABLE_NAME
 
@@ -120,24 +123,25 @@ vercel env add DYNAMODB_TABLE_NAME
 |----------|--------|---------|
 | `AWS_REGION` | Your choice | us-east-1 |
 | `AWS_ACCOUNT_ID` | Terraform/AWS Account | 123456789012 |
-| `AWS_ROLE_ARN` | Terraform output | arn:aws:iam::123456789012:role/noa-bedrock-role-prod |
+| `AWS_ACCESS_KEY_ID` | Runtime credential | `AKIA...` |
+| `AWS_SECRET_ACCESS_KEY` | Runtime credential | `...` |
 | `S3_BUCKET` | Terraform output | noa-audio-prod-123456789012 |
 | `S3_BACKUP_BUCKET` | Terraform output | noa-backup-prod-123456789012 |
 | `CLOUDWATCH_LOG_GROUP` | Terraform output | /aws/noa/prod |
 
-#### D. Vercel-Managed DynamoDB
+#### D. Terraform-Provisioned DynamoDB
 
-DynamoDB is managed by Vercel through their integration. You don't need to provision it with Terraform.
+DynamoDB is provisioned in Terraform as a pay-per-request table to keep idle cost as close to zero as possible.
 
-**Vercel auto-sets:**
-- `DYNAMODB_TABLE_NAME` - points to Vercel's managed table
-- Database credentials - handled automatically via OIDC
+**Terraform outputs:**
+- `dynamodb_table_name` - the application table name
+- `dynamodb_table_arn` - ARN for IAM policy wiring
+- `environment_variables.DYNAMODB_TABLE_NAME` - safe to copy into Vercel
 
-**Verify in Vercel:**
-1. Go to project Settings
-2. Check "Integrations" tab
-3. Confirm DynamoDB integration is active
-4. Check that `DYNAMODB_TABLE_NAME` is set
+**Verify in AWS:**
+1. Run `terraform output dynamodb_table_name`
+2. Describe the table in AWS CLI
+3. Confirm the three indexes exist: `email-index`, `doctorId-index`, `patientId-index`
 
 ### 3. Code Configuration
 
@@ -162,7 +166,7 @@ const awsConfig = {
 
 These files automatically use the infrastructure:
 
-- `lib/db.ts` - DynamoDB operations via Vercel
+- `lib/db.ts` - DynamoDB operations via AWS SDK and standard AWS credentials
 - `lib/bedrock-nova.ts` - Bedrock Nova models
 - `lib/voice-service.ts` - Audio processing via Sonic
 - `app/api/sessions/route.ts` - Uses S3 and DynamoDB
@@ -214,8 +218,10 @@ nano .env.local
 ```
 AWS_REGION=us-east-1
 AWS_ACCOUNT_ID=123456789012
-AWS_ROLE_ARN=arn:aws:iam::123456789012:role/noa-bedrock-role-prod
+AWS_ACCESS_KEY_ID=your-access-key-id
+AWS_SECRET_ACCESS_KEY=your-secret-access-key
 DYNAMODB_TABLE_NAME=noa-data
+DYNAMODB_TABLE_PARTITION_KEY=id
 S3_BUCKET=noa-audio-prod-123456789012
 NODE_ENV=development
 ```
@@ -314,23 +320,20 @@ vercel logs
 vercel inspect
 ```
 
-### 6. Vercel DynamoDB Setup
+### 6. DynamoDB Setup
 
-#### A. Enable Integration
+#### A. Verify Terraform Output
 
-1. Go to Vercel Project Settings
-2. Integrations → Add Integration
-3. Select AWS DynamoDB
-4. Configure table settings
+1. Run `terraform output dynamodb_table_name`
+2. Confirm the table exists in AWS
+3. Confirm the three indexes exist
 
 #### B. Verify Setup
 
 ```bash
 # Check environment variables
-vercel env list | grep DYNAMODB
-
-# Should show:
-# DYNAMODB_TABLE_NAME = noa-data
+echo $DYNAMODB_TABLE_NAME
+echo $AWS_ACCESS_KEY_ID
 ```
 
 #### C. Test Connection
@@ -434,16 +437,13 @@ aws sts get-caller-identity
 
 **Check 2: IAM Permissions**
 ```bash
-aws iam simulate-principal-policy \
-  --policy-source-arn $AWS_ROLE_ARN \
-  --action-names s3:GetObject \
-  --resource-arns "arn:aws:s3:::$S3_BUCKET/*"
+aws sts get-caller-identity
 ```
 
 **Check 3: Environment Variables**
 ```bash
 # In your app directory
-echo $AWS_ROLE_ARN
+echo $AWS_ACCESS_KEY_ID
 echo $S3_BUCKET
 ```
 
@@ -483,7 +483,7 @@ aws bedrock enable-foundation-model \
 - [ ] Vercel project created
 - [ ] GitHub repository connected
 - [ ] Vercel environment variables added
-- [ ] DynamoDB integration enabled
+- [ ] DynamoDB table verified
 - [ ] Application deployed to Vercel
 - [ ] Production API tests pass
 - [ ] Monitoring and logging verified
@@ -494,14 +494,14 @@ aws bedrock enable-foundation-model \
 ### Terraform-Provisioned (External AWS Account)
 - `AWS_REGION` - Region where resources deployed
 - `AWS_ACCOUNT_ID` - AWS Account ID
-- `AWS_ROLE_ARN` - IAM role for access
+- `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` - AWS runtime credentials
 - `S3_BUCKET` - Audio storage bucket
 - `S3_BACKUP_BUCKET` - Backup bucket
 - `CLOUDWATCH_LOG_GROUP` - Logs location
 
-### Vercel-Managed (DynamoDB)
-- `DYNAMODB_TABLE_NAME` - Set by Vercel integration
-- Database credentials - Auto-configured via OIDC
+### Terraform-Provisioned (DynamoDB)
+- `DYNAMODB_TABLE_NAME` - Set from Terraform outputs
+- `DYNAMODB_TABLE_PARTITION_KEY` - `id`
 
 ### Application-Specific
 - `NODE_ENV` - development/production

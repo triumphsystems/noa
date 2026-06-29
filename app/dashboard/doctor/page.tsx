@@ -98,7 +98,7 @@ export default function DashboardPage() {
       <div className="bg-white rounded-3xl p-8 border border-deep-ink/10">
         <h3 className="text-xl font-semibold font-serif mb-6">Quick Actions</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link href="/dashboard/sessions/new">
+          <Link href="/dashboard/doctor/sessions/new">
             <Button className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 py-3">
               Start New Session
             </Button>
@@ -122,7 +122,7 @@ export default function DashboardPage() {
           ) : sessions.length === 0 ? (
             <div className="bg-soft-meadow/50 rounded-3xl p-8 text-center">
               <p className="text-slate mb-4">No sessions yet. Start your first consultation.</p>
-              <Link href="/dashboard/sessions/new">
+              <Link href="/dashboard/doctor/sessions/new">
                 <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
                   Start New Session
                 </Button>
@@ -163,14 +163,14 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex gap-2">
                       {session.status === 'completed' && (
-                        <Link href={`/dashboard/sessions/${session.id}`}>
+                        <Link href={`/dashboard/doctor/sessions/${session.id}`}>
                           <Button size="sm" className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
                             View Note
                           </Button>
                         </Link>
                       )}
                       {session.status === 'active' && (
-                        <Link href={`/dashboard/sessions/${session.id}`}>
+                        <Link href={`/dashboard/doctor/sessions/${session.id}`}>
                           <Button size="sm" className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
                             Continue
                           </Button>
