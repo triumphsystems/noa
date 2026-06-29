@@ -2,13 +2,14 @@ import { Suspense } from 'react'
 import SignupForm from './signup-form'
 
 type SignupPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     type?: string
-  }
+  }>
 }
 
-export default function SignupPage({ searchParams }: SignupPageProps) {
-  const userType = searchParams?.type === 'patient' ? 'patient' : 'doctor'
+export default async function SignupPage({ searchParams }: SignupPageProps) {
+  const resolvedSearchParams = await searchParams
+  const userType = resolvedSearchParams?.type === 'patient' ? 'patient' : 'doctor'
 
   return (
     <Suspense fallback={<div className="space-y-6" />}>

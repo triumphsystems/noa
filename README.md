@@ -57,9 +57,9 @@ A production-ready healthcare application that transforms medical consultations 
     ┌─────────┼─────────┬──────────┬─────────────┐
     │         │         │          │             │
 ┌───▼──┐  ┌──▼──┐  ┌───▼──┐  ┌───▼────┐  ┌────▼───┐
-│AWS   │  │AWS  │  │AWS   │  │AWS     │  │Vercel  │
+│AWS   │  │AWS  │  │AWS   │  │AWS     │  │AWS     │
 │S3    │  │Bed- │  │IAM   │  │CloudW- │  │DynamoDB│
-│Audio │  │rock │  │Auth  │  │atch    │  │(Managed)
+│Audio │  │rock │  │Auth  │  │atch    │  │(Tf)    │
 │Store │  │Nova │  │      │  │Logs    │  │        │
 └──────┘  └─────┘  └──────┘  └────────┘  └────────┘
 ```
@@ -73,7 +73,7 @@ A production-ready healthcare application that transforms medical consultations 
 - **UI Components**: shadcn/ui
 
 ### Database & Storage
-- **Database**: AWS DynamoDB (Vercel-managed)
+- **Database**: AWS DynamoDB (Terraform-provisioned, on-demand)
 - **File Storage**: AWS S3 (Terraform-provisioned)
 - **Audio Processing**: AWS Bedrock Sonic
 
@@ -104,10 +104,10 @@ A production-ready healthcare application that transforms medical consultations 
 ### AWS Account Requirements
 - AWS Account with appropriate permissions
 - Bedrock access enabled (Nova Lite, Nova Pro, Sonic)
-- IAM permissions for S3, Bedrock, CloudWatch
+- IAM permissions for S3, Bedrock, CloudWatch, and DynamoDB
 
 ### Vercel Setup
-- Vercel account with DynamoDB integration enabled
+- Vercel account for deployment only
 - GitHub repository connected to Vercel
 
 ## Quick Start
@@ -179,21 +179,16 @@ terraform output > outputs.txt
 
 ### Vercel Configuration
 
-1. **Connect DynamoDB Integration**:
-   - Go to Vercel Dashboard → Project Settings
-   - Add DynamoDB integration
-   - Select or create DynamoDB table
-
-2. **Environment Variables**:
+1. **Environment Variables**:
    ```
    AWS_REGION=us-east-1
-   AWS_ROLE_ARN=arn:aws:iam::ACCOUNT:role/NoaBedrockRole
+   AWS_ACCOUNT_ID=123456789012
    DYNAMODB_TABLE_NAME=noa-data
    S3_BUCKET=noa-audio-bucket
    S3_BACKUP_BUCKET=noa-backup-bucket
    ```
 
-3. **Deploy**:
+2. **Deploy**:
    ```bash
    git push  # Automatically deploys to Vercel
    ```
@@ -205,10 +200,9 @@ terraform output > outputs.txt
 ```env
 # AWS Configuration
 AWS_REGION=us-east-1
-AWS_ROLE_ARN=arn:aws:iam::ACCOUNT:role/NoaBedrockRole
 AWS_ACCOUNT_ID=123456789012
 
-# Database (Vercel-Managed)
+# Database (Terraform-provisioned)
 DYNAMODB_TABLE_NAME=noa-data
 DYNAMODB_TABLE_PARTITION_KEY=id
 
@@ -236,6 +230,7 @@ For local development, you can use `.env.local`:
 ```env
 AWS_REGION=us-east-1
 DYNAMODB_TABLE_NAME=noa-dev
+DYNAMODB_TABLE_PARTITION_KEY=id
 S3_BUCKET=noa-audio-bucket-dev
 NODE_ENV=development
 ```
@@ -502,7 +497,7 @@ aws s3 ls s3://$S3_BUCKET
 
 # Verify IAM permissions
 aws iam simulate-principal-policy \
-  --policy-source-arn $AWS_ROLE_ARN \
+   --policy-source-arn arn:aws:iam::${AWS_ACCOUNT_ID}:role/<your-role-name> \
   --action-names s3:PutObject
 ```
 

@@ -52,7 +52,7 @@ export default function SignupForm({ userType }: SignupFormProps) {
         throw new Error(data.message || 'Signup failed')
       }
 
-      router.push(`/auth/verify?email=${formData.email}`)
+      router.push(`/auth/verify?email=${encodeURIComponent(formData.email)}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {

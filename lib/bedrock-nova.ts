@@ -1,12 +1,12 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
-import { awsCredentialsProvider } from '@vercel/functions/oidc'
+import { getAwsCredentials } from './aws-config'
+
+const region = process.env.AWS_REGION || 'us-east-1'
+const credentials = getAwsCredentials(region)
 
 const client = new BedrockRuntimeClient({
-  region: process.env.AWS_REGION || 'us-east-1',
-  credentials: awsCredentialsProvider({
-    roleArn: process.env.AWS_ROLE_ARN!,
-    clientConfig: { region: process.env.AWS_REGION },
-  }),
+  region,
+  ...(credentials ? { credentials } : {}),
 })
 
 // Nova Lite Model ID for text processing
