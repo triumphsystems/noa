@@ -16,11 +16,17 @@ variable "project_name" {
   default     = "noa"
 }
 
+variable "dynamodb_table_name" {
+  description = "DynamoDB table name for application data"
+  type        = string
+  default     = "noa-data"
+}
+
 variable "environment" {
   description = "Environment (dev, staging, prod)"
   type        = string
   default     = "prod"
-  
+
   validation {
     condition     = contains(["dev", "staging", "prod"], var.environment)
     error_message = "Environment must be dev, staging, or prod."
@@ -66,7 +72,7 @@ variable "tags" {
   description = "Additional tags for all resources"
   type        = map(string)
   default = {
-    Component = "NoaMedicalPlatform"
+    Component  = "NoaMedicalPlatform"
     CostCenter = "Engineering"
   }
 }

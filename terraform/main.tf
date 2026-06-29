@@ -2,6 +2,71 @@
 data "aws_caller_identity" "current" {}
 
 # ============================================
+# DynamoDB Table for Application Data
+# ============================================
+
+resource "aws_dynamodb_table" "noa_db" {
+  name         = var.dynamodb_table_name
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "id"
+  range_key    = "type"
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
+
+  attribute {
+    name = "type"
+    type = "S"
+  }
+
+  attribute {
+    name = "email"
+    type = "S"
+  }
+
+  attribute {
+    name = "doctorId"
+    type = "S"
+  }
+
+  attribute {
+    name = "patientId"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "email-index"
+    hash_key        = "email"
+    range_key       = "type"
+    projection_type = "ALL"
+  }
+
+  global_secondary_index {
+    name            = "doctorId-index"
+    hash_key        = "doctorId"
+    range_key       = "type"
+    projection_type = "ALL"
+  }
+
+  global_secondary_index {
+    name            = "patientId-index"
+    hash_key        = "patientId"
+    range_key       = "type"
+    projection_type = "ALL"
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name    = var.dynamodb_table_name
+      Purpose = "Medical platform data storage"
+    }
+  )
+}
+
+# ============================================
 # S3 Buckets for Audio and Backup Storage
 # ============================================
 
@@ -154,6 +219,33 @@ resource "aws_iam_role_policy" "bedrock_policy" {
           "bedrock:GetFoundationModel"
         ]
         Resource = "*"
+      }
+    ]
+  })
+}
+
+# DynamoDB access policy
+resource "aws_iam_role_policy" "dynamodb_policy" {
+  name = "${var.project_name}-dynamodb-policy"
+  role = aws_iam_role.bedrock_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:PutItem",
+          "dynamodb:GetItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:Scan"
+        ]
+        Resource = [
+          aws_dynamodb_table.noa_db.arn,
+          "${aws_dynamodb_table.noa_db.arn}/index/*"
+        ]
       }
     ]
   })
