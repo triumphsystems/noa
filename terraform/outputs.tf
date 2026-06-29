@@ -53,7 +53,7 @@ output "environment_variables" {
 
 output "deployment_instructions" {
   description = "Instructions for deployment"
-  value = <<-EOT
+  value       = <<-EOT
     1. Copy these environment variables to your Vercel project:
        AWS_REGION=${var.aws_region}
        AWS_ACCOUNT_ID=${var.aws_account_id}
@@ -70,4 +70,5 @@ output "deployment_instructions" {
     4. Deploy to Vercel:
        git push origin main
   EOT
+  sensitive   = true
 }

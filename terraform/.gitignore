@@ -33,18 +33,7 @@ terraform.rc
 *.tfplan
 
 # Ignore lock files (optional - uncomment to commit lock files)
-# .terraform.lock.hcl
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
+.terraform.lock.hcl
 
 # Terraform cloud
 .terraform.cloud/

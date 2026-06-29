@@ -1,6 +1,6 @@
 terraform {
   required_version = ">= 1.0"
-  
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -26,7 +26,6 @@ provider "aws" {
       Project     = var.project_name
       Environment = var.environment
       ManagedBy   = "Terraform"
-      CreatedAt   = timestamp()
     }
   }
 }

@@ -7,7 +7,7 @@ data "aws_caller_identity" "current" {}
 
 resource "aws_s3_bucket" "audio_bucket" {
   bucket = "${var.project_name}-audio-${var.environment}-${data.aws_caller_identity.current.account_id}"
-  
+
   tags = merge(
     var.tags,
     {
@@ -54,6 +54,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "audio_bucket" {
   rule {
     id     = "archive-old-recordings"
     status = "Enabled"
+
+    filter {}
 
     transition {
       days          = 90
@@ -112,7 +114,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "backup_bucket" {
 
 # Bedrock Role
 resource "aws_iam_role" "bedrock_role" {
-  name               = "${var.project_name}-bedrock-role-${var.environment}"
+  name = "${var.project_name}-bedrock-role-${var.environment}"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -159,7 +161,7 @@ resource "aws_iam_role_policy" "bedrock_policy" {
 
 # S3 Role
 resource "aws_iam_role" "s3_role" {
-  name               = "${var.project_name}-s3-role-${var.environment}"
+  name = "${var.project_name}-s3-role-${var.environment}"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -241,7 +243,7 @@ resource "aws_sns_topic_subscription" "alerts_email" {
   count     = var.enable_monitoring ? 1 : 0
   topic_arn = aws_sns_topic.alerts[0].arn
   protocol  = "email"
-  endpoint  = "ops@example.com" # Change this to your email
+  endpoint  = "ops@noa.triumphsystems.tech"
 }
 
 # ============================================
@@ -249,15 +251,15 @@ resource "aws_sns_topic_subscription" "alerts_email" {
 # ============================================
 
 resource "aws_cloudwatch_metric_alarm" "bedrock_errors" {
-  count           = var.enable_monitoring ? 1 : 0
-  alarm_name      = "${var.project_name}-bedrock-errors"
-  alarm_actions   = [aws_sns_topic.alerts[0].arn]
-  evaluation_periods = 1
-  metric_name     = "BedrockInvocationErrors"
-  namespace       = "AWS/Bedrock"
-  period          = 300
-  statistic       = "Sum"
-  threshold       = 5
+  count               = var.enable_monitoring ? 1 : 0
+  alarm_name          = "${var.project_name}-bedrock-errors"
+  alarm_actions       = [aws_sns_topic.alerts[0].arn]
+  evaluation_periods  = 1
+  metric_name         = "BedrockInvocationErrors"
+  namespace           = "AWS/Bedrock"
+  period              = 300
+  statistic           = "Sum"
+  threshold           = 5
   comparison_operator = "GreaterThanThreshold"
 
   tags = var.tags
