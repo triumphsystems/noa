@@ -1,50 +1,50 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts'
-import { fromNodeProviderChain } from '@aws-sdk/credential-providers'
+import { CredentialsProvider } from '@aws-sdk/types'
 
 const region = process.env.AWS_REGION || 'us-east-1'
 const bedrockRoleArn = process.env.BEDROCK_ROLE_ARN
 const bedrockRoleName = process.env.BEDROCK_ROLE_NAME
 
-// Create credentials provider that uses IAM role
-async function getBedrockIAMCredentials() {
-  try {
-    if (!bedrockRoleArn) {
-      console.log('[v0] BEDROCK_ROLE_ARN not set, using default credential chain')
-      return fromNodeProviderChain()()
-    }
+// Create a custom credentials provider that assumes the Bedrock role
+function createBedrockCredentialsProvider(): CredentialsProvider {
+  return async () => {
+    try {
+      if (!bedrockRoleArn) {
+        throw new Error('BEDROCK_ROLE_ARN environment variable is not set')
+      }
 
-    const stsClient = new STSClient({ region })
-    const command = new AssumeRoleCommand({
-      RoleArn: bedrockRoleArn,
-      RoleSessionName: bedrockRoleName || 'noa-bedrock-session',
-      DurationSeconds: 3600,
-    })
-    const response = await stsClient.send(command)
-    
-    console.log('[v0] Successfully assumed Bedrock role')
-    return {
-      accessKeyId: response.Credentials!.AccessKeyId!,
-      secretAccessKey: response.Credentials!.SecretAccessKey!,
-      sessionToken: response.Credentials!.SessionToken,
+      const stsClient = new STSClient({ region })
+      const command = new AssumeRoleCommand({
+        RoleArn: bedrockRoleArn,
+        RoleSessionName: bedrockRoleName || 'noa-bedrock-session',
+        DurationSeconds: 3600,
+      })
+      const response = await stsClient.send(command)
+      
+      console.log('[v0] Successfully assumed Bedrock role')
+      return {
+        accessKeyId: response.Credentials!.AccessKeyId!,
+        secretAccessKey: response.Credentials!.SecretAccessKey!,
+        sessionToken: response.Credentials!.SessionToken,
+      }
+    } catch (error) {
+      console.error('[v0] Failed to assume Bedrock role:', error instanceof Error ? error.message : error)
+      throw new Error(`Bedrock IAM authentication failed: ${error instanceof Error ? error.message : error}`)
     }
-  } catch (error) {
-    console.error('[v0] Failed to assume Bedrock role:', error instanceof Error ? error.message : error)
-    console.log('[v0] Falling back to default credential provider chain')
-    return fromNodeProviderChain()()
   }
 }
 
 // Initialize clients - Bedrock will use the assumed role credentials
 export const bedrockClient = new BedrockRuntimeClient({
   region,
-  credentials: getBedrockIAMCredentials(),
+  credentials: createBedrockCredentialsProvider(),
 })
 
 export const s3Client = new S3Client({
   region,
-  credentials: getBedrockIAMCredentials(),
+  credentials: createBedrockCredentialsProvider(),
 })
 
 export const SONIC_MODEL = 'anthropic.nova-sonic-v1:0'
