@@ -24,6 +24,10 @@ export async function invokeBedrockModel(
   temperature: number = 0.3
 ): Promise<string> {
   try {
+    console.log('[v0] AWS Region:', region)
+    console.log('[v0] Model ID:', SONIC_MODEL)
+    console.log('[v0] Credentials available:', !!bedrockCredentials)
+    
     const response = await bedrockClient.send(
       new InvokeModelCommand({
         modelId: SONIC_MODEL,
@@ -37,10 +41,14 @@ export async function invokeBedrockModel(
       })
     )
 
+    console.log('[v0] Bedrock response status:', response.$metadata?.httpStatusCode)
     const responseBody = JSON.parse(new TextDecoder().decode(response.body))
-    return responseBody.content[0]?.text || ''
+    const result = responseBody.content[0]?.text || ''
+    console.log('[v0] Extracted text length:', result.length)
+    return result
   } catch (error) {
-    console.error('[v0] Bedrock error:', error)
+    console.error('[v0] Bedrock error:', error instanceof Error ? error.message : error)
+    if (error instanceof Error) console.error('[v0] Stack:', error.stack)
     throw error
   }
 }
