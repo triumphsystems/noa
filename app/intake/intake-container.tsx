@@ -41,7 +41,7 @@ export function useIntakeContainer(): IntakeState {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
-  const [assistantMessage, setAssistantMessage] = useState('Hi, I'm Noa. I'll ask one question at a time.')
+  const [assistantMessage, setAssistantMessage] = useState("Hi, I'm Noa. I'll ask one question at a time.")
   const [detectedLanguage, setDetectedLanguage] = useState('English')
   const [draft, setDraft] = useState<IntakeConversationDraft>(initialDraft)
   const [history, setHistory] = useState<ConversationEntry[]>([
@@ -128,7 +128,7 @@ export function useIntakeContainer(): IntakeState {
     resetConversation: () => {
       setHistory([{ id: 's-1', role: 'system', text: 'Reset' }])
       setDraft(initialDraft)
-      setAssistantMessage('Hi, I'm Noa.')
+      setAssistantMessage("Hi, I'm Noa.")
       setDetectedLanguage('English')
       setIsComplete(false)
       speechControls.reset()
