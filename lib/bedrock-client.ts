@@ -1,19 +1,43 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-import { getAwsCredentials } from './aws-config'
+import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts'
+import { fromNodeProviderChain } from '@aws-sdk/credential-providers'
 
 const region = process.env.AWS_REGION || 'us-east-1'
-const bedrockCredentials = getAwsCredentials(region)
-const s3Credentials = getAwsCredentials(region)
+const roleArn = process.env.AWS_ROLE_ARN
+const accountId = process.env.AWS_ACCOUNT_ID
 
+// Create credentials provider that uses IAM role
+async function getIAMCredentials() {
+  try {
+    const stsClient = new STSClient({ region })
+    const command = new AssumeRoleCommand({
+      RoleArn: roleArn,
+      RoleSessionName: 'noa-intake-session',
+      DurationSeconds: 3600,
+    })
+    const response = await stsClient.send(command)
+    
+    return {
+      accessKeyId: response.Credentials!.AccessKeyId!,
+      secretAccessKey: response.Credentials!.SecretAccessKey!,
+      sessionToken: response.Credentials!.SessionToken,
+    }
+  } catch (error) {
+    console.log('[v0] Failed to assume role, falling back to provider chain:', error instanceof Error ? error.message : error)
+    return fromNodeProviderChain()()
+  }
+}
+
+// Initialize clients - Bedrock will use the assumed role credentials
 export const bedrockClient = new BedrockRuntimeClient({
   region,
-  ...(bedrockCredentials ? { credentials: bedrockCredentials } : {}),
+  credentials: roleArn ? getIAMCredentials() : fromNodeProviderChain()(),
 })
 
 export const s3Client = new S3Client({
   region,
-  ...(s3Credentials ? { credentials: s3Credentials } : {}),
+  credentials: roleArn ? getIAMCredentials() : fromNodeProviderChain()(),
 })
 
 export const SONIC_MODEL = 'anthropic.nova-sonic-v1:0'
@@ -24,10 +48,6 @@ export async function invokeBedrockModel(
   temperature: number = 0.3
 ): Promise<string> {
   try {
-    console.log('[v0] AWS Region:', region)
-    console.log('[v0] Model ID:', SONIC_MODEL)
-    console.log('[v0] Credentials available:', !!bedrockCredentials)
-    
     const response = await bedrockClient.send(
       new InvokeModelCommand({
         modelId: SONIC_MODEL,
@@ -41,14 +61,10 @@ export async function invokeBedrockModel(
       })
     )
 
-    console.log('[v0] Bedrock response status:', response.$metadata?.httpStatusCode)
     const responseBody = JSON.parse(new TextDecoder().decode(response.body))
-    const result = responseBody.content[0]?.text || ''
-    console.log('[v0] Extracted text length:', result.length)
-    return result
+    return responseBody.content[0]?.text || ''
   } catch (error) {
     console.error('[v0] Bedrock error:', error instanceof Error ? error.message : error)
-    if (error instanceof Error) console.error('[v0] Stack:', error.stack)
     throw error
   }
 }

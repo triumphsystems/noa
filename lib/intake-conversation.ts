@@ -48,18 +48,14 @@ Return JSON:
 }`
 
   try {
-    console.log('[v0] Invoking Bedrock with prompt length:', prompt.length)
     const text = await invokeBedrockModel(prompt, 900, 0.2)
-    console.log('[v0] Bedrock response:', text.substring(0, 200))
     
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
-      console.log('[v0] No JSON found in response. Full response:', text)
       throw new Error('Invalid response format from Bedrock')
     }
     
     const parsed = JSON.parse(jsonMatch[0])
-    console.log('[v0] Successfully parsed response')
 
     return {
       assistantMessage: parsed.assistantMessage || 'Please tell me the next detail.',
@@ -72,7 +68,6 @@ Return JSON:
     }
   } catch (error) {
     console.error('[v0] Error in generateIntakeConversationTurn:', error instanceof Error ? error.message : error)
-    if (error instanceof Error) console.error('[v0] Stack:', error.stack)
     return {
       assistantMessage: 'I missed that. Please speak more slowly.',
       detectedLanguage: language,
