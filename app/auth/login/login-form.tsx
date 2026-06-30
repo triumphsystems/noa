@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Lock, Mail, Eye, EyeOff } from 'lucide-react'
 
 type LoginFormProps = {
   userType: 'doctor' | 'patient'
@@ -17,6 +18,7 @@ export default function LoginForm({ userType }: LoginFormProps) {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -60,53 +62,68 @@ export default function LoginForm({ userType }: LoginFormProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold font-serif mb-2">Welcome back</h2>
+    <div className="space-y-8">
+      <div className="space-y-2">
+        <h2 className="text-3xl font-bold font-serif">Welcome back</h2>
         <p className="text-slate text-sm">
           Sign in as a {userType === 'doctor' ? 'doctor' : 'patient'} to access Noa
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
-            {error}
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-700 flex items-start gap-3">
+            <span className="mt-0.5">⚠️</span>
+            <span>{error}</span>
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-deep-ink mb-1">Email</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow"
-            placeholder="you@example.com"
-          />
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-deep-ink">Email Address</label>
+          <div className="relative">
+            <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate pointer-events-none" />
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="w-full pl-12 pr-4 py-3 border border-deep-ink/15 rounded-lg text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow focus:border-transparent transition-all duration-200"
+              placeholder="you@example.com"
+            />
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-deep-ink mb-1">Password</label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow"
-            placeholder="••••••••"
-          />
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-deep-ink">Password</label>
+          <div className="relative">
+            <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate pointer-events-none" />
+            <input
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              className="w-full pl-12 pr-12 py-3 border border-deep-ink/15 rounded-lg text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow focus:border-transparent transition-all duration-200"
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate hover:text-deep-ink transition-colors"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center justify-between text-sm">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" className="rounded" />
+        <div className="flex items-center justify-between text-sm pt-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" className="rounded w-4 h-4" />
             <span className="text-slate">Remember me</span>
           </label>
-          <a href="#" className="text-hi-yellow hover:underline">
+          <a href="#" className="text-hi-yellow font-medium hover:text-hi-yellow/80 transition-colors">
             Forgot password?
           </a>
         </div>
@@ -114,7 +131,7 @@ export default function LoginForm({ userType }: LoginFormProps) {
         <Button
           type="submit"
           disabled={loading}
-          className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium py-2"
+          className="w-full rounded-lg bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-semibold py-3 shadow-md hover:shadow-lg transition-all duration-200"
         >
           {loading ? 'Signing in...' : 'Sign In'}
         </Button>
@@ -127,16 +144,17 @@ export default function LoginForm({ userType }: LoginFormProps) {
         </Link>
       </div>
 
-      <div className="pt-4 border-t border-deep-ink/10">
-        <div className="flex gap-2 text-xs">
-          <Link href="/auth/login?type=doctor" className="flex-1">
-            <button className={`w-full py-2 rounded-full ${userType === 'doctor' ? 'bg-hi-yellow text-deep-ink' : 'bg-soft-meadow text-deep-ink'}`}>
-              Doctor Sign In
+      <div className="pt-6 border-t border-deep-ink/10">
+        <p className="text-xs uppercase tracking-wider text-slate font-semibold mb-3">Account Type</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Link href="/auth/login?type=doctor" className="block">
+            <button className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 ${userType === 'doctor' ? 'bg-hi-yellow text-deep-ink shadow-md' : 'bg-soft-meadow/50 text-deep-ink hover:bg-soft-meadow/70 border border-deep-ink/10'}`}>
+              👨‍⚕️ Doctor
             </button>
           </Link>
-          <Link href="/auth/login?type=patient" className="flex-1">
-            <button className={`w-full py-2 rounded-full ${userType === 'patient' ? 'bg-hi-yellow text-deep-ink' : 'bg-soft-meadow text-deep-ink'}`}>
-              Patient Sign In
+          <Link href="/auth/login?type=patient" className="block">
+            <button className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 ${userType === 'patient' ? 'bg-hi-yellow text-deep-ink shadow-md' : 'bg-soft-meadow/50 text-deep-ink hover:bg-soft-meadow/70 border border-deep-ink/10'}`}>
+              👤 Patient
             </button>
           </Link>
         </div>
