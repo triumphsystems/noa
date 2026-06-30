@@ -1,4 +1,4 @@
-import { invokeBedrockModel } from './bedrock-client'
+import { invokeAIModel } from './ai-gateway-service'
 import type { IntakeConversationMessage, IntakeConversationDraft, IntakeConversationResult } from './voice-types'
 
 export async function generateIntakeConversationTurn({
@@ -48,9 +48,9 @@ Return JSON:
 }`
 
   try {
-    console.log('[v0] Invoking Bedrock with prompt length:', prompt.length)
-    const text = await invokeBedrockModel(prompt, 900, 0.2)
-    console.log('[v0] Bedrock response:', text.substring(0, 200))
+    console.log('[v0] Invoking AI Gateway with prompt length:', prompt.length)
+    const text = await invokeAIModel(prompt, 900, 0.2)
+    console.log('[v0] AI Gateway response:', text.substring(0, 200))
     
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {

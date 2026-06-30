@@ -6,14 +6,15 @@ const region = process.env.AWS_REGION || 'us-east-1'
 const bedrockCredentials = getAwsCredentials(region)
 const s3Credentials = getAwsCredentials(region)
 
+// Initialize clients - they will use SDK's default credential provider chain if no explicit creds
 export const bedrockClient = new BedrockRuntimeClient({
   region,
-  ...(bedrockCredentials ? { credentials: bedrockCredentials } : {}),
+  credentials: bedrockCredentials || undefined, // Explicitly pass undefined to use default chain
 })
 
 export const s3Client = new S3Client({
   region,
-  ...(s3Credentials ? { credentials: s3Credentials } : {}),
+  credentials: s3Credentials || undefined, // Explicitly pass undefined to use default chain
 })
 
 export const SONIC_MODEL = 'anthropic.nova-sonic-v1:0'
