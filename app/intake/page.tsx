@@ -20,12 +20,13 @@ function PatientIntakeContent() {
 
   return (
     <div className="min-h-screen bg-canvas text-deep-ink">
-      <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-8 sm:px-6 lg:px-8">
         <IntakeHeader />
 
-        <main className="grid flex-1 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <section className="rounded-[2rem] border border-deep-ink/10 bg-white p-6 shadow-sm">
-            <div className="flex h-full flex-col justify-between gap-6">
+        <main className="grid flex-1 gap-8 lg:grid-cols-[1.5fr_1fr]">
+          {/* Main Intake Panel */}
+          <section className="rounded-3xl border border-deep-ink/10 bg-white p-8 shadow-lg">
+            <div className="flex h-full flex-col justify-between gap-8">
               <IntakeInfoPanels
                 assistantMessage={state.assistantMessage}
                 detectedLanguage={state.detectedLanguage}
@@ -38,48 +39,55 @@ function PatientIntakeContent() {
                 isListening={state.speechControls.isListening}
               />
 
-              <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="flex flex-col gap-3">
                 <Button
                   onClick={state.handleMicPress}
                   disabled={state.isSubmitting}
-                  className={`flex-1 rounded-full px-6 py-4 text-base font-semibold ${
+                  className={`w-full rounded-xl px-6 py-4 text-base font-semibold transition-all ${
                     state.speechControls.isRecording
-                      ? 'bg-deep-ink text-white hover:bg-deep-ink/90'
-                      : 'bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90'
+                      ? 'bg-red-500 text-white hover:bg-red-600 shadow-lg'
+                      : 'bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 shadow-md'
                   }`}
                 >
-                  <span className="mr-2 inline-flex h-3 w-3 rounded-full bg-current opacity-70" />
-                  {state.speechControls.isRecording ? 'Stop microphone' : 'Start microphone'}
+                  <span className="mr-2 inline-flex h-2.5 w-2.5 rounded-full bg-current" />
+                  {state.speechControls.isRecording ? 'Stop Recording' : 'Start Recording'}
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={state.skipToText}
-                  className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow"
-                >
-                  Type fallback
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={state.resetConversation}
-                  className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow"
-                >
-                  Reset
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={state.skipToText}
+                    className="rounded-lg border-deep-ink/20 text-deep-ink hover:bg-soft-meadow"
+                  >
+                    Type Instead
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={state.resetConversation}
+                    className="rounded-lg border-deep-ink/20 text-deep-ink hover:bg-soft-meadow"
+                  >
+                    Reset
+                  </Button>
+                </div>
               </div>
             </div>
           </section>
 
-          <IntakeSidebar
-            chatItems={state.chatItems}
-            draft={state.draft}
-            canPersist={state.canPersist}
-            isComplete={state.isComplete}
-          />
+          {/* Sidebar */}
+          <div className="lg:sticky lg:top-8 lg:h-fit">
+            <IntakeSidebar
+              chatItems={state.chatItems}
+              draft={state.draft}
+              canPersist={state.canPersist}
+              isComplete={state.isComplete}
+            />
+          </div>
         </main>
 
-        <footer className="mt-6 flex items-center justify-between gap-4 text-xs text-slate">
-          <p>Speak naturally. Switch languages mid-conversation.</p>
-          <p>{state.isComplete ? 'Ready for confirmation.' : 'Keep talking until done.'}</p>
+        <footer className="mt-12 pt-6 border-t border-deep-ink/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate">
+          <p className="font-medium">💡 Speak naturally. Switch languages anytime.</p>
+          <p className="font-medium px-4 py-2 rounded-full bg-soft-meadow/50">
+            {state.isComplete ? '✓ Ready to review' : 'Keep going...'}
+          </p>
         </footer>
       </div>
     </div>
