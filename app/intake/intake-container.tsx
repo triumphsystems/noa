@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import type { IntakeConversationDraft, IntakeConversationMessage } from '@/lib/voice-service'
+import type { IntakeConversationDraft, IntakeConversationMessage } from '@/lib/voice-types'
 import { useIntakeSpeech } from './use-intake-speech'
 
 const initialDraft: IntakeConversationDraft = {

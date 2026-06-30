@@ -1,4 +1,4 @@
-import type { IntakeConversationDraft } from '@/lib/voice-service'
+import type { IntakeConversationDraft } from '@/lib/voice-types'
 
 interface ConversationEntry {
   id: string
