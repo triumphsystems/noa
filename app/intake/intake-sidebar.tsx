@@ -15,9 +15,9 @@ interface IntakeSidebarProps {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-deep-ink/5 pb-3">
-      <span className="text-xs font-semibold uppercase tracking-widest text-slate">{label}</span>
-      <span className="text-right text-sm font-medium text-deep-ink max-w-[60%] truncate">{value}</span>
+    <div className="flex items-start justify-between gap-4 rounded-2xl bg-canvas px-4 py-3">
+      <span className="text-slate">{label}</span>
+      <span className="text-right font-medium text-deep-ink">{value}</span>
     </div>
   )
 }
@@ -25,58 +25,47 @@ function Row({ label, value }: { label: string; value: string }) {
 export function IntakeSidebar({ chatItems, draft, canPersist, isComplete }: IntakeSidebarProps) {
   return (
     <aside className="space-y-6">
-      {/* Conversation History */}
-      <div className="rounded-3xl border border-deep-ink/10 bg-white p-6 shadow-lg max-h-80 overflow-y-auto">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-slate mb-4">Conversation</h2>
-        <div className="space-y-3">
+      <div className="rounded-[2rem] border border-deep-ink/10 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold font-serif mb-4">Conversation</h2>
+        <div className="space-y-4">
           {chatItems.map(item => (
             <div
               key={item.id}
-              className={`rounded-xl px-4 py-3 text-sm leading-6 ${
+              className={`rounded-3xl px-4 py-3 text-sm leading-6 ${
                 item.role === 'assistant'
-                  ? 'bg-gradient-to-r from-hi-yellow/10 to-moss-green/10 border border-hi-yellow/20 text-deep-ink'
-                  : 'bg-slate-50 text-deep-ink border border-deep-ink/5'
+                  ? 'bg-soft-meadow/50 text-deep-ink'
+                  : 'bg-canvas text-deep-ink border border-deep-ink/10'
               }`}
             >
-              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-slate">{item.role}</p>
-              <p className="text-xs leading-5">{item.text}</p>
+              <p className="mb-1 text-xs uppercase tracking-[0.25em] text-slate">{item.role}</p>
+              <p>{item.text}</p>
             </div>
           ))}
           {chatItems.length === 0 && (
-            <div className="rounded-xl border-2 border-dashed border-slate/20 p-4 text-xs text-slate text-center">
-              Conversation will start here
+            <div className="rounded-3xl border border-dashed border-deep-ink/15 p-6 text-sm text-slate">
+              Conversation will appear as Noa asks questions.
             </div>
           )}
         </div>
       </div>
 
-      {/* Captured Data */}
-      <div className="rounded-3xl border border-deep-ink/10 bg-white p-6 shadow-lg">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-slate mb-5">Captured so far</h2>
-        <div className="space-y-0">
+      <div className="rounded-[2rem] border border-deep-ink/10 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold font-serif mb-4">Captured so far</h2>
+        <div className="space-y-3 text-sm">
           <Row label="Name" value={`${draft.firstName || '—'} ${draft.lastName || ''}`.trim()} />
           <Row label="DOB" value={draft.dateOfBirth || '—'} />
           <Row label="Email" value={draft.email || '—'} />
           <Row label="Phone" value={draft.phone || '—'} />
           <Row label="Conditions" value={draft.medicalConditions?.join(', ') || '—'} />
           <Row label="Allergies" value={draft.allergies?.join(', ') || '—'} />
-          <Row label="Emergency" value={draft.emergencyContactName || '—'} />
+          <Row label="Emergency contact" value={draft.emergencyContactName || '—'} />
         </div>
       </div>
 
-      {/* Status Card */}
-      <div className={`rounded-3xl border-2 p-6 ${
-        isComplete 
-          ? 'border-green-300 bg-green-50' 
-          : 'border-hi-yellow/30 bg-hi-yellow/10'
-      }`}>
-        <h3 className="text-sm font-bold uppercase tracking-widest mb-2 text-deep-ink">Status</h3>
+      <div className="rounded-[2rem] border border-hi-yellow/30 bg-hi-yellow/10 p-6">
+        <h2 className="text-lg font-semibold font-serif mb-2">Next step</h2>
         <p className="text-sm text-deep-ink leading-6">
-          {isComplete 
-            ? '✓ Intake complete! Ready to save.' 
-            : canPersist 
-            ? 'Keep talking to complete your intake.' 
-            : 'Start recording to begin.'}
+          {canPersist ? 'We can save the intake once complete.' : ''}
         </p>
       </div>
     </aside>

@@ -21,9 +21,12 @@ export default function LandingPage() {
                   Log In
                 </Button>
               </Link>
-              <Link href="/intake">
-                <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-8 py-2 text-base font-semibold">
-                  Speak with Noa
+              <Link href="/auth/signup">
+                <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-8 py-6 text-base">
+                    Start for Doctors
+                  </Button>
+                <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
+                  Get Started
                 </Button>
               </Link>
             </div>
@@ -43,17 +46,17 @@ export default function LandingPage() {
                 Noa transforms your voice into structured clinical intelligence. Document consultations naturally, get instant SOAP notes, and never lose patient context.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/intake">
-                  <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-8 py-6 text-base font-semibold">
-                    Speak with Noa
+                <Link href="/auth/signup?type=doctor">
+                  <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-8 py-6 text-base">
+                    Start for Doctors
                   </Button>
                 </Link>
-                <Link href="/auth/signup?type=doctor">
+                <Link href="/auth/signup?type=patient">
                   <Button
                     variant="outline"
-                    className="rounded-full border-deep-ink text-deep-ink hover:bg-soft-meadow px-8 py-6 text-base font-semibold"
+                    className="rounded-full border-deep-ink text-deep-ink hover:bg-soft-meadow px-8 py-6 text-base"
                   >
-                    For Doctors
+                    For Patients
                   </Button>
                 </Link>
               </div>
@@ -182,8 +185,8 @@ export default function LandingPage() {
           <p className="text-lg text-slate mb-8 max-w-2xl mx-auto">
             Join doctors already using Noa to save hours on documentation while improving patient care.
           </p>
-          <Link href="/intake">
-            <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-8 py-6 text-base font-semibold">
+          <Link href="/auth/signup?type=doctor">
+            <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-8 py-6 text-base">
               Start Your Free Trial
             </Button>
           </Link>
