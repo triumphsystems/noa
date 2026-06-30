@@ -4,27 +4,34 @@ import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts'
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers'
 
 const region = process.env.AWS_REGION || 'us-east-1'
-const roleArn = process.env.AWS_ROLE_ARN
-const accountId = process.env.AWS_ACCOUNT_ID
+const bedrockRoleArn = process.env.BEDROCK_ROLE_ARN
+const bedrockRoleName = process.env.BEDROCK_ROLE_NAME
 
 // Create credentials provider that uses IAM role
-async function getIAMCredentials() {
+async function getBedrockIAMCredentials() {
   try {
+    if (!bedrockRoleArn) {
+      console.log('[v0] BEDROCK_ROLE_ARN not set, using default credential chain')
+      return fromNodeProviderChain()()
+    }
+
     const stsClient = new STSClient({ region })
     const command = new AssumeRoleCommand({
-      RoleArn: roleArn,
-      RoleSessionName: 'noa-intake-session',
+      RoleArn: bedrockRoleArn,
+      RoleSessionName: bedrockRoleName || 'noa-bedrock-session',
       DurationSeconds: 3600,
     })
     const response = await stsClient.send(command)
     
+    console.log('[v0] Successfully assumed Bedrock role')
     return {
       accessKeyId: response.Credentials!.AccessKeyId!,
       secretAccessKey: response.Credentials!.SecretAccessKey!,
       sessionToken: response.Credentials!.SessionToken,
     }
   } catch (error) {
-    console.log('[v0] Failed to assume role, falling back to provider chain:', error instanceof Error ? error.message : error)
+    console.error('[v0] Failed to assume Bedrock role:', error instanceof Error ? error.message : error)
+    console.log('[v0] Falling back to default credential provider chain')
     return fromNodeProviderChain()()
   }
 }
@@ -32,12 +39,12 @@ async function getIAMCredentials() {
 // Initialize clients - Bedrock will use the assumed role credentials
 export const bedrockClient = new BedrockRuntimeClient({
   region,
-  credentials: roleArn ? getIAMCredentials() : fromNodeProviderChain()(),
+  credentials: getBedrockIAMCredentials(),
 })
 
 export const s3Client = new S3Client({
   region,
-  credentials: roleArn ? getIAMCredentials() : fromNodeProviderChain()(),
+  credentials: getBedrockIAMCredentials(),
 })
 
 export const SONIC_MODEL = 'anthropic.nova-sonic-v1:0'
