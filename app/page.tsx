@@ -21,9 +21,12 @@ export default function LandingPage() {
                   Log In
                 </Button>
               </Link>
-              <Link href="/intake">
-                <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-semibold">
-                  Speak with Noa
+              <Link href="/auth/signup">
+                <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-8 py-6 text-base">
+                    Start for Doctors
+                  </Button>
+                <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
+                  Get Started
                 </Button>
               </Link>
             </div>
@@ -43,63 +46,44 @@ export default function LandingPage() {
                 Noa transforms your voice into structured clinical intelligence. Document consultations naturally, get instant SOAP notes, and never lose patient context.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/intake">
-                  <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-8 py-6 text-base font-semibold">
-                    Speak with Noa
+                <Link href="/auth/signup?type=doctor">
+                  <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-8 py-6 text-base">
+                    Start for Doctors
                   </Button>
                 </Link>
-                <Link href="/auth/login">
+                <Link href="/auth/signup?type=patient">
                   <Button
                     variant="outline"
                     className="rounded-full border-deep-ink text-deep-ink hover:bg-soft-meadow px-8 py-6 text-base"
                   >
-                    Log In
+                    For Patients
                   </Button>
                 </Link>
               </div>
             </div>
 
-            {/* Hero Card — SOAP note preview */}
-            <div className="rounded-3xl bg-white border border-deep-ink/10 shadow-sm p-7 flex flex-col gap-5">
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-slate">Session active</p>
-                  <p className="text-base font-semibold font-serif text-deep-ink mt-0.5">Dr. Adebayo — Patient #4821</p>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-moss-green animate-pulse" />
-                  <span className="text-xs font-medium text-slate">Live</span>
-                </div>
-              </div>
-
-              {/* SOAP sections */}
-              <div className="space-y-3">
-                {[
-                  { label: 'S', heading: 'Subjective', text: 'Patient reports persistent dry cough for 3 weeks, mild fever.' },
-                  { label: 'O', heading: 'Objective', text: 'Temp 37.9 °C. Chest clear on auscultation. SpO₂ 98%.' },
-                  { label: 'A', heading: 'Assessment', text: 'Likely viral upper respiratory tract infection.' },
-                  { label: 'P', heading: 'Plan', text: 'Rest, fluids, paracetamol PRN. Follow up in 5 days.' },
-                ].map(({ label, heading, text }) => (
-                  <div key={label} className="flex gap-3 items-start">
-                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hi-yellow text-xs font-bold text-deep-ink">
-                      {label}
-                    </span>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-widest text-slate">{heading}</p>
-                      <p className="text-sm leading-5 text-deep-ink">{text}</p>
-                    </div>
+            {/* Hero Card with Decorative Elements */}
+            <div className="relative h-96">
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-moss-green/30 via-fuchsia/20 to-hi-yellow/20" />
+              <div className="relative rounded-3xl bg-white border-2 border-deep-ink/10 p-8 h-full flex flex-col justify-between overflow-hidden">
+                <div className="space-y-4">
+                  <div className="h-3 bg-soft-meadow rounded-full w-full" />
+                  <div className="h-3 bg-soft-meadow rounded-full w-5/6" />
+                  <div className="space-y-2 pt-4">
+                    <div className="h-2 bg-hi-yellow rounded-full w-2/3" />
+                    <div className="h-2 bg-slate/30 rounded-full w-full" />
+                    <div className="h-2 bg-slate/30 rounded-full w-4/5" />
                   </div>
-                ))}
-              </div>
-
-              {/* Footer */}
-              <div className="flex items-center justify-between border-t border-deep-ink/8 pt-4">
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate">Live processing</p>
-                <div className="flex gap-1.5">
-                  <div className="h-2 w-2 rounded-full bg-moss-green animate-pulse" />
-                  <div className="h-2 w-2 rounded-full bg-hi-yellow animate-pulse [animation-delay:150ms]" />
-                  <div className="h-2 w-2 rounded-full bg-slate/40 animate-pulse [animation-delay:300ms]" />
+                </div>
+                <div className="flex items-center justify-between pt-8 border-t border-deep-ink/5">
+                  <div className="space-y-1">
+                    <p className="text-xs uppercase tracking-widest text-slate font-semibold">Live processing</p>
+                    <p className="text-sm font-medium text-deep-ink">SOAP notes generating</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="h-2 w-2 bg-moss-green rounded-full animate-pulse" />
+                    <div className="h-2 w-2 bg-hi-yellow rounded-full animate-pulse delay-100" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -201,9 +185,9 @@ export default function LandingPage() {
           <p className="text-lg text-slate mb-8 max-w-2xl mx-auto">
             Join doctors already using Noa to save hours on documentation while improving patient care.
           </p>
-          <Link href="/intake">
-            <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-8 py-6 text-base font-semibold">
-              Speak with Noa
+          <Link href="/auth/signup?type=doctor">
+            <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-8 py-6 text-base">
+              Start Your Free Trial
             </Button>
           </Link>
         </div>

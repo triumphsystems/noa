@@ -21,65 +21,48 @@ export function IntakeInfoPanels({
   transcriptPreview,
   isListening,
 }: IntakeInfoPanelsProps) {
-  const statusLabel = isSubmitting ? 'Processing' : isRecording ? 'Listening' : isComplete ? 'Complete' : 'Ready'
-  const statusColor = isSubmitting
-    ? 'bg-fuchsia'
-    : isRecording
-    ? 'bg-moss-green'
-    : isComplete
-    ? 'bg-moss-green'
-    : 'bg-slate/40'
-
   return (
     <div className="space-y-4">
-      {/* Noa prompt */}
-      <div className="rounded-2xl border border-deep-ink/8 bg-soft-meadow/60 px-5 py-4">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate">Noa says</p>
-        <p className="text-lg font-medium leading-7 text-deep-ink">{assistantMessage}</p>
+      <div className="rounded-3xl bg-soft-meadow/50 p-5">
+        <p className="text-xs uppercase tracking-[0.3em] text-slate mb-3">Noa says</p>
+        <p className="text-xl font-medium leading-8 text-deep-ink">{assistantMessage}</p>
       </div>
 
-      {/* Meta row */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl border border-deep-ink/8 bg-white px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate mb-1">Language</p>
-          <p className="text-sm font-semibold text-deep-ink">{detectedLanguage}</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-3xl border border-deep-ink/10 bg-canvas p-4">
+          <p className="text-xs uppercase tracking-[0.25em] text-slate mb-2">Detected language</p>
+          <p className="font-medium text-deep-ink">{detectedLanguage}</p>
         </div>
-        <div className="rounded-xl border border-deep-ink/8 bg-white px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate mb-1">Status</p>
-          <div className="flex items-center gap-2">
-            <span className={`h-2 w-2 rounded-full ${statusColor} ${isRecording || isSubmitting ? 'animate-pulse' : ''}`} />
-            <p className="text-sm font-semibold text-deep-ink">{statusLabel}</p>
-          </div>
+        <div className="rounded-3xl border border-deep-ink/10 bg-canvas p-4">
+          <p className="text-xs uppercase tracking-[0.25em] text-slate mb-2">Status</p>
+          <p className="font-medium text-deep-ink">
+            {isSubmitting ? 'Processing' : isRecording ? 'Listening' : isComplete ? 'Complete' : 'Ready'}
+          </p>
         </div>
       </div>
 
-      {/* Alerts */}
       {supportMessage && (
-        <div className="rounded-xl border border-hi-yellow/40 bg-hi-yellow/10 px-4 py-3 text-sm text-deep-ink">
+        <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           {supportMessage}
         </div>
       )}
+
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      {/* Live transcript */}
-      <div className="rounded-2xl border border-deep-ink/8 bg-white px-5 py-4 flex-1">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate">Live transcript</p>
-          {isRecording && (
-            <span className="flex items-center gap-1.5 text-xs font-medium text-slate">
-              <span className="h-1.5 w-1.5 rounded-full bg-moss-green animate-pulse" />
-              {isListening ? 'Listening' : 'Starting...'}
-            </span>
-          )}
-        </div>
-        <p className="min-h-20 text-sm leading-6 text-deep-ink">
-          {transcriptPreview || <span className="text-slate/60 italic">Tap the microphone and speak naturally...</span>}
+      <div className="rounded-3xl border border-deep-ink/10 bg-canvas p-5">
+        <p className="text-xs uppercase tracking-[0.25em] text-slate mb-3">Live transcript</p>
+        <p className="min-h-24 text-base leading-7 text-deep-ink">
+          {transcriptPreview || 'Tap the microphone and answer in your own words.'}
         </p>
       </div>
+
+      <p className="text-xs uppercase tracking-[0.25em] text-slate">
+        {isRecording ? (isListening ? 'Listening live' : 'Starting microphone') : 'Mic idle'}
+      </p>
     </div>
   )
 }
