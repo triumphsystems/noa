@@ -22,6 +22,9 @@ export default function LandingPage() {
                 </Button>
               </Link>
               <Link href="/auth/signup">
+                <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-8 py-6 text-base">
+                    Start for Doctors
+                  </Button>
                 <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
                   Get Started
                 </Button>
