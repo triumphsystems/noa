@@ -13,23 +13,15 @@ export function getAwsCredentials(_region?: string): AwsCredentials | undefined 
   const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
   const sessionToken = process.env.AWS_SESSION_TOKEN
 
-  // If explicit credentials are provided, use them
-  if (accessKeyId && secretAccessKey) {
-    return {
-      accessKeyId,
-      secretAccessKey,
-      ...(sessionToken ? { sessionToken } : {}),
-    }
+  if (!accessKeyId || !secretAccessKey) {
+    return undefined
   }
 
-  // If no explicit credentials but we have environment setup (e.g., from Vercel/DynamoDB integration)
-  // allow SDK to use default credential provider chain (includes IAM role, environment variables, etc.)
-  if (process.env.AWS_REGION && (process.env.AWS_ROLE_ARN || process.env.AWS_ACCOUNT_ID)) {
-    console.log('[v0] Using default AWS credential provider chain (IAM role or environment)')
-    return undefined // Let SDK handle credential resolution
+  return {
+    accessKeyId,
+    secretAccessKey,
+    ...(sessionToken ? { sessionToken } : {}),
   }
-
-  return undefined
 }
 
 // ============================================

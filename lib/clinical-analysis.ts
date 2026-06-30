@@ -1,4 +1,4 @@
-import { invokeAIModel } from './ai-gateway-service'
+import { invokeBedrockModel } from './bedrock-client'
 
 export async function generateRealTimeNotes(
   transcript: string
