@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { CheckCircle2, ArrowRight, Home } from 'lucide-react'
 
 type IntakeCompletionState = {
   summary?: string
@@ -24,10 +27,9 @@ export default function ConfirmationPage() {
   const [completionState, setCompletionState] = useState<IntakeCompletionState | null>(null)
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
     const raw = window.sessionStorage.getItem('intake-completion')
-    if (!raw) {
-      return
-    }
+    if (!raw) return
 
     try {
       setCompletionState(JSON.parse(raw) as IntakeCompletionState)
@@ -36,77 +38,81 @@ export default function ConfirmationPage() {
     }
   }, [])
 
-  const summary = completionState?.summary || 'Your intake conversation was completed and securely stored.'
+  const summary = completionState?.summary || 'Your intake conversation was completed and securely stored in the clinical database.'
   const patientName = [completionState?.draft?.firstName, completionState?.draft?.lastName].filter(Boolean).join(' ') || 'Patient'
 
   return (
-    <div className="min-h-screen bg-canvas text-deep-ink flex items-center justify-center p-8">
-      <div className="max-w-md w-full text-center">
-        <div className="mb-6">
-          <div className="w-16 h-16 mx-auto bg-moss-green/20 rounded-full flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 text-moss-green" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clipRule="evenodd"
-              />
-            </svg>
+    <div className="min-h-screen bg-canvas text-deep-ink flex items-center justify-center p-6">
+      <div className="max-w-lg w-full text-center space-y-6">
+        <div className="flex justify-center">
+          <div className="w-16 h-16 bg-moss-green/20 border border-moss-green/30 rounded-full flex items-center justify-center shadow-xs">
+            <CheckCircle2 className="w-9 h-9 text-deep-ink" />
           </div>
         </div>
 
-        <h1 className="text-3xl font-bold font-serif mb-3">Intake Conversation Complete</h1>
-        <p className="text-slate mb-8">
-          Thank you, {patientName}. Noa captured your answers conversationally and stored the intake securely.
-        </p>
-
-        <div className="bg-white rounded-3xl p-6 mb-8 text-left border border-deep-ink/10 shadow-sm">
-          <h3 className="font-semibold text-deep-ink mb-2">Conversation summary</h3>
-          <p className="text-sm text-slate leading-6">{summary}</p>
-          {completionState?.language && (
-            <p className="mt-4 text-xs uppercase tracking-[0.25em] text-hi-yellow font-semibold">
-              Captured in {completionState.language}
-            </p>
-          )}
+        <div>
+          <h1 className="text-3xl font-bold font-serif mb-2 text-deep-ink">Intake Complete</h1>
+          <p className="text-slate text-sm">
+            Thank you, {patientName}. Noa captured your health information conversationally and encrypted the intake securely.
+          </p>
         </div>
 
-        <div className="bg-soft-meadow rounded-3xl p-6 mb-8 text-left">
-          <h3 className="font-semibold text-deep-ink mb-4">What Happens Next?</h3>
-          <ol className="space-y-3 text-sm text-slate">
-            <li className="flex gap-3">
-              <span className="text-hi-yellow font-bold">1</span>
-              <span>Your intake is ready for clinical review.</span>
+        <Card className="p-6 text-left space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold font-serif text-deep-ink text-base">Conversation Summary</h3>
+            {completionState?.language && (
+              <Badge variant="secondary" className="text-[10px]">
+                {completionState.language}
+              </Badge>
+            )}
+          </div>
+          <p className="text-sm text-slate leading-relaxed bg-soft-meadow/50 p-4 rounded-2xl border border-deep-ink/5">
+            {summary}
+          </p>
+        </Card>
+
+        <Card className="bg-soft-meadow border-deep-ink/10 p-6 text-left">
+          <h3 className="font-semibold font-serif text-deep-ink mb-3 text-base">What Happens Next?</h3>
+          <ol className="space-y-2.5 text-sm text-slate">
+            <li className="flex gap-3 items-start">
+              <span className="w-5 h-5 rounded-full bg-hi-yellow flex items-center justify-center text-xs font-bold text-deep-ink shrink-0 mt-0.5">
+                1
+              </span>
+              <span>Your medical intake is ready for your clinician's review.</span>
             </li>
-            <li className="flex gap-3">
-              <span className="text-hi-yellow font-bold">2</span>
-              <span>You can continue to the portal or wait for a follow-up message.</span>
+            <li className="flex gap-3 items-start">
+              <span className="w-5 h-5 rounded-full bg-hi-yellow flex items-center justify-center text-xs font-bold text-deep-ink shrink-0 mt-0.5">
+                2
+              </span>
+              <span>Your doctor can access the structured intake and synthesized findings.</span>
             </li>
-            <li className="flex gap-3">
-              <span className="text-hi-yellow font-bold">3</span>
-              <span>Your clinician can review the structured intake fields and transcript summary.</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="text-hi-yellow font-bold">4</span>
-              <span>Access your patient portal to continue the conversation.</span>
+            <li className="flex gap-3 items-start">
+              <span className="w-5 h-5 rounded-full bg-hi-yellow flex items-center justify-center text-xs font-bold text-deep-ink shrink-0 mt-0.5">
+                3
+              </span>
+              <span>Access your patient portal to review your consultation records.</span>
             </li>
           </ol>
-        </div>
+        </Card>
 
         <div className="space-y-3">
-          <Link href="/patient-dashboard" className="block">
-            <Button className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
-              Go to Patient Portal
+          <Link href="/dashboard/patient" className="block">
+            <Button className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 py-5 font-semibold gap-2">
+              <span>Go to Patient Portal</span>
+              <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>
           <Link href="/" className="block">
-            <Button variant="outline" className="w-full rounded-full border-deep-ink text-deep-ink hover:bg-soft-meadow">
-              Return to Home
+            <Button variant="outline" className="w-full rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow py-5 font-medium gap-2">
+              <Home className="w-4 h-4" />
+              <span>Return to Home</span>
             </Button>
           </Link>
         </div>
 
-        <p className="text-xs text-slate mt-8">
-          If you have any questions, contact us at{' '}
-          <a href="mailto:support@noa.health" className="text-hi-yellow hover:underline">
+        <p className="text-xs text-slate pt-2">
+          Questions or need assistance? Contact{' '}
+          <a href="mailto:support@noa.health" className="font-semibold text-deep-ink underline">
             support@noa.health
           </a>
         </p>

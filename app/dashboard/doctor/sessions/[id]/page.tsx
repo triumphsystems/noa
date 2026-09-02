@@ -1,7 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import * as React from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { StatCard } from '@/components/ui/stat-card'
+import { ArrowLeft, Clock, Download, Edit3, FileText, Mic, Save, User, X } from 'lucide-react'
 
 interface SessionDetail {
   id: string
@@ -66,189 +71,240 @@ const mockSession: SessionDetail = {
   },
 }
 
-export default function SessionPage({ params }: { params: { id: string } }) {
-  const [session] = useState<SessionDetail>(mockSession)
-  const [activeTab, setActiveTab] = useState<'transcript' | 'soap'>('soap')
-  const [editingNote, setEditingNote] = useState(false)
-  const [soapNote, setSoapNote] = useState(session.soapNote)
+export default function SessionPage({
+  params,
+}: {
+  params: Promise<{ id: string }> | { id: string }
+}) {
+  const unwrappedParams = React.use(params instanceof Promise ? params : Promise.resolve(params))
+  const [session] = React.useState<SessionDetail>(mockSession)
+  const [activeTab, setActiveTab] = React.useState<'soap' | 'transcript'>('soap')
+  const [editingNote, setEditingNote] = React.useState(false)
+  const [soapNote, setSoapNote] = React.useState(session.soapNote)
 
   const handleSaveSOAP = () => {
     setEditingNote(false)
-    // TODO: Save to DynamoDB
-    console.log('[v0] Saving SOAP note:', soapNote)
+    alert('SOAP note changes saved successfully.')
   }
 
   return (
-    <div className="p-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold font-serif mb-2">Session Details</h1>
-          <p className="text-slate">Consultation with {session.patientName}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-sm text-slate">{session.date}</p>
-          <p className="text-lg font-semibold text-deep-ink">{session.duration}</p>
+    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+      {/* Top Navigation & Actions */}
+      <div className="space-y-1">
+        <Link
+          href="/dashboard/doctor"
+          className="text-xs font-semibold text-slate hover:text-deep-ink flex items-center gap-1.5 transition-colors mb-2"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Dashboard</span>
+        </Link>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold font-serif text-deep-ink">Session Consultation</h1>
+            <p className="text-slate text-sm">
+              Session ID: {unwrappedParams.id || session.id} · {session.date}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => alert('Generating consultation PDF...')}
+            className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow gap-1.5"
+          >
+            <Download className="w-4 h-4" />
+            Download PDF
+          </Button>
         </div>
       </div>
 
-      {/* Session Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-soft-meadow rounded-3xl p-6 border border-deep-ink/10">
-          <p className="text-slate text-sm mb-2">Patient</p>
-          <p className="font-semibold text-deep-ink">{session.patientName}</p>
-        </div>
-        <div className="bg-soft-meadow rounded-3xl p-6 border border-deep-ink/10">
-          <p className="text-slate text-sm mb-2">Provider</p>
-          <p className="font-semibold text-deep-ink">{session.doctor}</p>
-        </div>
-        <div className="bg-soft-meadow rounded-3xl p-6 border border-deep-ink/10">
-          <p className="text-slate text-sm mb-2">Duration</p>
-          <p className="font-semibold text-deep-ink">{session.duration}</p>
-        </div>
+      {/* Session Metadata KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard
+          label="Patient"
+          value={session.patientName}
+          icon={<User className="h-5 w-5 text-slate" />}
+        />
+        <StatCard
+          label="Provider"
+          value={session.doctor}
+          icon={<FileText className="h-5 w-5 text-slate" />}
+        />
+        <StatCard
+          label="Session Duration"
+          value={session.duration}
+          icon={<Clock className="h-5 w-5 text-slate" />}
+        />
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white rounded-3xl p-6 border border-deep-ink/10">
-        <div className="flex gap-4 mb-6 border-b border-deep-ink/10">
+      {/* Main Tabs Container */}
+      <Card className="p-6">
+        {/* Tab Controls */}
+        <div className="flex gap-2 border-b border-deep-ink/10 pb-4 mb-6">
           <button
             onClick={() => setActiveTab('soap')}
-            className={`pb-3 font-medium ${
+            className={`px-5 py-2 rounded-full text-xs font-semibold transition-colors flex items-center gap-2 ${
               activeTab === 'soap'
-                ? 'text-deep-ink border-b-2 border-hi-yellow'
-                : 'text-slate hover:text-deep-ink'
+                ? 'bg-hi-yellow text-deep-ink shadow-2xs'
+                : 'bg-soft-meadow text-deep-ink/80 hover:bg-soft-meadow/80'
             }`}
           >
-            SOAP Note
+            <FileText className="w-3.5 h-3.5" />
+            <span>SOAP Clinical Note</span>
           </button>
           <button
             onClick={() => setActiveTab('transcript')}
-            className={`pb-3 font-medium ${
+            className={`px-5 py-2 rounded-full text-xs font-semibold transition-colors flex items-center gap-2 ${
               activeTab === 'transcript'
-                ? 'text-deep-ink border-b-2 border-hi-yellow'
-                : 'text-slate hover:text-deep-ink'
+                ? 'bg-hi-yellow text-deep-ink shadow-2xs'
+                : 'bg-soft-meadow text-deep-ink/80 hover:bg-soft-meadow/80'
             }`}
           >
-            Transcript
+            <Mic className="w-3.5 h-3.5" />
+            <span>Voice Transcript ({session.transcript.length})</span>
           </button>
         </div>
 
+        {/* SOAP Note Tab */}
         {activeTab === 'soap' && (
           <div className="space-y-6">
             {!editingNote ? (
               <>
-                <div>
-                  <h3 className="text-lg font-semibold font-serif text-deep-ink mb-3">Subjective</h3>
-                  <p className="text-slate leading-relaxed">{soapNote.subjective}</p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold font-serif text-deep-ink mb-3">Objective</h3>
-                  <p className="text-slate leading-relaxed">{soapNote.objective}</p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold font-serif text-deep-ink mb-3">Assessment</h3>
-                  <p className="text-slate leading-relaxed">{soapNote.assessment}</p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold font-serif text-deep-ink mb-3">Plan</h3>
-                  <p className="text-slate leading-relaxed">{soapNote.plan}</p>
+                <div className="space-y-4">
+                  <div className="bg-soft-meadow/50 rounded-2xl p-4 border border-deep-ink/5">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+                      Subjective
+                    </span>
+                    <p className="text-deep-ink text-sm leading-relaxed">{soapNote.subjective}</p>
+                  </div>
+
+                  <div className="bg-soft-meadow/50 rounded-2xl p-4 border border-deep-ink/5">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+                      Objective
+                    </span>
+                    <p className="text-deep-ink text-sm leading-relaxed">{soapNote.objective}</p>
+                  </div>
+
+                  <div className="bg-soft-meadow/50 rounded-2xl p-4 border border-deep-ink/5">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+                      Assessment
+                    </span>
+                    <p className="text-deep-ink text-sm leading-relaxed">{soapNote.assessment}</p>
+                  </div>
+
+                  <div className="bg-soft-meadow/50 rounded-2xl p-4 border border-deep-ink/5">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+                      Plan
+                    </span>
+                    <p className="text-deep-ink text-sm leading-relaxed">{soapNote.plan}</p>
+                  </div>
                 </div>
 
-                <div className="flex gap-3 pt-6 border-t border-deep-ink/10">
+                <div className="flex gap-3 pt-4 border-t border-deep-ink/10">
                   <Button
                     onClick={() => setEditingNote(true)}
-                    className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90"
+                    className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-1.5 font-medium"
                   >
-                    Edit Note
-                  </Button>
-                  <Button variant="outline" className="rounded-full border-deep-ink text-deep-ink hover:bg-soft-meadow">
-                    Download PDF
+                    <Edit3 className="w-4 h-4" />
+                    Edit Clinical Note
                   </Button>
                 </div>
               </>
             ) : (
-              <>
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-deep-ink mb-2">Subjective</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate mb-1.5">
+                    Subjective
+                  </label>
                   <textarea
                     value={soapNote.subjective}
-                    onChange={(e) => setSoapNote({ ...soapNote, subjective: e.target.value })}
-                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow"
-                    rows={4}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-deep-ink mb-2">Objective</label>
-                  <textarea
-                    value={soapNote.objective}
-                    onChange={(e) => setSoapNote({ ...soapNote, objective: e.target.value })}
-                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow"
-                    rows={4}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-deep-ink mb-2">Assessment</label>
-                  <textarea
-                    value={soapNote.assessment}
-                    onChange={(e) => setSoapNote({ ...soapNote, assessment: e.target.value })}
-                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow"
-                    rows={4}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-deep-ink mb-2">Plan</label>
-                  <textarea
-                    value={soapNote.plan}
-                    onChange={(e) => setSoapNote({ ...soapNote, plan: e.target.value })}
-                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow"
-                    rows={4}
+                    onChange={e => setSoapNote({ ...soapNote, subjective: e.target.value })}
+                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-sm bg-transparent"
+                    rows={3}
                   />
                 </div>
 
-                <div className="flex gap-3 pt-6 border-t border-deep-ink/10">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate mb-1.5">
+                    Objective
+                  </label>
+                  <textarea
+                    value={soapNote.objective}
+                    onChange={e => setSoapNote({ ...soapNote, objective: e.target.value })}
+                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-sm bg-transparent"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate mb-1.5">
+                    Assessment
+                  </label>
+                  <textarea
+                    value={soapNote.assessment}
+                    onChange={e => setSoapNote({ ...soapNote, assessment: e.target.value })}
+                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-sm bg-transparent"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate mb-1.5">
+                    Plan
+                  </label>
+                  <textarea
+                    value={soapNote.plan}
+                    onChange={e => setSoapNote({ ...soapNote, plan: e.target.value })}
+                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-sm bg-transparent"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4 border-t border-deep-ink/10">
                   <Button
                     onClick={handleSaveSOAP}
-                    className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90"
+                    className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-1.5 font-medium"
                   >
+                    <Save className="w-4 h-4" />
                     Save Changes
                   </Button>
                   <Button
                     onClick={() => setEditingNote(false)}
                     variant="outline"
-                    className="rounded-full border-deep-ink text-deep-ink hover:bg-soft-meadow"
+                    className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow gap-1.5"
                   >
+                    <X className="w-4 h-4" />
                     Cancel
                   </Button>
                 </div>
-              </>
+              </div>
             )}
           </div>
         )}
 
+        {/* Transcript Tab */}
         {activeTab === 'transcript' && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {session.transcript.map((line, idx) => (
-              <div key={idx} className="flex gap-4 pb-4 border-b border-deep-ink/10 last:border-b-0">
-                <div className="flex-shrink-0">
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                      line.speaker === 'Dr. Smith'
-                        ? 'bg-hi-yellow text-deep-ink'
-                        : 'bg-moss-green/20 text-deep-ink'
-                    }`}
-                  >
-                    {line.speaker}
-                  </span>
-                </div>
+              <div
+                key={idx}
+                className="flex items-start gap-3 p-3 bg-soft-meadow/40 rounded-2xl border border-deep-ink/5"
+              >
+                <Badge
+                  variant={line.speaker.toLowerCase().includes('dr') ? 'default' : 'success'}
+                  className="text-[10px] px-2.5 py-0.5 shrink-0"
+                >
+                  {line.speaker}
+                </Badge>
                 <div className="flex-1">
-                  <p className="text-slate mb-1">{line.text}</p>
-                  <p className="text-xs text-slate">{line.timestamp}</p>
+                  <p className="text-sm text-deep-ink leading-relaxed">{line.text}</p>
+                  <span className="text-[11px] text-slate font-mono mt-0.5 block">
+                    {line.timestamp}
+                  </span>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   )
 }

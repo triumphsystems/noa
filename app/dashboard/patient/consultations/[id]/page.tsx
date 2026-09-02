@@ -1,7 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import * as React from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { ArrowLeft, Download, Printer, CheckCircle2, UserCheck, Calendar } from 'lucide-react'
 
 interface PatientConsultationSummary {
   id: string
@@ -31,11 +35,13 @@ You discussed continuing your current exercise routine and dietary modifications
     'Schedule your next appointment for 3 months from now. Your routine labs are scheduled for 6 months. If you experience any concerning symptoms before your next visit, please contact our office.',
 }
 
-export default function PatientConsultationPage({ params }: { params: { id: string } }) {
-  const [consultation] = useState<PatientConsultationSummary>(mockConsultation)
+export default function PatientConsultationPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+  // Support both Promise and synchronous params across Next.js versions
+  const unwrappedParams = React.use(params instanceof Promise ? params : Promise.resolve(params))
+  const [consultation] = React.useState<PatientConsultationSummary>(mockConsultation)
 
   const handleDownloadPDF = () => {
-    console.log('[v0] Downloading consultation PDF')
+    alert('Generating PDF summary...')
   }
 
   const handlePrintPage = () => {
@@ -44,107 +50,94 @@ export default function PatientConsultationPage({ params }: { params: { id: stri
 
   return (
     <div className="min-h-screen bg-canvas text-deep-ink">
-      {/* Navigation */}
-      <nav className="border-b border-deep-ink/20 bg-soft-meadow/50">
+      {/* Navigation Header */}
+      <nav className="border-b border-deep-ink/10 bg-soft-meadow sticky top-0 z-10">
         <div className="mx-auto max-w-4xl px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold font-serif">Noa Patient Portal</h1>
-          <div className="flex items-center gap-4">
-            <a href="/patient-dashboard" className="text-sm text-slate hover:text-deep-ink">
-              Back to Dashboard
-            </a>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard/patient"
+              className="text-slate hover:text-deep-ink p-1 -ml-1 rounded-full transition-colors flex items-center gap-1.5 text-sm font-medium"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Portal</span>
+            </Link>
+          </div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold font-serif text-deep-ink">Noa</h1>
+            <Badge variant="secondary" className="text-xs">Consultation Summary</Badge>
           </div>
         </div>
       </nav>
 
       <div className="p-8 max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-8">
+        {/* Top bar with metadata and actions */}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold font-serif mb-2">Consultation Summary</h2>
-            <div className="space-y-1 text-slate">
-              <p>Date: {consultation.date}</p>
-              <p>Provider: {consultation.doctorName}</p>
+            <h2 className="text-3xl font-bold font-serif mb-2 text-deep-ink">Consultation Summary</h2>
+            <div className="flex items-center gap-4 text-sm text-slate">
+              <span className="flex items-center gap-1.5">
+                <Calendar className="w-4 h-4" />
+                {consultation.date}
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1.5">
+                <UserCheck className="w-4 h-4" />
+                Provider: {consultation.doctorName}
+              </span>
             </div>
           </div>
-          <div className="flex gap-3">
-            <Button onClick={handleDownloadPDF} className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
+          <div className="flex gap-2.5">
+            <Button
+              onClick={handleDownloadPDF}
+              className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-1.5 font-medium"
+            >
+              <Download className="w-4 h-4" />
               Download PDF
             </Button>
             <Button
               onClick={handlePrintPage}
               variant="outline"
-              className="rounded-full border-deep-ink text-deep-ink hover:bg-soft-meadow"
+              className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow gap-1.5 font-medium"
             >
+              <Printer className="w-4 h-4" />
               Print
             </Button>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="bg-white rounded-3xl p-8 border border-deep-ink/10 space-y-8">
-          {/* Summary Section */}
+        {/* Visit Summary Card */}
+        <Card className="p-8 space-y-8">
           <div>
-            <h3 className="text-2xl font-bold font-serif text-deep-ink mb-4">Visit Summary</h3>
-            <p className="text-slate leading-relaxed whitespace-pre-line">{consultation.summary}</p>
+            <h3 className="text-xl font-bold font-serif text-deep-ink mb-3">Visit Summary</h3>
+            <p className="text-slate leading-relaxed whitespace-pre-line text-sm">
+              {consultation.summary}
+            </p>
           </div>
 
-          {/* Recommendations */}
-          <div>
-            <h3 className="text-2xl font-bold font-serif text-deep-ink mb-4">Your Care Plan</h3>
+          {/* Care Plan Recommendations */}
+          <div className="border-t border-deep-ink/10 pt-6">
+            <h3 className="text-xl font-bold font-serif text-deep-ink mb-4">Your Care Plan</h3>
             <div className="space-y-3">
               {consultation.recommendations.map((rec, idx) => (
-                <div key={idx} className="flex gap-4 p-4 bg-soft-meadow/50 rounded-2xl">
-                  <div className="flex-shrink-0">
-                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-hi-yellow text-deep-ink font-semibold">
-                      {idx + 1}
-                    </div>
+                <div key={idx} className="flex gap-3.5 p-4 bg-soft-meadow/50 rounded-2xl border border-deep-ink/5 items-start">
+                  <div className="w-6 h-6 rounded-full bg-hi-yellow flex items-center justify-center font-bold text-xs text-deep-ink shrink-0 mt-0.5">
+                    {idx + 1}
                   </div>
-                  <p className="text-slate leading-relaxed">{rec}</p>
+                  <p className="text-sm text-deep-ink leading-relaxed">{rec}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Next Steps */}
-          <div className="bg-hi-yellow/10 border-2 border-hi-yellow/20 rounded-2xl p-6">
-            <h3 className="text-lg font-semibold font-serif text-deep-ink mb-3">Next Steps</h3>
-            <p className="text-slate leading-relaxed">{consultation.nextSteps}</p>
-          </div>
-
-          {/* Important Information */}
-          <div className="bg-moss-green/10 border border-moss-green/20 rounded-2xl p-6">
-            <h3 className="font-semibold text-deep-ink mb-3">Important Information</h3>
-            <ul className="space-y-2 text-sm text-slate">
-              <li className="flex gap-3">
-                <span className="text-moss-green">•</span>
-                <span>This summary is for your personal records and reference</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-moss-green">•</span>
-                <span>Please keep this document safe and bring it to your next appointment</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-moss-green">•</span>
-                <span>Contact your provider if you have questions or concerns</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-moss-green">•</span>
-                <span>In case of emergency, call 911 or go to the nearest emergency room</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Message Provider */}
           <div className="border-t border-deep-ink/10 pt-6">
-            <h3 className="font-semibold text-deep-ink mb-3">Have Questions?</h3>
-            <p className="text-slate mb-4">
-              Use the secure messaging feature in your patient portal to contact your healthcare provider. You should expect a response within 24 business hours.
-            </p>
-            <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
-              Message Your Provider
-            </Button>
+            <h3 className="text-xl font-bold font-serif text-deep-ink mb-3">Next Steps</h3>
+            <div className="p-4 bg-moss-green/10 rounded-2xl border border-moss-green/20 text-sm text-deep-ink leading-relaxed flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-moss-green shrink-0 mt-0.5" />
+              <p>{consultation.nextSteps}</p>
+            </div>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   )

@@ -2,6 +2,10 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { StatCard } from '@/components/ui/stat-card'
+import { Bell, Calendar, FileText, HeartPulse, LogOut, ShieldCheck, User } from 'lucide-react'
 
 interface Consultation {
   id: string
@@ -23,7 +27,7 @@ const mockConsultations: Consultation[] = [
     id: '2',
     date: 'March 25, 2026',
     doctorName: 'Dr. Michael Johnson',
-    summary: 'Annual physical examination',
+    summary: 'Annual physical examination and routine wellness assessment.',
     status: 'scheduled',
   },
 ]
@@ -32,20 +36,28 @@ export default function PatientDashboard() {
   return (
     <div className="min-h-screen bg-canvas text-deep-ink">
       {/* Navigation */}
-      <nav className="border-b border-deep-ink/20 bg-soft-meadow/50">
+      <nav className="border-b border-deep-ink/10 bg-soft-meadow sticky top-0 z-10">
         <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold font-serif">Noa Patient Portal</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold font-serif text-deep-ink">Noa</h1>
+            <Badge variant="secondary" className="text-xs">Patient Portal</Badge>
+          </div>
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-soft-meadow rounded-full">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
+            <button
+              className="p-2 hover:bg-deep-ink/5 rounded-full text-deep-ink transition-colors"
+              aria-label="Notifications"
+            >
+              <Bell className="w-5 h-5" />
             </button>
-            <div className="w-10 h-10 rounded-full bg-hi-yellow flex items-center justify-center font-semibold text-deep-ink">
+            <div className="w-10 h-10 rounded-full bg-hi-yellow border border-deep-ink/10 flex items-center justify-center font-serif font-bold text-deep-ink shadow-2xs">
               P
             </div>
-            <Link href="/auth/logout">
-              <button className="text-sm text-slate hover:text-deep-ink">Log Out</button>
+            <Link
+              href="/auth/logout"
+              className="text-sm font-medium text-slate hover:text-deep-ink flex items-center gap-1.5 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Log Out</span>
             </Link>
           </div>
         </div>
@@ -54,111 +66,141 @@ export default function PatientDashboard() {
       {/* Main Content */}
       <div className="p-8 space-y-8 max-w-5xl mx-auto">
         {/* Welcome Section */}
-        <div className="bg-white rounded-3xl p-8 border border-deep-ink/10">
-          <h2 className="text-3xl font-bold font-serif mb-2">Welcome to Your Health Portal</h2>
-          <p className="text-slate">Access your consultations, view summaries, and manage your health information.</p>
-        </div>
+        <Card className="p-8 bg-gradient-to-r from-soft-meadow via-white to-soft-meadow/40">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-3xl font-bold font-serif mb-2 text-deep-ink">Welcome to Your Health Portal</h2>
+              <p className="text-slate text-sm max-w-xl">
+                Access your consultation summaries, review your care plans, and keep track of your prescribed medications.
+              </p>
+            </div>
+            <Link href="/intake">
+              <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium shrink-0">
+                Update Health Intake
+              </Button>
+            </Link>
+          </div>
+        </Card>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            { label: 'Total Consultations', value: '12' },
-            { label: 'Upcoming Appointments', value: '1' },
-            { label: 'Documents', value: '15' },
-          ].map((stat, idx) => (
-            <div key={idx} className="bg-soft-meadow rounded-3xl p-6 border border-deep-ink/10">
-              <p className="text-slate text-sm font-medium mb-2">{stat.label}</p>
-              <p className="text-3xl font-bold font-serif text-deep-ink">{stat.value}</p>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <StatCard
+            label="Total Consultations"
+            value="12"
+            icon={<FileText className="h-5 w-5 text-slate" />}
+          />
+          <StatCard
+            label="Upcoming Visits"
+            value="1"
+            icon={<Calendar className="h-5 w-5 text-slate" />}
+          />
+          <StatCard
+            label="Health Records"
+            value="15"
+            icon={<HeartPulse className="h-5 w-5 text-slate" />}
+          />
         </div>
 
         {/* Consultations */}
         <div className="space-y-4">
-          <h3 className="text-2xl font-bold font-serif">Your Consultations</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl font-bold font-serif text-deep-ink">Your Consultations</h3>
+          </div>
 
           <div className="space-y-3">
             {mockConsultations.map(consultation => (
-              <div
+              <Card
                 key={consultation.id}
-                className="bg-white rounded-3xl p-6 border border-deep-ink/10 hover:border-hi-yellow/50 transition-colors"
+                className="hover:border-hi-yellow/60 transition-colors p-6"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h4 className="font-semibold font-serif text-deep-ink">with {consultation.doctorName}</h4>
-                      <span
-                        className={`text-xs font-medium px-3 py-1 rounded-full ${
-                          consultation.status === 'completed'
-                            ? 'bg-moss-green/20 text-deep-ink'
-                            : 'bg-hi-yellow/20 text-deep-ink'
-                        }`}
-                      >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-3">
+                      <h4 className="font-semibold font-serif text-deep-ink text-lg">
+                        Consultation with {consultation.doctorName}
+                      </h4>
+                      <Badge variant={consultation.status === 'completed' ? 'success' : 'default'}>
                         {consultation.status === 'completed' ? 'Completed' : 'Scheduled'}
-                      </span>
+                      </Badge>
                     </div>
-                    <p className="text-sm text-slate mb-2">{consultation.summary}</p>
-                    <p className="text-xs text-slate">{consultation.date}</p>
+                    <p className="text-sm text-slate leading-relaxed">{consultation.summary}</p>
+                    <div className="flex items-center gap-2 text-xs text-slate pt-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span>{consultation.date}</span>
+                    </div>
                   </div>
+
                   {consultation.status === 'completed' && (
-                    <Link href={`/patient-dashboard/consultations/${consultation.id}`}>
-                      <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
+                    <Link href={`/dashboard/patient/consultations/${consultation.id}`}>
+                      <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium">
                         View Summary
                       </Button>
                     </Link>
                   )}
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         </div>
 
         {/* Health Information */}
-        <div className="bg-white rounded-3xl p-8 border border-deep-ink/10">
-          <h3 className="text-xl font-semibold font-serif mb-6">Your Health Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <p className="text-sm text-slate mb-3">Current Medications</p>
-              <ul className="space-y-2">
-                {['Metformin 500mg BID', 'Lisinopril 10mg QD'].map((med, idx) => (
-                  <li key={idx} className="text-sm text-deep-ink flex items-center gap-2">
-                    <span className="w-2 h-2 bg-hi-yellow rounded-full" />
-                    {med}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="text-sm text-slate mb-3">Allergies</p>
-              <div className="flex flex-wrap gap-2">
-                {['Penicillin', 'Sulfa drugs'].map((allergy, idx) => (
-                  <span key={idx} className="bg-red-100 text-red-800 text-xs px-3 py-1 rounded-full">
-                    {allergy}
-                  </span>
-                ))}
+        <Card className="p-8">
+          <CardHeader className="p-0 pb-6">
+            <CardTitle>Your Health Information</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate mb-3">
+                  Current Medications
+                </p>
+                <ul className="space-y-2.5">
+                  {['Metformin 500mg BID', 'Lisinopril 10mg QD'].map((med, idx) => (
+                    <li key={idx} className="text-sm text-deep-ink flex items-center gap-2.5">
+                      <span className="w-2 h-2 bg-hi-yellow rounded-full shrink-0" />
+                      <span>{med}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate mb-3">
+                  Allergies
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {['Penicillin', 'Sulfa drugs'].map((allergy, idx) => (
+                    <Badge key={idx} variant="danger">
+                      {allergy}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Important Information */}
-        <div className="bg-soft-meadow rounded-3xl p-8 border border-deep-ink/10">
-          <h3 className="text-lg font-semibold font-serif mb-4">Important Information</h3>
-          <ul className="space-y-3 text-sm text-slate">
-            <li className="flex gap-3">
-              <span className="text-hi-yellow">•</span>
-              <span>Your consultation summaries are secure and encrypted</span>
+        <Card className="bg-soft-meadow border-deep-ink/10 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <ShieldCheck className="h-5 w-5 text-deep-ink" />
+            <h3 className="text-lg font-semibold font-serif text-deep-ink">Patient Security & Privacy</h3>
+          </div>
+          <ul className="space-y-2 text-sm text-slate">
+            <li className="flex gap-2">
+              <span className="text-deep-ink">•</span>
+              <span>All consultation transcripts and summaries are encrypted end-to-end.</span>
             </li>
-            <li className="flex gap-3">
-              <span className="text-hi-yellow">•</span>
-              <span>You can download your reports anytime from the documents section</span>
+            <li className="flex gap-2">
+              <span className="text-deep-ink">•</span>
+              <span>You can download or print your consultation reports anytime.</span>
             </li>
-            <li className="flex gap-3">
-              <span className="text-hi-yellow">•</span>
-              <span>Share access to your records with trusted family members</span>
+            <li className="flex gap-2">
+              <span className="text-deep-ink">•</span>
+              <span>Health records are only shared with licensed clinicians you have authorized.</span>
             </li>
           </ul>
-        </div>
+        </Card>
       </div>
     </div>
   )

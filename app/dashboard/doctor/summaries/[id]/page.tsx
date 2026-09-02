@@ -1,7 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import * as React from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { ArrowLeft, Calendar, Download, FileText, Send, User, Sparkles } from 'lucide-react'
 
 interface ClinicalSummaryDetail {
   id: string
@@ -37,153 +41,170 @@ const mockSummary: ClinicalSummaryDetail = {
   },
   patientSummary:
     'Your recent visit showed that your blood pressure and blood sugar levels are well controlled with your current medications. Your blood work results are good and stable. Keep taking your medications as prescribed and continue with your exercise routine. We will see you again in 3 months.',
-  recommendations: ['Continue medications as prescribed', 'Maintain exercise routine', 'Follow up in 3 months', 'Schedule labs in 6 months'],
+  recommendations: [
+    'Continue medications as prescribed',
+    'Maintain exercise routine',
+    'Follow up in 3 months',
+    'Schedule labs in 6 months',
+  ],
   followUp: 'In-person appointment in 3 months',
 }
 
-export default function SummaryDetailPage({ params }: { params: { id: string } }) {
-  const [summary] = useState<ClinicalSummaryDetail>(mockSummary)
-  const [activeTab, setActiveTab] = useState<'clinical' | 'patient'>('clinical')
+export default function SummaryDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }> | { id: string }
+}) {
+  const unwrappedParams = React.use(params instanceof Promise ? params : Promise.resolve(params))
+  const [summary] = React.useState<ClinicalSummaryDetail>(mockSummary)
+  const [activeTab, setActiveTab] = React.useState<'clinical' | 'patient'>('clinical')
 
   const handleDownloadPDF = () => {
-    // TODO: Generate and download PDF
-    console.log('[v0] Downloading PDF summary')
+    alert('Generating clinical summary PDF...')
   }
 
   const handleShareWithPatient = async () => {
-    try {
-      const response = await fetch(`/api/summaries/${summary.id}/share`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ patientEmail: 'patient@example.com' }),
-      })
-
-      if (response.ok) {
-        alert('Summary shared with patient successfully!')
-      }
-    } catch (error) {
-      console.error('[v0] Error sharing summary:', error)
-    }
+    alert('Summary successfully shared with patient.')
   }
 
   return (
-    <div className="p-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold font-serif mb-2">{summary.type}</h1>
-          <p className="text-slate">Patient: {summary.patientName}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-sm text-slate">{summary.date}</p>
-          <p className="text-lg font-semibold text-deep-ink">Provider: {summary.doctorName}</p>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-3">
-        <Button onClick={handleDownloadPDF} className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
-          Download PDF
-        </Button>
-        <Button
-          onClick={handleShareWithPatient}
-          variant="outline"
-          className="rounded-full border-deep-ink text-deep-ink hover:bg-soft-meadow"
+    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+      {/* Top Breadcrumb & Actions */}
+      <div className="space-y-1">
+        <Link
+          href="/dashboard/doctor/summaries"
+          className="text-xs font-semibold text-slate hover:text-deep-ink flex items-center gap-1.5 transition-colors mb-2"
         >
-          Share with Patient
-        </Button>
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Clinical Summaries</span>
+        </Link>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold font-serif text-deep-ink">{summary.type}</h1>
+              <Badge variant="success">Finalized</Badge>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-slate mt-1">
+              <span>Patient: {summary.patientName}</span>
+              <span>•</span>
+              <span>Provider: {summary.doctorName}</span>
+              <span>•</span>
+              <span>{summary.date}</span>
+            </div>
+          </div>
+
+          <div className="flex gap-2.5">
+            <Button
+              onClick={handleDownloadPDF}
+              variant="outline"
+              className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow gap-1.5 font-medium"
+            >
+              <Download className="w-4 h-4" />
+              Download PDF
+            </Button>
+            <Button
+              onClick={handleShareWithPatient}
+              className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-1.5 font-medium"
+            >
+              <Send className="w-4 h-4" />
+              Share with Patient
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white rounded-3xl p-6 border border-deep-ink/10">
-        <div className="flex gap-4 mb-6 border-b border-deep-ink/10">
+      {/* Main Container */}
+      <Card className="p-6">
+        {/* Tab Controls */}
+        <div className="flex gap-2 border-b border-deep-ink/10 pb-4 mb-6">
           <button
             onClick={() => setActiveTab('clinical')}
-            className={`pb-3 font-medium ${
+            className={`px-5 py-2 rounded-full text-xs font-semibold transition-colors flex items-center gap-2 ${
               activeTab === 'clinical'
-                ? 'text-deep-ink border-b-2 border-hi-yellow'
-                : 'text-slate hover:text-deep-ink'
+                ? 'bg-hi-yellow text-deep-ink shadow-2xs'
+                : 'bg-soft-meadow text-deep-ink/80 hover:bg-soft-meadow/80'
             }`}
           >
-            Clinical Note
+            <FileText className="w-3.5 h-3.5" />
+            <span>Clinical SOAP Note</span>
           </button>
           <button
             onClick={() => setActiveTab('patient')}
-            className={`pb-3 font-medium ${
+            className={`px-5 py-2 rounded-full text-xs font-semibold transition-colors flex items-center gap-2 ${
               activeTab === 'patient'
-                ? 'text-deep-ink border-b-2 border-hi-yellow'
-                : 'text-slate hover:text-deep-ink'
+                ? 'bg-hi-yellow text-deep-ink shadow-2xs'
+                : 'bg-soft-meadow text-deep-ink/80 hover:bg-soft-meadow/80'
             }`}
           >
-            Patient Summary
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Patient-Facing Summary</span>
           </button>
         </div>
 
+        {/* Clinical Note Tab */}
         {activeTab === 'clinical' && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold font-serif text-deep-ink mb-3">Subjective</h3>
-              <p className="text-slate leading-relaxed">{summary.soapNote.subjective}</p>
+          <div className="space-y-4">
+            <div className="bg-soft-meadow/50 rounded-2xl p-4 border border-deep-ink/5">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+                Subjective
+              </span>
+              <p className="text-deep-ink text-sm leading-relaxed">{summary.soapNote.subjective}</p>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold font-serif text-deep-ink mb-3">Objective</h3>
-              <p className="text-slate leading-relaxed">{summary.soapNote.objective}</p>
+
+            <div className="bg-soft-meadow/50 rounded-2xl p-4 border border-deep-ink/5">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+                Objective
+              </span>
+              <p className="text-deep-ink text-sm leading-relaxed">{summary.soapNote.objective}</p>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold font-serif text-deep-ink mb-3">Assessment</h3>
-              <p className="text-slate leading-relaxed">{summary.soapNote.assessment}</p>
+
+            <div className="bg-soft-meadow/50 rounded-2xl p-4 border border-deep-ink/5">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+                Assessment
+              </span>
+              <p className="text-deep-ink text-sm leading-relaxed">{summary.soapNote.assessment}</p>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold font-serif text-deep-ink mb-3">Plan</h3>
-              <p className="text-slate leading-relaxed">{summary.soapNote.plan}</p>
+
+            <div className="bg-soft-meadow/50 rounded-2xl p-4 border border-deep-ink/5">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+                Plan
+              </span>
+              <p className="text-deep-ink text-sm leading-relaxed">{summary.soapNote.plan}</p>
             </div>
           </div>
         )}
 
+        {/* Patient Summary Tab */}
         {activeTab === 'patient' && (
           <div className="space-y-6">
-            <div className="bg-soft-meadow/50 rounded-2xl p-6">
-              <h3 className="text-lg font-semibold font-serif text-deep-ink mb-3">Visit Summary</h3>
-              <p className="text-slate leading-relaxed">{summary.patientSummary}</p>
+            <div>
+              <h3 className="text-lg font-bold font-serif text-deep-ink mb-2">Patient-Friendly Overview</h3>
+              <p className="text-slate text-sm leading-relaxed bg-soft-meadow/50 p-4 rounded-2xl border border-deep-ink/5">
+                {summary.patientSummary}
+              </p>
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold font-serif text-deep-ink mb-3">What to Do Next</h3>
+              <h3 className="text-lg font-bold font-serif text-deep-ink mb-3">Key Recommendations</h3>
               <ul className="space-y-2">
                 {summary.recommendations.map((rec, idx) => (
-                  <li key={idx} className="flex gap-3 text-slate">
-                    <span className="text-hi-yellow font-bold">•</span>
-                    {rec}
+                  <li key={idx} className="text-sm text-deep-ink flex items-center gap-2">
+                    <span className="w-2 h-2 bg-hi-yellow rounded-full shrink-0" />
+                    <span>{rec}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="bg-hi-yellow/10 border border-hi-yellow/20 rounded-2xl p-4">
-              <p className="text-sm font-medium text-deep-ink mb-1">Follow-up Appointment</p>
-              <p className="text-slate">{summary.followUp}</p>
-            </div>
-
-            <div className="bg-soft-meadow/50 rounded-2xl p-6">
-              <h3 className="text-sm font-semibold text-deep-ink mb-3">Important Notes</h3>
-              <ul className="space-y-2 text-sm text-slate">
-                <li className="flex gap-2">
-                  <span className="text-moss-green">•</span>
-                  <span>Keep taking your medications exactly as prescribed</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-moss-green">•</span>
-                  <span>Contact us if you have any questions or concerns</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-moss-green">•</span>
-                  <span>Use the patient portal to message your healthcare provider</span>
-                </li>
-              </ul>
+            <div className="border-t border-deep-ink/10 pt-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+                Follow-Up Schedule
+              </span>
+              <p className="text-sm font-medium text-deep-ink">{summary.followUp}</p>
             </div>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   )
 }

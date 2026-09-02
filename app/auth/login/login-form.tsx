@@ -46,7 +46,11 @@ export default function LoginForm({ userType }: LoginFormProps) {
 
       if (typeof window !== 'undefined') {
         if (data.user?.id) {
-          window.localStorage.setItem('doctorId', data.user.id)
+          if (userType === 'doctor') {
+            window.localStorage.setItem('doctorId', data.user.id)
+          } else {
+            window.localStorage.setItem('patientId', data.user.id)
+          }
         }
         window.localStorage.setItem('userType', userType)
       }

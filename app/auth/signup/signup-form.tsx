@@ -56,6 +56,9 @@ export default function SignupForm({ userType }: SignupFormProps) {
         if (data.doctor?.id) {
           window.localStorage.setItem('doctorId', data.doctor.id)
         }
+        if (data.patient?.id) {
+          window.localStorage.setItem('patientId', data.patient.id)
+        }
         window.localStorage.setItem('userType', userType)
       }
 

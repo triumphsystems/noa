@@ -1,8 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import * as React from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { ArrowLeft, Calendar, FileText, Mail, Mic, Phone, Plus, User } from 'lucide-react'
 
 interface PatientProfile {
   id: string
@@ -57,149 +60,176 @@ const mockSessions = [
   },
 ]
 
-export default function PatientProfilePage({ params }: { params: { id: string } }) {
-  const [patient] = useState(mockPatientProfile)
-  const [sessions] = useState(mockSessions)
+export default function PatientProfilePage({
+  params,
+}: {
+  params: Promise<{ id: string }> | { id: string }
+}) {
+  const unwrappedParams = React.use(params instanceof Promise ? params : Promise.resolve(params))
+  const [patient] = React.useState<PatientProfile>(mockPatientProfile)
+  const [sessions] = React.useState(mockSessions)
 
   return (
-    <div className="p-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold font-serif mb-2">{patient.name}</h1>
-          <p className="text-slate">Patient ID: {patient.id}</p>
+    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+      {/* Top Back Link & Action */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <Link
+            href="/dashboard/doctor/patients"
+            className="text-xs font-semibold text-slate hover:text-deep-ink flex items-center gap-1.5 transition-colors mb-2"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Patients Registry</span>
+          </Link>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold font-serif text-deep-ink">{patient.name}</h1>
+            <Badge variant="secondary" className="text-xs">
+              ID: {unwrappedParams.id || patient.id}
+            </Badge>
+          </div>
         </div>
-        <Link href={`/dashboard/sessions/new?patientId=${patient.id}`}>
-          <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
-            Start Session
+
+        <Link href={`/dashboard/doctor/sessions/new?patientId=${unwrappedParams.id || patient.id}`}>
+          <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-2 font-medium">
+            <Mic className="h-4 w-4" />
+            Start Voice Session
           </Button>
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* Main Content (2 cols) */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Demographics */}
-          <div className="bg-white rounded-3xl p-8 border border-deep-ink/10">
-            <h2 className="text-xl font-semibold font-serif mb-6">Demographics</h2>
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <p className="text-sm text-slate mb-1">Age</p>
-                <p className="text-lg font-semibold text-deep-ink">{patient.age} years old</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate mb-1">Gender</p>
-                <p className="text-lg font-semibold text-deep-ink">{patient.gender}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate mb-1">Date of Birth</p>
-                <p className="text-lg font-semibold text-deep-ink">{patient.dateOfBirth}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate mb-1">Email</p>
-                <p className="text-lg font-semibold text-deep-ink">{patient.email}</p>
-              </div>
-              <div className="col-span-2">
-                <p className="text-sm text-slate mb-1">Phone</p>
-                <p className="text-lg font-semibold text-deep-ink">{patient.phone}</p>
-              </div>
-              <div className="col-span-2">
-                <p className="text-sm text-slate mb-1">Address</p>
-                <p className="text-lg font-semibold text-deep-ink">{patient.address}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Medical History */}
-          <div className="bg-white rounded-3xl p-8 border border-deep-ink/10">
-            <h2 className="text-xl font-semibold font-serif mb-6">Medical History</h2>
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-medium text-deep-ink mb-2">Conditions</h3>
-                <div className="flex flex-wrap gap-2">
-                  {patient.medicalHistory.map((condition, idx) => (
-                    <span key={idx} className="bg-slate/10 text-slate text-sm px-3 py-1 rounded-full">
-                      {condition}
-                    </span>
-                  ))}
+          {/* Demographics Card */}
+          <Card className="p-6">
+            <CardHeader className="p-0 pb-4">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <User className="w-5 h-5 text-slate" />
+                Demographics & Personal Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <p className="text-xs text-slate mb-1">Age</p>
+                  <p className="font-semibold text-deep-ink">{patient.age} years</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate mb-1">Gender</p>
+                  <p className="font-semibold text-deep-ink">{patient.gender}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate mb-1">Date of Birth</p>
+                  <p className="font-semibold text-deep-ink">{patient.dateOfBirth}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate mb-1">Emergency Contact</p>
+                  <p className="font-semibold text-deep-ink truncate">{patient.emergencyContact}</p>
                 </div>
               </div>
-              <div>
-                <h3 className="font-medium text-deep-ink mb-2">Allergies</h3>
-                <div className="flex flex-wrap gap-2">
-                  {patient.allergies.map((allergy, idx) => (
-                    <span key={idx} className="bg-red-100 text-red-800 text-sm px-3 py-1 rounded-full">
-                      {allergy}
-                    </span>
-                  ))}
+
+              <div className="mt-4 pt-4 border-t border-deep-ink/10 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center gap-2 text-slate">
+                  <Mail className="w-4 h-4 text-slate shrink-0" />
+                  <span className="text-deep-ink font-medium">{patient.email}</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate">
+                  <Phone className="w-4 h-4 text-slate shrink-0" />
+                  <span className="text-deep-ink font-medium">{patient.phone}</span>
                 </div>
               </div>
-              <div>
-                <h3 className="font-medium text-deep-ink mb-2">Current Medications</h3>
-                <ul className="space-y-2">
-                  {patient.currentMedications.map((med, idx) => (
-                    <li key={idx} className="text-sm text-slate flex items-center gap-2">
-                      <span className="w-2 h-2 bg-hi-yellow rounded-full" />
-                      {med}
-                    </li>
-                  ))}
-                </ul>
+            </CardContent>
+          </Card>
+
+          {/* Clinical Profile (Conditions, Allergies, Meds) */}
+          <Card className="p-6 space-y-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate mb-3">
+                Active Medical Conditions
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {patient.medicalHistory.map((cond, idx) => (
+                  <Badge key={idx} variant="secondary" className="px-3 py-1">
+                    {cond}
+                  </Badge>
+                ))}
               </div>
             </div>
-          </div>
 
-          {/* Session History */}
-          <div className="bg-white rounded-3xl p-8 border border-deep-ink/10">
-            <h2 className="text-xl font-semibold font-serif mb-6">Session History</h2>
+            <div className="border-t border-deep-ink/10 pt-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate mb-3">
+                Known Allergies
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {patient.allergies.map((allergy, idx) => (
+                  <Badge key={idx} variant="danger" className="px-3 py-1">
+                    {allergy}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-deep-ink/10 pt-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate mb-3">
+                Current Medications
+              </p>
+              <ul className="space-y-2">
+                {patient.currentMedications.map((med, idx) => (
+                  <li key={idx} className="text-sm text-deep-ink flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-hi-yellow rounded-full shrink-0" />
+                    <span>{med}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Card>
+
+          {/* Consultation History */}
+          <div className="space-y-3">
+            <h3 className="text-xl font-bold font-serif text-deep-ink">Consultation History</h3>
             <div className="space-y-3">
-              {sessions.map((session) => (
-                <div key={session.id} className="flex items-center justify-between p-4 bg-soft-meadow/50 rounded-2xl">
-                  <div>
-                    <p className="font-medium text-deep-ink">{session.date}</p>
-                    <p className="text-sm text-slate">{session.summary}</p>
-                    <p className="text-xs text-slate mt-1">Provider: {session.provider}</p>
+              {sessions.map(session => (
+                <Card key={session.id} className="p-5 hover:border-hi-yellow/60 transition-colors">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-xs text-slate">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>{session.date}</span>
+                        <span>•</span>
+                        <span>{session.provider}</span>
+                      </div>
+                      <p className="text-sm font-medium text-deep-ink">{session.summary}</p>
+                    </div>
+                    <Link href={`/dashboard/doctor/sessions/${session.id}`}>
+                      <Button size="sm" variant="outline" className="rounded-full text-xs font-semibold">
+                        View Note
+                      </Button>
+                    </Link>
                   </div>
-                  <Link href={`/dashboard/sessions/${session.id}`}>
-                    <button className="text-hi-yellow hover:underline font-medium">View</button>
-                  </Link>
-                </div>
+                </Card>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar / Quick Notes */}
         <div className="space-y-6">
-          {/* Contact Card */}
-          <div className="bg-soft-meadow rounded-3xl p-6 border border-deep-ink/10">
-            <h3 className="font-semibold font-serif text-deep-ink mb-4">Quick Contact</h3>
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs text-slate mb-1">Emergency Contact</p>
-                <p className="text-sm font-medium text-deep-ink">{patient.emergencyContact}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate mb-1">Primary Phone</p>
-                <p className="text-sm font-medium text-deep-ink">{patient.phone}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div className="bg-white rounded-3xl p-6 border border-deep-ink/10">
-            <h3 className="font-semibold font-serif text-deep-ink mb-4">Clinical Notes</h3>
+          <Card className="p-6 bg-soft-meadow border-deep-ink/10 space-y-3">
+            <h3 className="font-semibold font-serif text-deep-ink text-base">Clinical Notes</h3>
             <p className="text-sm text-slate leading-relaxed">{patient.notes}</p>
-          </div>
+          </Card>
 
-          {/* Actions */}
-          <div className="space-y-2">
-            <Button className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
-              Edit Profile
-            </Button>
-            <Button variant="outline" className="w-full rounded-full border-deep-ink text-deep-ink hover:bg-soft-meadow">
-              Message Patient
-            </Button>
-          </div>
+          <Card className="p-6 space-y-3">
+            <h3 className="font-semibold font-serif text-deep-ink text-base">Patient Actions</h3>
+            <div className="space-y-2">
+              <Button className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium">
+                Edit Patient Info
+              </Button>
+              <Button variant="outline" className="w-full rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow font-medium">
+                Message Patient
+              </Button>
+            </div>
+          </Card>
         </div>
       </div>
     </div>
