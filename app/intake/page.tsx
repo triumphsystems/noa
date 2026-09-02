@@ -222,7 +222,7 @@ function PatientIntake() {
     setError('')
     pushHistory('patient', trimmedTranscript)
 
-    const outgoingHistory = [...history, { id: `patient-${Date.now()}`, role: 'patient', text: trimmedTranscript }]
+    const outgoingHistory: ConversationEntry[] = [...history, { id: `patient-${Date.now()}`, role: 'patient', text: trimmedTranscript }]
 
     try {
       const response = await fetch('/api/intakes/conversation', {

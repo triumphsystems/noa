@@ -2,7 +2,11 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { RefreshCw } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { StatCard } from '@/components/ui/stat-card'
+import { EmptyState } from '@/components/ui/empty-state'
+import { Calendar, CheckCircle2, Clock, FileEdit, Plus, RefreshCw, Search, Users } from 'lucide-react'
 
 import { useDoctorDashboardStore } from '@/lib/stores/doctor-dashboard-store'
 
@@ -16,10 +20,7 @@ export default function DashboardPage() {
   const loadDashboard = useDoctorDashboardStore(state => state.loadDashboard)
 
   const handleRefresh = () => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
+    if (typeof window === 'undefined') return
     const storedDoctorId = window.localStorage.getItem('doctorId')
     if (storedDoctorId) {
       void loadDashboard(storedDoctorId)
@@ -39,19 +40,20 @@ export default function DashboardPage() {
   const recentSessions = sessions.slice(0, 5)
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="flex items-start justify-between gap-4">
+    <div className="p-8 space-y-8 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-serif mb-2">{doctor?.name || 'Doctor Dashboard'}</h1>
-          <p className="text-slate">
-            {doctor ? `${doctor.specialty} · ${doctor.clinic}` : ''}
+          <h1 className="text-3xl font-bold font-serif mb-1 text-deep-ink">{doctor?.name || 'Doctor Dashboard'}</h1>
+          <p className="text-slate text-sm">
+            {doctor ? `${doctor.specialty} · ${doctor.clinic}` : 'Welcome back to your practice'}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
             onClick={handleRefresh}
-            className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow"
+            className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow gap-2"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh
@@ -71,106 +73,139 @@ export default function DashboardPage() {
       )}
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Today\'s Sessions', value: stats?.todaySessions.toString() || '0' },
-          { label: 'Unique Patients', value: stats?.totalPatients.toString() || '0' },
-          { label: 'Completed Sessions', value: stats?.completedSessions.toString() || '0' },
-          { label: 'Pending Notes', value: stats?.pendingNotes.toString() || '0' },
-        ].map((stat, idx) => (
-          <div key={idx} className="bg-soft-meadow rounded-3xl p-6 border border-deep-ink/10">
-            <p className="text-slate text-sm font-medium mb-2">{stat.label}</p>
-            <p className="text-3xl font-bold font-serif text-deep-ink">{stat.value}</p>
-          </div>
-        ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Today's Sessions"
+          value={stats?.todaySessions.toString() || '0'}
+          icon={<Calendar className="h-5 w-5" />}
+        />
+        <StatCard
+          label="Unique Patients"
+          value={stats?.totalPatients.toString() || '0'}
+          icon={<Users className="h-5 w-5" />}
+        />
+        <StatCard
+          label="Completed Sessions"
+          value={stats?.completedSessions.toString() || '0'}
+          icon={<CheckCircle2 className="h-5 w-5" />}
+        />
+        <StatCard
+          label="Pending Notes"
+          value={stats?.pendingNotes.toString() || '0'}
+          icon={<FileEdit className="h-5 w-5" />}
+        />
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-3xl p-8 border border-deep-ink/10">
-        <h3 className="text-xl font-semibold font-serif mb-6">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link href="/dashboard/doctor/sessions/new">
-            <Button className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 py-3">
-              Start New Session
-            </Button>
-          </Link>
-          <Button variant="outline" className="w-full rounded-full border-deep-ink text-deep-ink hover:bg-soft-meadow py-3">
-            Search Patients
-          </Button>
-          <Button variant="outline" className="w-full rounded-full border-deep-ink text-deep-ink hover:bg-soft-meadow py-3">
-            View Reports
-          </Button>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Link href="/dashboard/doctor/sessions/new" className="block">
+              <Button className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 py-5 font-medium gap-2">
+                <Plus className="h-4 w-4" />
+                Start New Session
+              </Button>
+            </Link>
+            <Link href="/dashboard/doctor/patients" className="block">
+              <Button variant="outline" className="w-full rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow py-5 font-medium gap-2">
+                <Search className="h-4 w-4" />
+                Search Patients
+              </Button>
+            </Link>
+            <Link href="/dashboard/doctor/summaries" className="block">
+              <Button variant="outline" className="w-full rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow py-5 font-medium gap-2">
+                <FileEdit className="h-4 w-4" />
+                Review Summaries
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Recent Sessions */}
       <div className="space-y-4">
-        <h3 className="text-xl font-semibold font-serif">Recent Sessions</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-semibold font-serif text-deep-ink">Recent Sessions</h3>
+          {sessions.length > 0 && (
+            <Link href="/dashboard/doctor/sessions/new" className="text-xs font-semibold text-slate hover:text-deep-ink">
+              View all sessions →
+            </Link>
+          )}
+        </div>
 
-        <div className="space-y-3">
-          {isLoading ? (
-            <div className="text-center py-8 text-slate">Loading sessions...</div>
-          ) : recentSessions.length === 0 ? (
-            <div className="bg-soft-meadow/50 rounded-3xl p-8 text-center">
-              <p className="text-slate mb-4">No sessions yet. Start your first consultation.</p>
+        {isLoading ? (
+          <div className="text-center py-12 text-slate">Loading sessions...</div>
+        ) : recentSessions.length === 0 ? (
+          <EmptyState
+            title="No sessions yet"
+            description="Start your first AI-assisted clinical consultation to see transcripts and SOAP notes here."
+            action={
               <Link href="/dashboard/doctor/sessions/new">
-                <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
+                <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-2">
+                  <Plus className="h-4 w-4" />
                   Start New Session
                 </Button>
               </Link>
-            </div>
-          ) : (
-            recentSessions.map(session => {
-              return (
-                <div
-                  key={session.id}
-                  className="bg-white rounded-3xl p-6 border border-deep-ink/10 hover:border-hi-yellow/50 transition-colors"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h4 className="font-semibold font-serif text-deep-ink">{getPatientName(session.patientId)}</h4>
-                        <span
-                          className={`text-xs font-medium px-3 py-1 rounded-full ${
-                            session.status === 'completed'
-                              ? 'bg-moss-green/20 text-deep-ink'
-                              : session.status === 'active'
-                                ? 'bg-hi-yellow/20 text-deep-ink'
-                                : 'bg-slate/10 text-slate'
-                          }`}
-                        >
-                            {session.status === 'completed' ? 'Completed' : session.status === 'active' ? 'In Progress' : 'Archived'}
-                          </span>
-                      </div>
-                      <p className="text-sm text-slate mb-2">{session.soapNote?.assessment || 'No assessment yet'}</p>
-                      <div className="flex gap-4 text-xs text-slate">
-                          <span>{formatSessionTime(session.startedAt)}</span>
-                      </div>
+            }
+          />
+        ) : (
+          <div className="space-y-3">
+            {recentSessions.map(session => (
+              <Card
+                key={session.id}
+                className="hover:border-hi-yellow/60 transition-colors p-6"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-3">
+                      <h4 className="font-semibold font-serif text-deep-ink text-base">
+                        {getPatientName(session.patientId)}
+                      </h4>
+                      <Badge
+                        variant={
+                          session.status === 'completed'
+                            ? 'success'
+                            : session.status === 'active'
+                              ? 'default'
+                              : 'draft'
+                        }
+                      >
+                        {session.status === 'completed'
+                          ? 'Completed'
+                          : session.status === 'active'
+                            ? 'In Progress'
+                            : 'Archived'}
+                      </Badge>
                     </div>
-                    <div className="flex gap-2">
-                      {session.status === 'completed' && (
-                        <Link href={`/dashboard/doctor/sessions/${session.id}`}>
-                          <Button size="sm" className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
-                            View Note
-                          </Button>
-                        </Link>
-                      )}
-                      {session.status === 'active' && (
-                        <Link href={`/dashboard/doctor/sessions/${session.id}`}>
-                          <Button size="sm" className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
-                            Continue
-                          </Button>
-                        </Link>
-                      )}
+                    <p className="text-sm text-slate line-clamp-1">
+                      {session.soapNote?.assessment || 'No clinical assessment yet'}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-slate pt-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>{formatSessionTime(session.startedAt)}</span>
                     </div>
                   </div>
-                </div>
-              )
-            })
-          )}
-        </div>
-      </div>
 
+                  <div>
+                    <Link href={`/dashboard/doctor/sessions/${session.id}`}>
+                      <Button
+                        size="sm"
+                        variant={session.status === 'completed' ? 'secondary' : 'default'}
+                        className="rounded-full font-medium"
+                      >
+                        {session.status === 'completed' ? 'View Note' : 'Continue Session'}
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

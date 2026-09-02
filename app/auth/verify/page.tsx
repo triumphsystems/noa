@@ -33,13 +33,17 @@ export default async function VerifyPage({ searchParams }: VerifyPageProps) {
       </div>
 
       <div className="space-y-3">
-        <Button asChild className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium py-2">
-          <Link href="/auth/login">Go to sign in</Link>
-        </Button>
+        <Link href="/auth/login" className="block">
+          <Button className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium py-2">
+            Go to sign in
+          </Button>
+        </Link>
 
-        <Button asChild variant="outline" className="w-full rounded-full border-deep-ink/20 text-deep-ink hover:bg-deep-ink/5 font-medium py-2">
-          <Link href="/auth/signup">Create another account</Link>
-        </Button>
+        <Link href="/auth/signup" className="block">
+          <Button variant="outline" className="w-full rounded-full border-deep-ink/20 text-deep-ink hover:bg-deep-ink/5 font-medium py-2">
+            Create another account
+          </Button>
+        </Link>
       </div>
     </div>
   )

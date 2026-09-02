@@ -38,6 +38,8 @@ export async function POST(request: NextRequest) {
       savedIntake = await createIntake({
         patientId,
         doctorId,
+        completed: Boolean(result.isComplete),
+        completedAt: result.isComplete ? Date.now() : undefined,
         medicalHistory: [
           result.draft.medicalConditions?.length ? `Conditions: ${result.draft.medicalConditions.join(', ')}` : '',
           result.draft.familyHistory ? `Family history: ${result.draft.familyHistory}` : '',
