@@ -185,12 +185,28 @@ export default function DoctorSettingsPage() {
 
         <div className="space-y-6">
           <div className="rounded-3xl border border-deep-ink/10 bg-soft-meadow p-6">
-            <h2 className="text-lg font-semibold font-serif mb-3">Profile preview</h2>
-            <div className="space-y-2 text-sm text-deep-ink">
-              <p><span className="text-slate">Name:</span> {doctor?.name || 'Not loaded yet'}</p>
-              <p><span className="text-slate">Specialty:</span> {doctor?.specialty || 'Not loaded yet'}</p>
-              <p><span className="text-slate">Clinic:</span> {doctor?.clinic || 'Not loaded yet'}</p>
-              <p><span className="text-slate">Phone:</span> {doctor?.phone || 'Not set'}</p>
+            <h2 className="text-lg font-semibold font-serif mb-4">Profile preview</h2>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 rounded-full bg-hi-yellow flex items-center justify-center font-serif font-bold text-lg text-deep-ink border border-deep-ink/10 overflow-hidden shrink-0">
+                {(formState.avatar || doctor?.avatar) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={formState.avatar || doctor?.avatar}
+                    alt={formState.name || doctor?.name || 'Doctor'}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  (formState.name || doctor?.name || 'D').charAt(0).toUpperCase()
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-deep-ink truncate">{formState.name || doctor?.name || 'Doctor Name'}</p>
+                <p className="text-xs text-slate truncate">{formState.specialty || doctor?.specialty || 'Specialty not selected'}</p>
+              </div>
+            </div>
+            <div className="space-y-2 text-sm text-deep-ink border-t border-deep-ink/10 pt-3">
+              <p><span className="text-slate">Clinic:</span> {formState.clinic || doctor?.clinic || 'Not set'}</p>
+              <p><span className="text-slate">Phone:</span> {formState.phone || doctor?.phone || 'Not set'}</p>
             </div>
           </div>
 

@@ -118,8 +118,8 @@ export default function SummariesPage() {
               </div>
             </div>
 
-            <Link href={`/dashboard/summaries/${summary.id}`}>
-              <Button className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
+            <Link href={`/dashboard/doctor/summaries/${summary.id}`}>
+              <Button className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium transition-colors">
                 View Summary
               </Button>
             </Link>
