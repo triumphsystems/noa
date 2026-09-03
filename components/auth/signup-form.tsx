@@ -14,10 +14,11 @@ export default function SignupForm({ userType }: SignupFormProps) {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    confirmPassword: '',
     firstName: '',
     lastName: '',
-    specialization: userType === 'doctor' ? '' : undefined,
+    specialty: '',
+    clinic: '',
+    dateOfBirth: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -33,10 +34,6 @@ export default function SignupForm({ userType }: SignupFormProps) {
     setLoading(true)
 
     try {
-      if (formData.password !== formData.confirmPassword) {
-        throw new Error('Passwords do not match')
-      }
-
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -73,7 +70,7 @@ export default function SignupForm({ userType }: SignupFormProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold font-serif mb-2">Create your account</h2>
+        <h2 className="text-2xl font-bold font-serif mb-2 text-deep-ink">Create your account</h2>
         <p className="text-slate text-sm">
           Sign up as a {userType === 'doctor' ? 'doctor' : 'patient'} to get started with Noa
         </p>
@@ -81,7 +78,7 @@ export default function SignupForm({ userType }: SignupFormProps) {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-3 text-sm text-red-700">
             {error}
           </div>
         )}
@@ -95,7 +92,7 @@ export default function SignupForm({ userType }: SignupFormProps) {
               value={formData.firstName}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
+              className="w-full px-4 py-2.5 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm bg-transparent"
               placeholder="First name"
             />
           </div>
@@ -107,33 +104,11 @@ export default function SignupForm({ userType }: SignupFormProps) {
               value={formData.lastName}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
+              className="w-full px-4 py-2.5 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm bg-transparent"
               placeholder="Last name"
             />
           </div>
         </div>
-
-        {userType === 'doctor' && (
-          <div>
-            <label className="block text-sm font-medium text-deep-ink mb-1">Specialization</label>
-            <select
-              name="specialization"
-              value={formData.specialization || ''}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
-            >
-              <option value="">Select specialization</option>
-              <option value="general">General Practice</option>
-              <option value="cardiology">Cardiology</option>
-              <option value="neurology">Neurology</option>
-              <option value="orthopedics">Orthopedics</option>
-              <option value="pediatrics">Pediatrics</option>
-              <option value="psychiatry">Psychiatry</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-        )}
 
         <div>
           <label className="block text-sm font-medium text-deep-ink mb-1">Email</label>
@@ -143,10 +118,57 @@ export default function SignupForm({ userType }: SignupFormProps) {
             value={formData.email}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
+            className="w-full px-4 py-2.5 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-sm bg-transparent"
             placeholder="you@example.com"
           />
         </div>
+
+        {userType === 'doctor' ? (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-deep-ink mb-1">Specialty</label>
+              <select
+                name="specialty"
+                value={formData.specialty}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2.5 border border-deep-ink/20 rounded-full text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-sm bg-transparent"
+              >
+                <option value="">Select specialty</option>
+                <option value="General Practice">General Practice</option>
+                <option value="Cardiology">Cardiology</option>
+                <option value="Dermatology">Dermatology</option>
+                <option value="Neurology">Neurology</option>
+                <option value="Pediatrics">Pediatrics</option>
+                <option value="Psychiatry">Psychiatry</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-deep-ink mb-1">Clinic Name</label>
+              <input
+                type="text"
+                name="clinic"
+                value={formData.clinic}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2.5 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-sm bg-transparent"
+                placeholder="Clinic name"
+              />
+            </div>
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium text-deep-ink mb-1">Date of Birth</label>
+            <input
+              type="date"
+              name="dateOfBirth"
+              value={formData.dateOfBirth}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2.5 border border-deep-ink/20 rounded-full text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-sm bg-transparent"
+            />
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-deep-ink mb-1">Password</label>
@@ -156,20 +178,7 @@ export default function SignupForm({ userType }: SignupFormProps) {
             value={formData.password}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
-            placeholder="••••••••"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-deep-ink mb-1">Confirm Password</label>
-          <input
-            type="password"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
+            className="w-full px-4 py-2.5 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-sm bg-transparent"
             placeholder="••••••••"
           />
         </div>
@@ -177,26 +186,26 @@ export default function SignupForm({ userType }: SignupFormProps) {
         <Button
           type="submit"
           disabled={loading}
-          className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium py-2"
+          className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium py-5 shadow-xs"
         >
           {loading ? 'Creating account...' : 'Create Account'}
         </Button>
       </form>
 
-      <div className="text-center text-sm">
+      <div className="text-center text-xs text-slate">
         Already have an account?{' '}
-        <Link href="/auth/login" className="font-medium text-hi-yellow hover:underline">
+        <Link href="/auth/login" className="font-semibold text-deep-ink hover:underline">
           Log in
         </Link>
       </div>
 
       <div className="pt-4 border-t border-deep-ink/10 text-center text-xs text-slate">
         By creating an account, you agree to our{' '}
-        <a href="#" className="hover:text-deep-ink">
+        <a href="#" className="font-medium text-deep-ink hover:underline">
           Terms of Service
         </a>{' '}
         and{' '}
-        <a href="#" className="hover:text-deep-ink">
+        <a href="#" className="font-medium text-deep-ink hover:underline">
           Privacy Policy
         </a>
       </div>
