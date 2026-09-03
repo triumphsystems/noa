@@ -36,6 +36,23 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
       throw new Error('Tool must have a valid name')
     }
     this.localTools.set(tool.name, tool)
+
+    // Forward to browser native modelContext if Chrome flag is active
+    if (typeof window !== 'undefined') {
+      const nativeContext = (window as any).__nativeModelContext
+      if (nativeContext && typeof nativeContext.registerTool === 'function' && nativeContext !== this) {
+        try {
+          nativeContext.registerTool({
+            name: tool.name,
+            description: tool.description,
+            inputSchema: tool.inputSchema,
+            execute: tool.execute,
+          })
+        } catch {
+          // Ignore native registration conflicts
+        }
+      }
+    }
   }
 
   /**
@@ -201,6 +218,17 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
         results.forEach((res: any) => {
           if (res.id === 1 && res.result?.tools) {
             this.cachedServerTools = res.result.tools
+            // Register server tools so Chrome DevTools discovers all clinical tools
+            res.result.tools.forEach((serverTool: ToolDefinition) => {
+              if (!this.localTools.has(serverTool.name)) {
+                this.registerTool({
+                  name: serverTool.name,
+                  description: serverTool.description,
+                  inputSchema: serverTool.inputSchema as any,
+                  execute: async (input) => this.executeTool(serverTool.name, input),
+                })
+              }
+            })
           } else if (res.id === 2 && res.result?.resources) {
             this.cachedServerResources = res.result.resources
           } else if (res.id === 3 && res.result?.prompts) {
@@ -309,27 +337,63 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
 }
 
 /**
- * Attaches the WebMCP runtime to document.modelContext, navigator.modelContext, and window.webmcp
+ * Attaches the WebMCP runtime to document.modelContext and bridges with Chrome DevTools
  */
 export function injectBrowserModelContext(): BrowserModelContextRuntime {
   if (typeof window === 'undefined') {
     return new BrowserModelContextRuntime()
   }
 
+  // Preserve native browser modelContext if Chrome flag is active
+  const nativeDocContext = (document as any).modelContext
+  const nativeNavContext = (navigator as any).modelContext
+  const native = (nativeDocContext && typeof nativeDocContext.registerTool === 'function')
+    ? nativeDocContext
+    : (nativeNavContext && typeof nativeNavContext.registerTool === 'function')
+      ? nativeNavContext
+      : null
+
+  if (native) {
+    ;(window as any).__nativeModelContext = native
+  }
+
   const runtime = new BrowserModelContextRuntime()
 
   // Standard: document.modelContext
-  if (!(document as any).modelContext) {
+  try {
     Object.defineProperty(document, 'modelContext', {
       value: runtime,
-      writable: false,
+      writable: true,
       configurable: true,
       enumerable: true,
     })
+  } catch {
+    ;(document as any).modelContext = runtime
+  }
+
+  // Mirror to navigator.modelContext for Chrome DevTools InspectorWebMCPAgent compatibility
+  try {
+    if (!(navigator as any).modelContext) {
+      Object.defineProperty(navigator, 'modelContext', {
+        value: runtime,
+        writable: true,
+        configurable: true,
+        enumerable: true,
+      })
+    }
+  } catch {
+    ;(navigator as any).modelContext = runtime
   }
 
   // Sync server definitions in background
   runtime.syncServerDefinitions()
 
+  // Dispatch DOM readiness event for DevTools panels & browser extensions
+  try {
+    document.dispatchEvent(new CustomEvent('modelcontext:ready', { detail: { version: runtime.version } }))
+    window.dispatchEvent(new CustomEvent('webmcp:ready', { detail: { version: runtime.version } }))
+  } catch {}
+
   return runtime
 }
+
