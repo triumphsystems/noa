@@ -141,47 +141,84 @@ export default function LandingPage() {
 
             {/* Interactive Hero Card Preview */}
             <div className="relative mt-4 lg:mt-0">
-              <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-moss-green/30 via-hi-yellow/30 to-fuchsia/20 blur-lg opacity-70" />
-              <Card className="relative p-5 sm:p-6 space-y-4 border border-deep-ink/10 shadow-lg">
-                <div className="flex items-center justify-between border-b border-deep-ink/10 pb-3">
+              {/* Glow layers */}
+              <div className="absolute -inset-3 rounded-3xl bg-gradient-to-br from-moss-green/40 via-hi-yellow/25 to-fuchsia/20 blur-2xl opacity-60" />
+              <div className="absolute -inset-1 rounded-3xl bg-gradient-to-tr from-hi-yellow/20 via-transparent to-moss-green/10 blur-md opacity-80" />
+
+              <Card className="relative p-5 sm:p-6 space-y-3.5 border border-deep-ink/8 shadow-2xl bg-white/95 backdrop-blur-sm">
+
+                {/* Session header */}
+                <div className="flex items-center justify-between pb-3 border-b border-deep-ink/8">
                   <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-moss-green animate-pulse" />
-                    <span className="text-xs font-semibold text-deep-ink uppercase tracking-wider">
-                      Live Consultation Session
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-moss-green opacity-60" />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-moss-green" />
                     </span>
+                    <span className="text-[11px] font-bold text-deep-ink uppercase tracking-widest">
+                      Live Consultation
+                    </span>
+                    <span className="text-[10px] text-slate font-medium">· Dr. Rivera</span>
                   </div>
-                  <Badge variant="default" className="text-[10px] font-mono">
+                  <Badge variant="default" className="text-[10px] font-mono px-2.5 py-0.5 bg-hi-yellow text-deep-ink">
                     00:24
                   </Badge>
                 </div>
 
-                {/* Simulated live transcript */}
-                <div className="space-y-3 bg-soft-meadow/40 p-3.5 sm:p-4 rounded-2xl border border-deep-ink/5 text-xs">
-                  <div className="space-y-1">
-                    <span className="font-bold text-deep-ink">Dr. Rivera:</span>
-                    <p className="text-slate">How has the adjusted blood pressure dosage been feeling this week?</p>
+                {/* Transcript */}
+                <div className="space-y-2.5 rounded-2xl border border-deep-ink/5 overflow-hidden text-xs">
+                  {/* Doctor turn */}
+                  <div className="flex gap-2.5 bg-soft-meadow/60 px-3.5 py-3">
+                    <div className="w-5 h-5 rounded-full bg-deep-ink/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-[9px] font-bold text-deep-ink">DR</span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-deep-ink text-[11px] mb-0.5">Dr. Rivera</p>
+                      <p className="text-slate leading-relaxed">How has the adjusted blood pressure dosage been feeling this week?</p>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <span className="font-bold text-deep-ink">Patient (John D.):</span>
-                    <p className="text-slate">Much better. Morning readings are around 124/80 and no more lightheadedness.</p>
+                  {/* Patient turn */}
+                  <div className="flex gap-2.5 bg-white px-3.5 py-3">
+                    <div className="w-5 h-5 rounded-full bg-moss-green/25 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-[9px] font-bold text-deep-ink">PT</span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-deep-ink text-[11px] mb-0.5">John D. <span className="font-normal text-slate">(Patient)</span></p>
+                      <p className="text-slate leading-relaxed">Much better. Morning readings are around 124/80 and no more lightheadedness.</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Real-time SOAP synthesis preview */}
-                <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-deep-ink/10 shadow-2xs space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-deep-ink flex items-center gap-1.5">
-                      <FileCheck className="w-3.5 h-3.5 text-moss-green" />
+                {/* SOAP note preview */}
+                <div className="bg-soft-meadow/50 rounded-2xl border border-deep-ink/8 overflow-hidden">
+                  <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-deep-ink/6 bg-white/60">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-deep-ink flex items-center gap-1.5">
+                      <FileCheck className="w-3 h-3 text-moss-green" />
                       Auto-Generated SOAP Note
                     </span>
-                    <Badge variant="success" className="text-[10px]">
+                    <Badge variant="success" className="text-[9px] px-2 py-0.5">
                       Ready
                     </Badge>
                   </div>
-                  <p className="text-xs text-slate leading-relaxed">
-                    <strong className="text-deep-ink">Assessment:</strong> Hypertension well-controlled on current therapy. Patient reports complete resolution of lightheadedness.
-                  </p>
+                  <div className="px-3.5 py-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
+                    <div>
+                      <p className="text-[9px] uppercase tracking-widest text-slate font-semibold mb-0.5">Subjective</p>
+                      <p className="text-deep-ink leading-relaxed">BP well-managed; no lightheadedness since dose adjustment.</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] uppercase tracking-widest text-slate font-semibold mb-0.5">Objective</p>
+                      <p className="text-deep-ink leading-relaxed">BP 124/80 mmHg. Vitals stable. Alert and oriented.</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] uppercase tracking-widest text-slate font-semibold mb-0.5">Assessment</p>
+                      <p className="text-deep-ink leading-relaxed">Hypertension well-controlled on current therapy.</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] uppercase tracking-widest text-slate font-semibold mb-0.5">Plan</p>
+                      <p className="text-deep-ink leading-relaxed">Continue current regimen. Follow-up in 4 weeks.</p>
+                    </div>
+                  </div>
                 </div>
+
               </Card>
             </div>
           </div>
