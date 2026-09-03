@@ -42,38 +42,38 @@ export default function ConfirmationPage() {
   const patientName = [completionState?.draft?.firstName, completionState?.draft?.lastName].filter(Boolean).join(' ') || 'Patient'
 
   return (
-    <div className="min-h-screen bg-canvas text-deep-ink flex items-center justify-center p-6">
-      <div className="max-w-lg w-full text-center space-y-6">
+    <div className="min-h-screen bg-canvas text-deep-ink flex items-center justify-center p-4 sm:p-6">
+      <div className="max-w-lg w-full text-center space-y-5 sm:space-y-6">
         <div className="flex justify-center">
-          <div className="w-16 h-16 bg-moss-green/20 border border-moss-green/30 rounded-full flex items-center justify-center shadow-xs">
-            <CheckCircle2 className="w-9 h-9 text-deep-ink" />
+          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-moss-green/20 border border-moss-green/30 rounded-full flex items-center justify-center shadow-xs">
+            <CheckCircle2 className="w-8 h-8 sm:w-9 sm:h-9 text-deep-ink" />
           </div>
         </div>
 
         <div>
-          <h1 className="text-3xl font-bold font-serif mb-2 text-deep-ink">Intake Complete</h1>
-          <p className="text-slate text-sm">
+          <h1 className="text-2xl sm:text-3xl font-bold font-serif mb-2 text-deep-ink">Intake Complete</h1>
+          <p className="text-slate text-xs sm:text-sm">
             Thank you, {patientName}. Noa captured your health information conversationally and encrypted the intake securely.
           </p>
         </div>
 
-        <Card className="p-6 text-left space-y-3">
+        <Card className="p-4 sm:p-6 text-left space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold font-serif text-deep-ink text-base">Conversation Summary</h3>
+            <h3 className="font-semibold font-serif text-deep-ink text-sm sm:text-base">Conversation Summary</h3>
             {completionState?.language && (
               <Badge variant="secondary" className="text-[10px]">
                 {completionState.language}
               </Badge>
             )}
           </div>
-          <p className="text-sm text-slate leading-relaxed bg-soft-meadow/50 p-4 rounded-2xl border border-deep-ink/5">
+          <p className="text-xs sm:text-sm text-slate leading-relaxed bg-soft-meadow/50 p-3.5 sm:p-4 rounded-2xl border border-deep-ink/5">
             {summary}
           </p>
         </Card>
 
-        <Card className="bg-soft-meadow border-deep-ink/10 p-6 text-left">
-          <h3 className="font-semibold font-serif text-deep-ink mb-3 text-base">What Happens Next?</h3>
-          <ol className="space-y-2.5 text-sm text-slate">
+        <Card className="bg-soft-meadow border-deep-ink/10 p-4 sm:p-6 text-left">
+          <h3 className="font-semibold font-serif text-deep-ink mb-3 text-sm sm:text-base">What Happens Next?</h3>
+          <ol className="space-y-2.5 text-xs sm:text-sm text-slate">
             <li className="flex gap-3 items-start">
               <span className="w-5 h-5 rounded-full bg-hi-yellow flex items-center justify-center text-xs font-bold text-deep-ink shrink-0 mt-0.5">
                 1

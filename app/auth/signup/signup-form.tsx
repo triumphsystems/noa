@@ -86,7 +86,7 @@ export default function SignupForm({ userType }: SignupFormProps) {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-deep-ink mb-1">First Name</label>
             <input
@@ -95,7 +95,7 @@ export default function SignupForm({ userType }: SignupFormProps) {
               value={formData.firstName}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow"
+              className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
               placeholder="First name"
             />
           </div>
@@ -107,7 +107,7 @@ export default function SignupForm({ userType }: SignupFormProps) {
               value={formData.lastName}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow"
+              className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
               placeholder="Last name"
             />
           </div>
@@ -121,7 +121,7 @@ export default function SignupForm({ userType }: SignupFormProps) {
               value={formData.specialization || ''}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow"
+              className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
             >
               <option value="">Select specialization</option>
               <option value="general">General Practice</option>
@@ -143,7 +143,7 @@ export default function SignupForm({ userType }: SignupFormProps) {
             value={formData.email}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow"
+            className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
             placeholder="you@example.com"
           />
         </div>
@@ -156,7 +156,7 @@ export default function SignupForm({ userType }: SignupFormProps) {
             value={formData.password}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow"
+            className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
             placeholder="••••••••"
           />
         </div>
@@ -169,7 +169,7 @@ export default function SignupForm({ userType }: SignupFormProps) {
             value={formData.confirmPassword}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow"
+            className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
             placeholder="••••••••"
           />
         </div>

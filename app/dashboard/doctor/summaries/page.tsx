@@ -56,20 +56,20 @@ export default function SummariesPage() {
     filterStatus === 'all' ? summaries : summaries.filter(s => s.status === filterStatus)
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold font-serif mb-1 text-deep-ink">Clinical Summaries</h1>
-        <p className="text-slate text-sm">Review, verify, and export consultation summaries</p>
+        <h1 className="text-2xl sm:text-3xl font-bold font-serif mb-1 text-deep-ink">Clinical Summaries</h1>
+        <p className="text-slate text-xs sm:text-sm">Review, verify, and export consultation summaries</p>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {(['all', 'draft', 'published'] as const).map(status => (
           <button
             key={status}
             onClick={() => setFilterStatus(status)}
-            className={`px-5 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors ${
+            className={`px-4 sm:px-5 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors shrink-0 ${
               filterStatus === status
                 ? 'bg-hi-yellow text-deep-ink shadow-2xs'
                 : 'bg-soft-meadow text-deep-ink/80 hover:bg-soft-meadow/80'
@@ -88,7 +88,7 @@ export default function SummariesPage() {
           description={`No consultation summaries matching status "${filterStatus}".`}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {filteredSummaries.map(summary => (
             <Card
               key={summary.id}

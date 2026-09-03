@@ -5,8 +5,8 @@ import { ArrowLeft, Home } from 'lucide-react'
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-canvas text-deep-ink flex items-center justify-center p-6">
-      <Card className="max-w-md w-full p-8 text-center space-y-6 shadow-md border-deep-ink/10">
+    <div className="min-h-screen bg-canvas text-deep-ink flex items-center justify-center p-4 sm:p-6">
+      <Card className="max-w-md w-full p-6 sm:p-8 text-center space-y-6 shadow-md border-deep-ink/10">
         <div className="space-y-2">
           <p className="text-5xl font-serif font-bold text-deep-ink tracking-tight">404</p>
           <h1 className="text-2xl font-bold font-serif text-deep-ink">Page Not Found</h1>

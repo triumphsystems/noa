@@ -78,9 +78,9 @@ export default function DoctorSettingsPage() {
   }
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold font-serif mb-2">Profile and preferences</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold font-serif mb-2">Profile and preferences</h1>
       </div>
 
       {error && (
@@ -96,10 +96,10 @@ export default function DoctorSettingsPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-        <form onSubmit={handleSubmit} className="rounded-3xl border border-deep-ink/10 bg-white p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="rounded-3xl border border-deep-ink/10 bg-white p-4 sm:p-6 space-y-5">
           <div>
-            <h2 className="text-xl font-semibold font-serif mb-1">Edit profile</h2>
-            <p className="text-sm text-slate">Change how you appear across the dashboard.</p>
+            <h2 className="text-lg sm:text-xl font-semibold font-serif mb-1">Edit profile</h2>
+            <p className="text-xs sm:text-sm text-slate">Change how you appear across the dashboard.</p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -109,7 +109,7 @@ export default function DoctorSettingsPage() {
                 name="name"
                 value={formState.name}
                 onChange={handleChange}
-                className="w-full rounded-full border border-deep-ink/20 px-4 py-2 text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow"
+                className="w-full rounded-full border border-deep-ink/20 px-4 py-2 text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
                 placeholder="Dr. Alex Rivera"
                 required
               />
@@ -121,7 +121,7 @@ export default function DoctorSettingsPage() {
                 name="specialty"
                 value={formState.specialty}
                 onChange={handleChange}
-                className="w-full rounded-full border border-deep-ink/20 px-4 py-2 text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow"
+                className="w-full rounded-full border border-deep-ink/20 px-4 py-2 text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
               >
                 <option value="">Select specialty</option>
                 <option value="General Practice">General Practice</option>
@@ -140,7 +140,7 @@ export default function DoctorSettingsPage() {
                 name="clinic"
                 value={formState.clinic}
                 onChange={handleChange}
-                className="w-full rounded-full border border-deep-ink/20 px-4 py-2 text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow"
+                className="w-full rounded-full border border-deep-ink/20 px-4 py-2 text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
                 placeholder="North Star Health"
               />
             </div>
@@ -151,7 +151,7 @@ export default function DoctorSettingsPage() {
                 name="phone"
                 value={formState.phone}
                 onChange={handleChange}
-                className="w-full rounded-full border border-deep-ink/20 px-4 py-2 text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow"
+                className="w-full rounded-full border border-deep-ink/20 px-4 py-2 text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
                 placeholder="(555) 123-4567"
               />
             </div>
@@ -162,21 +162,21 @@ export default function DoctorSettingsPage() {
                 name="avatar"
                 value={formState.avatar}
                 onChange={handleChange}
-                className="w-full rounded-full border border-deep-ink/20 px-4 py-2 text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow"
+                className="w-full rounded-full border border-deep-ink/20 px-4 py-2 text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
                 placeholder="https://..."
               />
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <Button type="submit" disabled={isSaving || isLoading} className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button type="submit" disabled={isSaving || isLoading} className="w-full sm:w-auto rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
               {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={() => doctorId && void loadDashboard(doctorId)}
-              className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow"
+              className="w-full sm:w-auto rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow"
             >
               Reload
             </Button>

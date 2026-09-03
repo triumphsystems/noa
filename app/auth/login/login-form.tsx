@@ -87,7 +87,7 @@ export default function LoginForm({ userType }: LoginFormProps) {
             value={formData.email}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow"
+            className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
             placeholder="you@example.com"
           />
         </div>
@@ -100,7 +100,7 @@ export default function LoginForm({ userType }: LoginFormProps) {
             value={formData.password}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow"
+            className="w-full px-4 py-2 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm"
             placeholder="••••••••"
           />
         </div>

@@ -40,26 +40,26 @@ export default function DashboardPage() {
   const recentSessions = sessions.slice(0, 5)
 
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-serif mb-1 text-deep-ink">{doctor?.name || 'Doctor Dashboard'}</h1>
-          <p className="text-slate text-sm">
+          <h1 className="text-2xl sm:text-3xl font-bold font-serif mb-1 text-deep-ink">{doctor?.name || 'Doctor Dashboard'}</h1>
+          <p className="text-slate text-xs sm:text-sm">
             {doctor ? `${doctor.specialty} · ${doctor.clinic}` : 'Welcome back to your practice'}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap sm:flex-nowrap">
           <Button
             variant="outline"
             onClick={handleRefresh}
-            className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow gap-2"
+            className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow gap-2 flex-1 sm:flex-initial text-xs sm:text-sm"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh
           </Button>
-          <Link href="/dashboard/doctor/settings">
-            <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90">
+          <Link href="/dashboard/doctor/settings" className="flex-1 sm:flex-initial">
+            <Button className="w-full sm:w-auto rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 text-xs sm:text-sm">
               Edit Profile
             </Button>
           </Link>
@@ -156,11 +156,11 @@ export default function DashboardPage() {
             {recentSessions.map(session => (
               <Card
                 key={session.id}
-                className="hover:border-hi-yellow/60 transition-colors p-6"
+                className="hover:border-hi-yellow/60 transition-colors p-4 sm:p-6"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                       <h4 className="font-semibold font-serif text-deep-ink text-base">
                         {getPatientName(session.patientId)}
                       </h4>
@@ -184,17 +184,17 @@ export default function DashboardPage() {
                       {session.soapNote?.assessment || 'No clinical assessment yet'}
                     </p>
                     <div className="flex items-center gap-2 text-xs text-slate pt-1">
-                      <Clock className="h-3.5 w-3.5" />
+                      <Clock className="h-3.5 w-3.5 shrink-0" />
                       <span>{formatSessionTime(session.startedAt)}</span>
                     </div>
                   </div>
 
-                  <div>
-                    <Link href={`/dashboard/doctor/sessions/${session.id}`}>
+                  <div className="w-full sm:w-auto">
+                    <Link href={`/dashboard/doctor/sessions/${session.id}`} className="block sm:inline">
                       <Button
                         size="sm"
                         variant={session.status === 'completed' ? 'secondary' : 'default'}
-                        className="rounded-full font-medium"
+                        className="w-full sm:w-auto rounded-full font-medium"
                       >
                         {session.status === 'completed' ? 'View Note' : 'Continue Session'}
                       </Button>

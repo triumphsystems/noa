@@ -88,7 +88,7 @@ export default function SessionPage({
   }
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Top Navigation & Actions */}
       <div className="space-y-1">
         <Link
@@ -100,15 +100,15 @@ export default function SessionPage({
         </Link>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold font-serif text-deep-ink">Session Consultation</h1>
-            <p className="text-slate text-sm">
+            <h1 className="text-2xl sm:text-3xl font-bold font-serif text-deep-ink">Session Consultation</h1>
+            <p className="text-slate text-xs sm:text-sm">
               Session ID: {unwrappedParams.id || session.id} · {session.date}
             </p>
           </div>
           <Button
             variant="outline"
             onClick={() => alert('Generating consultation PDF...')}
-            className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow gap-1.5"
+            className="w-full sm:w-auto rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow gap-1.5 text-xs sm:text-sm"
           >
             <Download className="w-4 h-4" />
             Download PDF
@@ -136,12 +136,12 @@ export default function SessionPage({
       </div>
 
       {/* Main Tabs Container */}
-      <Card className="p-6">
+      <Card className="p-4 sm:p-6">
         {/* Tab Controls */}
-        <div className="flex gap-2 border-b border-deep-ink/10 pb-4 mb-6">
+        <div className="flex gap-2 border-b border-deep-ink/10 pb-4 mb-6 overflow-x-auto">
           <button
             onClick={() => setActiveTab('soap')}
-            className={`px-5 py-2 rounded-full text-xs font-semibold transition-colors flex items-center gap-2 ${
+            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-semibold transition-colors flex items-center gap-2 shrink-0 ${
               activeTab === 'soap'
                 ? 'bg-hi-yellow text-deep-ink shadow-2xs'
                 : 'bg-soft-meadow text-deep-ink/80 hover:bg-soft-meadow/80'
@@ -152,7 +152,7 @@ export default function SessionPage({
           </button>
           <button
             onClick={() => setActiveTab('transcript')}
-            className={`px-5 py-2 rounded-full text-xs font-semibold transition-colors flex items-center gap-2 ${
+            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-semibold transition-colors flex items-center gap-2 shrink-0 ${
               activeTab === 'transcript'
                 ? 'bg-hi-yellow text-deep-ink shadow-2xs'
                 : 'bg-soft-meadow text-deep-ink/80 hover:bg-soft-meadow/80'
@@ -217,7 +217,7 @@ export default function SessionPage({
                   <textarea
                     value={soapNote.subjective}
                     onChange={e => setSoapNote({ ...soapNote, subjective: e.target.value })}
-                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-sm bg-transparent"
+                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm bg-transparent"
                     rows={3}
                   />
                 </div>
@@ -229,7 +229,7 @@ export default function SessionPage({
                   <textarea
                     value={soapNote.objective}
                     onChange={e => setSoapNote({ ...soapNote, objective: e.target.value })}
-                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-sm bg-transparent"
+                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm bg-transparent"
                     rows={3}
                   />
                 </div>
@@ -241,7 +241,7 @@ export default function SessionPage({
                   <textarea
                     value={soapNote.assessment}
                     onChange={e => setSoapNote({ ...soapNote, assessment: e.target.value })}
-                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-sm bg-transparent"
+                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm bg-transparent"
                     rows={3}
                   />
                 </div>
@@ -253,7 +253,7 @@ export default function SessionPage({
                   <textarea
                     value={soapNote.plan}
                     onChange={e => setSoapNote({ ...soapNote, plan: e.target.value })}
-                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-sm bg-transparent"
+                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm bg-transparent"
                     rows={3}
                   />
                 </div>

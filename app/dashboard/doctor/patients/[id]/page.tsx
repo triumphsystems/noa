@@ -70,7 +70,7 @@ export default function PatientProfilePage({
   const [sessions] = React.useState(mockSessions)
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Top Back Link & Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
@@ -81,29 +81,29 @@ export default function PatientProfilePage({
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Patients Registry</span>
           </Link>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold font-serif text-deep-ink">{patient.name}</h1>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl font-bold font-serif text-deep-ink">{patient.name}</h1>
             <Badge variant="secondary" className="text-xs">
               ID: {unwrappedParams.id || patient.id}
             </Badge>
           </div>
         </div>
 
-        <Link href={`/dashboard/doctor/sessions/new?patientId=${unwrappedParams.id || patient.id}`}>
-          <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-2 font-medium">
+        <Link href={`/dashboard/doctor/sessions/new?patientId=${unwrappedParams.id || patient.id}`} className="block sm:inline">
+          <Button className="w-full sm:w-auto rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-2 font-medium text-xs sm:text-sm">
             <Mic className="h-4 w-4" />
             Start Voice Session
           </Button>
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
         {/* Main Content (2 cols) */}
         <div className="lg:col-span-2 space-y-6">
           {/* Demographics Card */}
-          <Card className="p-6">
+          <Card className="p-4 sm:p-6">
             <CardHeader className="p-0 pb-4">
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                 <User className="w-5 h-5 text-slate" />
                 Demographics & Personal Details
               </CardTitle>
@@ -186,22 +186,22 @@ export default function PatientProfilePage({
 
           {/* Consultation History */}
           <div className="space-y-3">
-            <h3 className="text-xl font-bold font-serif text-deep-ink">Consultation History</h3>
+            <h3 className="text-lg sm:text-xl font-bold font-serif text-deep-ink">Consultation History</h3>
             <div className="space-y-3">
               {sessions.map(session => (
-                <Card key={session.id} className="p-5 hover:border-hi-yellow/60 transition-colors">
-                  <div className="flex items-center justify-between gap-4">
+                <Card key={session.id} className="p-4 sm:p-5 hover:border-hi-yellow/60 transition-colors">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-xs text-slate">
-                        <Calendar className="w-3.5 h-3.5" />
+                      <div className="flex items-center gap-2 text-xs text-slate flex-wrap">
+                        <Calendar className="w-3.5 h-3.5 shrink-0" />
                         <span>{session.date}</span>
                         <span>•</span>
                         <span>{session.provider}</span>
                       </div>
                       <p className="text-sm font-medium text-deep-ink">{session.summary}</p>
                     </div>
-                    <Link href={`/dashboard/doctor/sessions/${session.id}`}>
-                      <Button size="sm" variant="outline" className="rounded-full text-xs font-semibold">
+                    <Link href={`/dashboard/doctor/sessions/${session.id}`} className="block sm:inline">
+                      <Button size="sm" variant="outline" className="w-full sm:w-auto rounded-full text-xs font-semibold">
                         View Note
                       </Button>
                     </Link>

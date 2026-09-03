@@ -300,27 +300,27 @@ export default function NewSessionPage() {
   }
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold font-serif mb-1 text-deep-ink">New Consultation</h1>
-        <p className="text-slate text-sm">
+        <h1 className="text-2xl sm:text-3xl font-bold font-serif mb-1 text-deep-ink">New Consultation</h1>
+        <p className="text-slate text-xs sm:text-sm">
           Voice-guided session with real-time AI transcription & clinical SOAP note generation
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
         {/* Main Recording & Transcript Area */}
         <div className="lg:col-span-2 space-y-6">
           {/* Patient Selector */}
-          <Card className="p-6">
+          <Card className="p-4 sm:p-6">
             <label className="block text-sm font-semibold text-deep-ink mb-2">
               Select Patient Record
             </label>
             <select
               value={selectedPatient}
               onChange={e => setSelectedPatient(e.target.value)}
-              className="w-full px-4 py-3 border border-deep-ink/20 rounded-full text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow bg-transparent text-sm"
+              className="w-full px-4 py-3 border border-deep-ink/20 rounded-full text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow bg-transparent text-base sm:text-sm"
             >
               <option value="">Choose a patient...</option>
               {patients.map(patient => (

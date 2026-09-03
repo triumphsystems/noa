@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -11,29 +14,35 @@ import {
   FileText,
   Layers,
   Lock,
+  Menu,
   Mic,
   ShieldCheck,
   Sparkles,
   Users,
+  X,
 } from 'lucide-react'
 
 export default function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-canvas text-deep-ink">
       {/* Navigation */}
       <nav className="border-b border-deep-ink/10 bg-soft-meadow/80 backdrop-blur-md sticky top-0 z-30">
-        <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl font-bold font-serif text-deep-ink tracking-tight">Noa</span>
             <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">
               Clinical Intelligence
             </Badge>
           </div>
-          <div className="flex items-center gap-6">
-            <Link href="#features" className="text-sm font-medium text-slate hover:text-deep-ink transition-colors hidden md:block">
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-6">
+            <Link href="#features" className="text-sm font-medium text-slate hover:text-deep-ink transition-colors">
               Features
             </Link>
-            <Link href="#how-it-works" className="text-sm font-medium text-slate hover:text-deep-ink transition-colors hidden md:block">
+            <Link href="#how-it-works" className="text-sm font-medium text-slate hover:text-deep-ink transition-colors">
               How It Works
             </Link>
             <div className="flex items-center gap-3">
@@ -49,35 +58,80 @@ export default function LandingPage() {
               </Link>
             </div>
           </div>
+
+          {/* Mobile Navigation Toggle & Quick Actions */}
+          <div className="flex md:hidden items-center gap-2">
+            <Link href="/auth/login">
+              <Button variant="outline" size="sm" className="rounded-full border-deep-ink/20 text-deep-ink text-xs px-3 py-1.5 h-8">
+                Log In
+              </Button>
+            </Link>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-full hover:bg-deep-ink/10 transition-colors text-deep-ink"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Dropdown Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-deep-ink/10 bg-soft-meadow px-4 py-4 space-y-3">
+            <div className="flex flex-col space-y-2">
+              <Link
+                href="#features"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-lg text-sm font-medium text-deep-ink hover:bg-deep-ink/5"
+              >
+                Features
+              </Link>
+              <Link
+                href="#how-it-works"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-lg text-sm font-medium text-deep-ink hover:bg-deep-ink/5"
+              >
+                How It Works
+              </Link>
+            </div>
+            <div className="pt-2 border-t border-deep-ink/10 flex flex-col gap-2">
+              <Link href="/auth/signup" onClick={() => setMobileMenuOpen(false)} className="w-full">
+                <Button className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium">
+                  Get Started
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-16 lg:py-24">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
+      <section className="relative overflow-hidden py-12 sm:py-16 lg:py-24">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <div className="space-y-5 sm:space-y-6">
               <Badge variant="secondary" className="px-3.5 py-1 text-xs gap-1.5 inline-flex items-center">
                 <Sparkles className="w-3.5 h-3.5 text-deep-ink" />
                 <span>Next-Generation Voice AI for Healthcare</span>
               </Badge>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold font-serif leading-tight text-balance text-deep-ink">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold font-serif leading-tight text-balance text-deep-ink">
                 Medical memory, powered by AI
               </h1>
-              <p className="text-base sm:text-lg text-slate leading-relaxed text-balance">
+              <p className="text-sm sm:text-lg text-slate leading-relaxed text-balance">
                 Noa transforms your voice consultations into structured clinical intelligence in real time. Document patient visits naturally, synthesize accurate SOAP notes, and never lose clinical context.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                <Link href="/auth/signup?type=doctor" className="block sm:inline-block">
-                  <Button className="w-full sm:w-auto rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-8 py-6 text-base font-semibold shadow-xs gap-2">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2">
+                <Link href="/auth/signup?type=doctor" className="block w-full sm:w-auto">
+                  <Button className="w-full sm:w-auto rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-6 sm:px-8 py-5 sm:py-6 text-base font-semibold shadow-xs gap-2">
                     <span>Start for Doctors</span>
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </Link>
-                <Link href="/auth/signup?type=patient" className="block sm:inline-block">
+                <Link href="/auth/signup?type=patient" className="block w-full sm:w-auto">
                   <Button
                     variant="outline"
-                    className="w-full sm:w-auto rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow px-8 py-6 text-base font-medium"
+                    className="w-full sm:w-auto rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow px-6 sm:px-8 py-5 sm:py-6 text-base font-medium"
                   >
                     Patient Portal
                   </Button>
@@ -86,9 +140,9 @@ export default function LandingPage() {
             </div>
 
             {/* Interactive Hero Card Preview */}
-            <div className="relative">
+            <div className="relative mt-4 lg:mt-0">
               <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-moss-green/30 via-hi-yellow/30 to-fuchsia/20 blur-lg opacity-70" />
-              <Card className="relative p-6 space-y-4 border border-deep-ink/10 shadow-lg">
+              <Card className="relative p-5 sm:p-6 space-y-4 border border-deep-ink/10 shadow-lg">
                 <div className="flex items-center justify-between border-b border-deep-ink/10 pb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full bg-moss-green animate-pulse" />
@@ -102,7 +156,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Simulated live transcript */}
-                <div className="space-y-3 bg-soft-meadow/40 p-4 rounded-2xl border border-deep-ink/5 text-xs">
+                <div className="space-y-3 bg-soft-meadow/40 p-3.5 sm:p-4 rounded-2xl border border-deep-ink/5 text-xs">
                   <div className="space-y-1">
                     <span className="font-bold text-deep-ink">Dr. Rivera:</span>
                     <p className="text-slate">How has the adjusted blood pressure dosage been feeling this week?</p>
@@ -114,7 +168,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Real-time SOAP synthesis preview */}
-                <div className="bg-white p-4 rounded-2xl border border-deep-ink/10 shadow-2xs space-y-2">
+                <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-deep-ink/10 shadow-2xs space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-deep-ink flex items-center gap-1.5">
                       <FileCheck className="w-3.5 h-3.5 text-moss-green" />
@@ -135,10 +189,10 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="bg-soft-meadow/60 py-20 border-y border-deep-ink/10">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-            <h2 className="text-3xl sm:text-4xl font-bold font-serif text-deep-ink">
+      <section id="features" className="bg-soft-meadow/60 py-14 sm:py-20 border-y border-deep-ink/10">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-16 space-y-3">
+            <h2 className="text-2xl sm:text-4xl font-bold font-serif text-deep-ink">
               Clinical intelligence at your voice
             </h2>
             <p className="text-slate text-sm sm:text-base">
@@ -146,7 +200,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {[
               {
                 icon: Mic,
@@ -181,11 +235,11 @@ export default function LandingPage() {
             ].map((feature, idx) => {
               const Icon = feature.icon
               return (
-                <Card key={idx} className="p-8 hover:border-hi-yellow/60 transition-colors">
+                <Card key={idx} className="p-6 sm:p-8 hover:border-hi-yellow/60 transition-colors">
                   <div className="w-12 h-12 rounded-2xl bg-hi-yellow/40 border border-hi-yellow flex items-center justify-center mb-5 text-deep-ink">
                     <Icon className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xl font-semibold font-serif text-deep-ink mb-2">{feature.title}</h3>
+                  <h3 className="text-lg sm:text-xl font-semibold font-serif text-deep-ink mb-2">{feature.title}</h3>
                   <p className="text-slate text-sm leading-relaxed">{feature.description}</p>
                 </Card>
               )
@@ -195,16 +249,16 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-20">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-            <h2 className="text-3xl sm:text-4xl font-bold font-serif text-deep-ink">How Noa works</h2>
+      <section id="how-it-works" className="py-14 sm:py-20">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-16 space-y-3">
+            <h2 className="text-2xl sm:text-4xl font-bold font-serif text-deep-ink">How Noa works</h2>
             <p className="text-slate text-sm sm:text-base">
               Four frictionless steps to eliminate consultation documentation backlogs.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
             {[
               {
                 step: '01',
@@ -227,12 +281,12 @@ export default function LandingPage() {
                 description: 'Review the note, sign off, and send an easy-to-read summary to the patient portal.',
               },
             ].map((item, idx) => (
-              <Card key={idx} className="p-8 flex gap-6 items-start">
-                <span className="text-3xl font-bold font-serif text-deep-ink/20 shrink-0">
+              <Card key={idx} className="p-5 sm:p-8 flex gap-4 sm:gap-6 items-start">
+                <span className="text-2xl sm:text-3xl font-bold font-serif text-deep-ink/20 shrink-0">
                   {item.step}
                 </span>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold font-serif text-deep-ink">{item.title}</h3>
+                <div className="space-y-1.5 sm:space-y-2">
+                  <h3 className="text-lg sm:text-xl font-semibold font-serif text-deep-ink">{item.title}</h3>
                   <p className="text-slate text-sm leading-relaxed">{item.description}</p>
                 </div>
               </Card>
@@ -242,17 +296,17 @@ export default function LandingPage() {
       </section>
 
       {/* Bottom CTA Banner */}
-      <section className="bg-soft-meadow/80 py-20 border-t border-deep-ink/10">
-        <div className="mx-auto max-w-4xl px-6 text-center space-y-6">
-          <h2 className="text-3xl sm:text-4xl font-bold font-serif text-deep-ink">
+      <section className="bg-soft-meadow/80 py-14 sm:py-20 border-t border-deep-ink/10">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center space-y-5 sm:space-y-6">
+          <h2 className="text-2xl sm:text-4xl font-bold font-serif text-deep-ink">
             Ready to reclaim hours on clinical documentation?
           </h2>
-          <p className="text-slate text-base max-w-xl mx-auto">
+          <p className="text-slate text-sm sm:text-base max-w-xl mx-auto">
             Join medical professionals who have transformed consultation flow with Noa.
           </p>
           <div className="pt-2">
-            <Link href="/auth/signup?type=doctor">
-              <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-8 py-6 text-base font-semibold shadow-xs">
+            <Link href="/auth/signup?type=doctor" className="inline-block w-full sm:w-auto">
+              <Button className="w-full sm:w-auto rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-8 py-5 sm:py-6 text-base font-semibold shadow-xs">
                 Start Your Practice Trial
               </Button>
             </Link>
@@ -261,8 +315,8 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-deep-ink/10 bg-canvas py-12">
-        <div className="mx-auto max-w-6xl px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate">
+      <footer className="border-t border-deep-ink/10 bg-canvas py-8 sm:py-12">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate">
           <div className="flex items-center gap-2">
             <span className="font-serif font-bold text-sm text-deep-ink">Noa</span>
             <span>— Medical Memory Platform</span>

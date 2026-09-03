@@ -68,7 +68,7 @@ export default function SummaryDetailPage({
   }
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Top Breadcrumb & Actions */}
       <div className="space-y-1">
         <Link
@@ -80,11 +80,11 @@ export default function SummaryDetailPage({
         </Link>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold font-serif text-deep-ink">{summary.type}</h1>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl sm:text-3xl font-bold font-serif text-deep-ink">{summary.type}</h1>
               <Badge variant="success">Finalized</Badge>
             </div>
-            <div className="flex items-center gap-3 text-sm text-slate mt-1">
+            <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-slate mt-1 flex-wrap">
               <span>Patient: {summary.patientName}</span>
               <span>•</span>
               <span>Provider: {summary.doctorName}</span>
@@ -93,18 +93,18 @@ export default function SummaryDetailPage({
             </div>
           </div>
 
-          <div className="flex gap-2.5">
+          <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
             <Button
               onClick={handleDownloadPDF}
               variant="outline"
-              className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow gap-1.5 font-medium"
+              className="w-full sm:w-auto rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow gap-1.5 font-medium text-xs sm:text-sm"
             >
               <Download className="w-4 h-4" />
               Download PDF
             </Button>
             <Button
               onClick={handleShareWithPatient}
-              className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-1.5 font-medium"
+              className="w-full sm:w-auto rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-1.5 font-medium text-xs sm:text-sm"
             >
               <Send className="w-4 h-4" />
               Share with Patient
@@ -114,12 +114,12 @@ export default function SummaryDetailPage({
       </div>
 
       {/* Main Container */}
-      <Card className="p-6">
+      <Card className="p-4 sm:p-6">
         {/* Tab Controls */}
-        <div className="flex gap-2 border-b border-deep-ink/10 pb-4 mb-6">
+        <div className="flex gap-2 border-b border-deep-ink/10 pb-4 mb-6 overflow-x-auto">
           <button
             onClick={() => setActiveTab('clinical')}
-            className={`px-5 py-2 rounded-full text-xs font-semibold transition-colors flex items-center gap-2 ${
+            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-semibold transition-colors flex items-center gap-2 shrink-0 ${
               activeTab === 'clinical'
                 ? 'bg-hi-yellow text-deep-ink shadow-2xs'
                 : 'bg-soft-meadow text-deep-ink/80 hover:bg-soft-meadow/80'
@@ -130,7 +130,7 @@ export default function SummaryDetailPage({
           </button>
           <button
             onClick={() => setActiveTab('patient')}
-            className={`px-5 py-2 rounded-full text-xs font-semibold transition-colors flex items-center gap-2 ${
+            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-semibold transition-colors flex items-center gap-2 shrink-0 ${
               activeTab === 'patient'
                 ? 'bg-hi-yellow text-deep-ink shadow-2xs'
                 : 'bg-soft-meadow text-deep-ink/80 hover:bg-soft-meadow/80'
