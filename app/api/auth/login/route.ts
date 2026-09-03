@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDoctorByEmail } from '@/lib/db'
+import { signInWithCognito, getCognitoConfig, getCognitoUser } from '@/lib/auth/cognito'
+import { setAuthCookies } from '@/lib/auth/cookies'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,46 +16,85 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (userType === 'doctor') {
-      // Look up doctor in DynamoDB
-      const doctor = await getDoctorByEmail(email)
+    const { isConfigured } = getCognitoConfig()
 
-      if (!doctor) {
-        return NextResponse.json(
-          { message: 'Doctor account not found' },
-          { status: 401 }
-        )
+    // 1. AWS Cognito Authentication
+    if (isConfigured) {
+      const tokens = await signInWithCognito(email, password)
+      const cognitoUser = await getCognitoUser(tokens.accessToken)
+
+      let resolvedUser = {
+        id: cognitoUser?.sub || `user-${Date.now()}`,
+        email: email.trim().toLowerCase(),
+        name: cognitoUser?.name || email,
+        userType: (cognitoUser?.userType || userType || 'doctor') as 'doctor' | 'patient',
       }
 
-      // In production, verify password hash against stored hash
-      // For now, we assume password verification would happen with AWS Cognito
-      
-      return NextResponse.json({
+      // If doctor, cross-reference DynamoDB profile
+      if (resolvedUser.userType === 'doctor') {
+        const doctor = await getDoctorByEmail(email)
+        if (doctor) {
+          resolvedUser.id = doctor.id
+          resolvedUser.name = doctor.name
+        }
+      }
+
+      const response = NextResponse.json({
         success: true,
         message: 'Login successful',
-        user: {
-          id: doctor.id,
-          email: doctor.email,
-          name: doctor.name,
-          type: 'doctor',
-        },
-        tokens: {
-          accessToken: `token-${doctor.id}`,
-          idToken: `id-${doctor.id}`,
-          refreshToken: `refresh-${doctor.id}`,
-        },
+        user: resolvedUser,
+      })
+
+      // Set tamper-proof httpOnly secure session cookies
+      return setAuthCookies(response, tokens, {
+        sub: resolvedUser.id,
+        email: resolvedUser.email,
+        name: resolvedUser.name,
+        userType: resolvedUser.userType,
       })
     }
 
+    // 2. Unconfigured Cognito Guard (Fail-fast transparency)
+    // In healthcare, we never silently bypass passwords unless explicitly configured for local test mode
+    if (process.env.ALLOW_DEV_AUTH === 'true' && process.env.NODE_ENV !== 'production') {
+      const doctor = await getDoctorByEmail(email)
+      if (!doctor) {
+        return NextResponse.json({ message: 'Doctor account not found' }, { status: 401 })
+      }
+
+      const devUser = {
+        sub: doctor.id,
+        email: doctor.email,
+        name: doctor.name,
+        userType: 'doctor' as const,
+      }
+
+      const devTokens = {
+        accessToken: `dev-token-${doctor.id}`,
+        idToken: `dev-id-${doctor.id}`,
+        expiresIn: 3600,
+      }
+
+      const response = NextResponse.json({
+        success: true,
+        message: 'Logged in via development auth bypass',
+        user: devUser,
+      })
+
+      return setAuthCookies(response, devTokens, devUser)
+    }
+
     return NextResponse.json(
-      { message: 'Invalid user type' },
-      { status: 400 }
+      {
+        message: 'AWS Cognito User Pool is not configured. Please provision Cognito via Terraform or set COGNITO_USER_POOL_ID and COGNITO_CLIENT_ID.',
+      },
+      { status: 503 }
     )
-  } catch (error) {
-    console.error('[v0] Login error:', error)
+  } catch (error: any) {
+    console.error('[Auth] Login error:', error?.message)
     return NextResponse.json(
-      { message: 'Login failed', error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
+      { message: error?.message || 'Login failed' },
+      { status: 401 }
     )
   }
 }

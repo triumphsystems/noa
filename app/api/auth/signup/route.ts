@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createDoctor, createPatient, getDoctorByEmail, getPatientsByDoctor } from '@/lib/db'
+import { createDoctor, createPatient, getDoctorByEmail } from '@/lib/db'
+import { signUpWithCognito, getCognitoConfig } from '@/lib/auth/cognito'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +15,37 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if doctor already exists
+    if (userType !== 'doctor' && userType !== 'patient') {
+      return NextResponse.json(
+        { message: 'Invalid user type. Must be doctor or patient.' },
+        { status: 400 }
+      )
+    }
+
+    const { isConfigured } = getCognitoConfig()
+
+    // 1. AWS Cognito Registration
+    let userSub = ''
+    let isConfirmed = false
+
+    if (isConfigured) {
+      const result = await signUpWithCognito({
+        email,
+        password,
+        userType,
+        firstName,
+        lastName,
+      })
+      userSub = result.userSub
+      isConfirmed = result.isConfirmed
+    } else if (process.env.ALLOW_DEV_AUTH !== 'true' && process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { message: 'AWS Cognito User Pool is not configured for registration.' },
+        { status: 503 }
+      )
+    }
+
+    // 2. DynamoDB Medical Profile Record
     if (userType === 'doctor') {
       const existing = await getDoctorByEmail(email)
       if (existing) {
@@ -24,10 +55,9 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Create doctor in DynamoDB
       const doctor = await createDoctor({
-        email,
-        name: `${firstName} ${lastName}`,
+        email: email.trim().toLowerCase(),
+        name: `${firstName} ${lastName}`.trim(),
         specialty: specialty || 'General Practice',
         clinic: clinic || 'Clinic',
         license: 'LICENSE-PENDING',
@@ -35,32 +65,39 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: 'Doctor account created successfully',
+        message: isConfirmed
+          ? 'Doctor account created successfully'
+          : 'Doctor account created. Please verify your email with the confirmation code sent to you.',
+        userSub,
+        isConfirmed,
         doctor: {
           id: doctor.id,
           email: doctor.email,
           name: doctor.name,
         },
       })
-    } else if (userType === 'patient') {
+    } else {
       if (!doctorId) {
         return NextResponse.json(
-          { message: 'Doctor ID is required for patient signup' },
+          { message: 'Doctor ID is required for patient registration' },
           { status: 400 }
         )
       }
 
-      // Create patient in DynamoDB
       const patient = await createPatient({
         doctorId,
-        email,
-        firstName,
-        lastName,
+        email: email.trim().toLowerCase(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
       })
 
       return NextResponse.json({
         success: true,
-        message: 'Patient account created successfully',
+        message: isConfirmed
+          ? 'Patient account created successfully'
+          : 'Patient account created. Please verify your email with the confirmation code sent to you.',
+        userSub,
+        isConfirmed,
         patient: {
           id: patient.id,
           email: patient.email,
@@ -69,16 +106,11 @@ export async function POST(request: NextRequest) {
         },
       })
     }
-
+  } catch (error: any) {
+    console.error('[Auth] Signup error:', error?.message)
     return NextResponse.json(
-      { message: 'Invalid user type' },
+      { message: error?.message || 'Registration failed' },
       { status: 400 }
-    )
-  } catch (error) {
-    console.error('[v0] Signup error:', error)
-    return NextResponse.json(
-      { message: 'Signup failed', error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
     )
   }
 }

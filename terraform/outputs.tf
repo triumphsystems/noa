@@ -54,7 +54,19 @@ output "environment_variables" {
     S3_BUCKET            = aws_s3_bucket.audio_bucket.id
     S3_BACKUP_BUCKET     = try(aws_s3_bucket.backup_bucket[0].id, "")
     CLOUDWATCH_LOG_GROUP = try(aws_cloudwatch_log_group.noa_logs[0].name, "")
+    COGNITO_USER_POOL_ID = aws_cognito_user_pool.noa_user_pool.id
+    COGNITO_CLIENT_ID    = aws_cognito_user_pool_client.noa_app_client.id
   }
+}
+
+output "cognito_user_pool_id" {
+  description = "ID of the Cognito User Pool"
+  value       = aws_cognito_user_pool.noa_user_pool.id
+}
+
+output "cognito_user_pool_client_id" {
+  description = "ID of the Cognito App Client"
+  value       = aws_cognito_user_pool_client.noa_app_client.id
 }
 
 output "deployment_instructions" {
