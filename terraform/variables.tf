@@ -44,6 +44,24 @@ variable "alert_email" {
   default     = "ops@noa.yourdomain.com"
 }
 
+variable "enable_bedrock" {
+  description = "Enable IAM permissions for AWS Bedrock models"
+  type        = bool
+  default     = true
+}
+
+variable "enable_vercel_oidc" {
+  description = "Enable OpenID Connect (OIDC) identity federation for Vercel deployments (zero static keys)"
+  type        = bool
+  default     = true
+}
+
+variable "vercel_project_name" {
+  description = "Vercel project name for scoping OIDC subject claims"
+  type        = string
+  default     = "noa"
+}
+
 variable "enable_monitoring" {
   description = "Create CloudWatch log group, SNS topic, and alarms. Recommended for prod only."
   type        = bool

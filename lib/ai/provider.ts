@@ -7,7 +7,7 @@
  */
 
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
-import { getAwsCredentials } from '@/lib/aws-config'
+import { getAwsCredentials, createCredentialProvider } from '@/lib/aws-config'
 
 export type AIModelTier = 'fast' | 'reasoning' | 'intake'
 export type AIProvider = 'bedrock' | 'local'
@@ -54,13 +54,16 @@ interface InvokeResult {
 
 // Bedrock client initialization
 const region = process.env.AWS_REGION || 'us-east-1'
-const credentials = getAwsCredentials(region)
+const hasCredentialsConfigured = Boolean(
+  (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
+  (process.env.VERCEL_OIDC_TOKEN && process.env.AWS_ROLE_ARN)
+)
 
 const bedrockClient = new BedrockRuntimeClient({
   region,
   maxAttempts: 5,
   retryMode: 'adaptive',
-  ...(credentials ? { credentials } : {}),
+  ...(hasCredentialsConfigured ? { credentials: createCredentialProvider(region) } : {}),
 })
 
 // Configuration getters

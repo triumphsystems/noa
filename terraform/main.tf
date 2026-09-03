@@ -187,25 +187,63 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "backup_bucket" {
 }
 
 # ============================================
+# Vercel OIDC Identity Provider (Zero Static Keys)
+# ============================================
+
+resource "aws_iam_openid_connect_provider" "vercel" {
+  count           = var.enable_vercel_oidc ? 1 : 0
+  url             = "https://oidc.vercel.com"
+  client_id_list  = ["https://vercel.com"]
+  thumbprint_list = ["9e99a48a9960b14926bb7f3b02e22da2b0ab7280"]
+
+  tags = merge(
+    var.tags,
+    {
+      Name    = "${var.project_name}-vercel-oidc"
+      Purpose = "Vercel OpenID Connect identity federation"
+    }
+  )
+}
+
+# ============================================
 # IAM Role — single role for all app access
 # ============================================
 
 # One role covers Bedrock + DynamoDB + S3. Fewer sts:AssumeRole calls
-# from the app, and simpler to manage.
+# from the app, and supports both traditional IAM and Vercel OIDC.
 resource "aws_iam_role" "app_role" {
   name = "${var.project_name}-app-role-${var.environment}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          AWS = "arn:aws:iam::${var.aws_account_id}:root"
+    Statement = concat(
+      [
+        {
+          Effect = "Allow"
+          Principal = {
+            AWS = "arn:aws:iam::${var.aws_account_id}:root"
+          }
+          Action = "sts:AssumeRole"
         }
-        Action = "sts:AssumeRole"
-      }
-    ]
+      ],
+      var.enable_vercel_oidc ? [
+        {
+          Effect = "Allow"
+          Principal = {
+            Federated = aws_iam_openid_connect_provider.vercel[0].arn
+          }
+          Action = "sts:AssumeRoleWithWebIdentity"
+          Condition = {
+            StringEquals = {
+              "oidc.vercel.com:aud" = "https://vercel.com"
+            }
+            StringLike = {
+              "oidc.vercel.com:sub" = "owner:*:project:${var.vercel_project_name}:environment:*"
+            }
+          }
+        }
+      ] : []
+    )
   })
 
   tags = var.tags

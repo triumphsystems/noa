@@ -155,7 +155,7 @@ export async function saveAudioToS3(audioBuffer: Buffer, sessionId: string): Pro
   try {
     await s3Client.send(
       new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET || 'noa-medical',
+        Bucket: process.env.S3_BUCKET || process.env.AWS_S3_BUCKET || awsConfig.s3.bucket || 'noa-medical',
         Key: key,
         Body: audioBuffer,
         ContentType: 'audio/wav',

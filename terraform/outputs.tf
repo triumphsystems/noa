@@ -38,6 +38,11 @@ output "app_role_name" {
   value       = aws_iam_role.app_role.name
 }
 
+output "vercel_oidc_provider_arn" {
+  description = "ARN of the Vercel OIDC Identity Provider (empty if disabled)"
+  value       = try(aws_iam_openid_connect_provider.vercel[0].arn, "")
+}
+
 output "cloudwatch_log_group" {
   description = "CloudWatch log group name (empty if monitoring disabled)"
   value       = try(aws_cloudwatch_log_group.noa_logs[0].name, "")
