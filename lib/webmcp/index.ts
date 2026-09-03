@@ -3,7 +3,6 @@
  * Complete Model Context Protocol (MCP) suite for web & server.
  */
 
-import './types/model-context.d'
 
 // Core
 export * from './core/types'
