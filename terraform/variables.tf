@@ -11,7 +11,7 @@ variable "aws_account_id" {
 }
 
 variable "project_name" {
-  description = "Project name for resource naming"
+  description = "Project name used for resource naming"
   type        = string
   default     = "noa"
 }
@@ -23,7 +23,7 @@ variable "dynamodb_table_name" {
 }
 
 variable "environment" {
-  description = "Environment (dev, staging, prod)"
+  description = "Deployment environment"
   type        = string
   default     = "prod"
 
@@ -34,42 +34,54 @@ variable "environment" {
 }
 
 variable "app_url" {
-  description = "Application URL"
+  description = "Application URL (e.g. https://noa.yourdomain.com)"
   type        = string
 }
 
-variable "enable_bedrock" {
-  description = "Enable Bedrock integration"
-  type        = bool
-  default     = true
+variable "alert_email" {
+  description = "Email address for CloudWatch alarm notifications"
+  type        = string
+  default     = "ops@noa.yourdomain.com"
 }
 
 variable "enable_monitoring" {
-  description = "Enable CloudWatch monitoring"
+  description = "Create CloudWatch log group, SNS topic, and alarms. Recommended for prod only."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "log_retention_days" {
-  description = "CloudWatch log retention in days"
+  description = "CloudWatch log retention period in days"
   type        = number
   default     = 30
 }
 
+variable "enable_s3_versioning" {
+  description = "Enable S3 versioning on the audio bucket. Suspended by default to avoid accumulating old-version storage costs."
+  type        = bool
+  default     = false
+}
+
+variable "s3_expiry_days" {
+  description = "Days after which current S3 objects are permanently deleted"
+  type        = number
+  default     = 365
+}
+
 variable "enable_s3_replication" {
-  description = "Enable S3 cross-region replication for backups"
+  description = "Create a backup S3 bucket for cross-region replication"
   type        = bool
   default     = false
 }
 
 variable "s3_replication_region" {
-  description = "S3 replication destination region"
+  description = "Destination region for S3 replication"
   type        = string
   default     = "us-west-2"
 }
 
 variable "tags" {
-  description = "Additional tags for all resources"
+  description = "Additional tags applied to all resources"
   type        = map(string)
   default = {
     Component  = "NoaMedicalPlatform"

@@ -36,25 +36,27 @@ resource "aws_dynamodb_table" "noa_db" {
     type = "S"
   }
 
+  # KEYS_ONLY avoids duplicating every item attribute into each index.
+  # Add INCLUDE projections here only if a specific query needs extra fields.
   global_secondary_index {
     name            = "email-index"
     hash_key        = "email"
     range_key       = "type"
-    projection_type = "ALL"
+    projection_type = "KEYS_ONLY"
   }
 
   global_secondary_index {
     name            = "doctorId-index"
     hash_key        = "doctorId"
     range_key       = "type"
-    projection_type = "ALL"
+    projection_type = "KEYS_ONLY"
   }
 
   global_secondary_index {
     name            = "patientId-index"
     hash_key        = "patientId"
     range_key       = "type"
-    projection_type = "ALL"
+    projection_type = "KEYS_ONLY"
   }
 
   tags = merge(
@@ -67,7 +69,7 @@ resource "aws_dynamodb_table" "noa_db" {
 }
 
 # ============================================
-# S3 Buckets for Audio and Backup Storage
+# S3 Bucket for Audio and Document Storage
 # ============================================
 
 resource "aws_s3_bucket" "audio_bucket" {
@@ -82,7 +84,6 @@ resource "aws_s3_bucket" "audio_bucket" {
   )
 }
 
-# Block public access
 resource "aws_s3_bucket_public_access_block" "audio_bucket" {
   bucket = aws_s3_bucket.audio_bucket.id
 
@@ -92,16 +93,16 @@ resource "aws_s3_bucket_public_access_block" "audio_bucket" {
   restrict_public_buckets = true
 }
 
-# Enable versioning for data protection
+# Versioning is suspended by default to avoid accumulating old-version
+# storage costs. Enable it only in production via var.enable_s3_versioning.
 resource "aws_s3_bucket_versioning" "audio_bucket" {
   bucket = aws_s3_bucket.audio_bucket.id
 
   versioning_configuration {
-    status = "Enabled"
+    status = var.enable_s3_versioning ? "Enabled" : "Suspended"
   }
 }
 
-# Enable encryption
 resource "aws_s3_bucket_server_side_encryption_configuration" "audio_bucket" {
   bucket = aws_s3_bucket.audio_bucket.id
 
@@ -112,33 +113,45 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "audio_bucket" {
   }
 }
 
-# Enable lifecycle policies
+# Lifecycle policy:
+# - Move to STANDARD_IA after 30 days (retrieval is instant, cheaper for
+#   infrequently accessed audio; avoids Glacier's retrieval delays and
+#   90-day minimum storage charge).
+# - Expire current objects after var.s3_expiry_days (default 365).
+# - Clean up noncurrent versions quickly if versioning is enabled.
 resource "aws_s3_bucket_lifecycle_configuration" "audio_bucket" {
   bucket = aws_s3_bucket.audio_bucket.id
 
   rule {
-    id     = "archive-old-recordings"
+    id     = "tiered-storage"
     status = "Enabled"
 
     filter {}
 
     transition {
-      days          = 90
-      storage_class = "GLACIER"
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+
+    expiration {
+      days = var.s3_expiry_days
     }
 
     noncurrent_version_transition {
       noncurrent_days = 30
-      storage_class   = "GLACIER"
+      storage_class   = "STANDARD_IA"
     }
 
     noncurrent_version_expiration {
-      noncurrent_days = 365
+      noncurrent_days = 90
     }
   }
 }
 
-# Backup bucket (optional, for replication)
+# ============================================
+# Backup Bucket (optional)
+# ============================================
+
 resource "aws_s3_bucket" "backup_bucket" {
   count  = var.enable_s3_replication ? 1 : 0
   bucket = "${var.project_name}-backup-${var.environment}-${data.aws_caller_identity.current.account_id}"
@@ -174,12 +187,14 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "backup_bucket" {
 }
 
 # ============================================
-# IAM Roles and Policies
+# IAM Role — single role for all app access
 # ============================================
 
-# Bedrock Role
-resource "aws_iam_role" "bedrock_role" {
-  name = "${var.project_name}-bedrock-role-${var.environment}"
+# One role covers Bedrock + DynamoDB + S3. Fewer sts:AssumeRole calls
+# from the app, and simpler to manage.
+resource "aws_iam_role" "app_role" {
+  name = "${var.project_name}-app-role-${var.environment}"
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -196,10 +211,9 @@ resource "aws_iam_role" "bedrock_role" {
   tags = var.tags
 }
 
-# Bedrock access policy
 resource "aws_iam_role_policy" "bedrock_policy" {
   name = "${var.project_name}-bedrock-policy"
-  role = aws_iam_role.bedrock_role.id
+  role = aws_iam_role.app_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -214,20 +228,17 @@ resource "aws_iam_role_policy" "bedrock_policy" {
         Resource = "arn:aws:bedrock:${var.aws_region}::foundation-model/*"
       },
       {
-        Effect = "Allow"
-        Action = [
-          "bedrock:GetFoundationModel"
-        ]
+        Effect   = "Allow"
+        Action   = ["bedrock:GetFoundationModel"]
         Resource = "*"
       }
     ]
   })
 }
 
-# DynamoDB access policy
 resource "aws_iam_role_policy" "dynamodb_policy" {
   name = "${var.project_name}-dynamodb-policy"
-  role = aws_iam_role.bedrock_role.id
+  role = aws_iam_role.app_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -251,29 +262,9 @@ resource "aws_iam_role_policy" "dynamodb_policy" {
   })
 }
 
-# S3 Role
-resource "aws_iam_role" "s3_role" {
-  name = "${var.project_name}-s3-role-${var.environment}"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          AWS = "arn:aws:iam::${var.aws_account_id}:root"
-        }
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
-
-  tags = var.tags
-}
-
-# S3 access policy
 resource "aws_iam_role_policy" "s3_policy" {
   name = "${var.project_name}-s3-policy"
-  role = aws_iam_role.s3_role.id
+  role = aws_iam_role.app_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -304,7 +295,7 @@ resource "aws_iam_role_policy" "s3_policy" {
 }
 
 # ============================================
-# CloudWatch Logs (Optional)
+# CloudWatch Logs (disabled by default)
 # ============================================
 
 resource "aws_cloudwatch_log_group" "noa_logs" {
@@ -321,7 +312,7 @@ resource "aws_cloudwatch_log_group" "noa_logs" {
 }
 
 # ============================================
-# SNS Topics for Alerts (Optional)
+# SNS + CloudWatch Alarms (disabled by default)
 # ============================================
 
 resource "aws_sns_topic" "alerts" {
@@ -335,12 +326,8 @@ resource "aws_sns_topic_subscription" "alerts_email" {
   count     = var.enable_monitoring ? 1 : 0
   topic_arn = aws_sns_topic.alerts[0].arn
   protocol  = "email"
-  endpoint  = "ops@noa.triumphsystems.tech"
+  endpoint  = var.alert_email
 }
-
-# ============================================
-# CloudWatch Alarms (Optional)
-# ============================================
 
 resource "aws_cloudwatch_metric_alarm" "bedrock_errors" {
   count               = var.enable_monitoring ? 1 : 0
@@ -358,7 +345,7 @@ resource "aws_cloudwatch_metric_alarm" "bedrock_errors" {
 }
 
 # ============================================
-# Outputs for Configuration
+# Locals
 # ============================================
 
 locals {
