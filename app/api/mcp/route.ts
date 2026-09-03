@@ -9,6 +9,7 @@ import { initWebMCPServer } from '@/lib/webmcp/server/init'
 import { dispatcher } from '@/lib/webmcp/core/dispatcher'
 import { registry } from '@/lib/webmcp/core/registry'
 import { JsonRpcRequest, ExecutionContext } from '@/lib/webmcp/core/types'
+import { checkRateLimit, getClientIdentifier } from '@/lib/ratelimit'
 
 // Ensure tools, resources, and prompts are registered
 initWebMCPServer()
@@ -34,6 +35,33 @@ export async function OPTIONS() {
  */
 export async function POST(req: NextRequest) {
   try {
+    // Distributed Rate limiting (60 requests per minute per client)
+    const clientId = getClientIdentifier(req)
+    const rateCheck = await checkRateLimit(clientId, { limit: 60, windowSeconds: 60 })
+    if (!rateCheck.success) {
+      const retryAfter = Math.max(1, rateCheck.reset - Math.floor(Date.now() / 1000))
+      return NextResponse.json(
+        {
+          jsonrpc: '2.0',
+          id: null,
+          error: {
+            code: -32000,
+            message: `Rate limit exceeded. Maximum ${rateCheck.limit} requests per minute allowed. Please retry in ${retryAfter} seconds.`,
+          },
+        },
+        {
+          status: 429,
+          headers: {
+            ...CORS_HEADERS,
+            'Retry-After': String(retryAfter),
+            'X-RateLimit-Limit': String(rateCheck.limit),
+            'X-RateLimit-Remaining': String(rateCheck.remaining),
+            'X-RateLimit-Reset': String(rateCheck.reset),
+          },
+        }
+      )
+    }
+
     const rawBody = await req.json()
 
     // Extract execution context from headers

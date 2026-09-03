@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateClinicalInsights, generateFollowUpPlan } from '@/lib/bedrock-nova'
+import { checkRateLimit, getClientIdentifier, rateLimitResponse } from '@/lib/ratelimit'
+import { ClinicalAIUnavailableError } from '@/lib/ai/provider'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +13,13 @@ export async function POST(request: NextRequest) {
         { error: 'Current presentation is required' },
         { status: 400 }
       )
+    }
+
+    // Rate limiting: max 20 requests per minute per client
+    const clientId = getClientIdentifier(request)
+    const rateCheck = await checkRateLimit(clientId, { limit: 20, windowSeconds: 60 })
+    if (!rateCheck.success) {
+      return rateLimitResponse(rateCheck)
     }
 
     console.log('[v0] Generating clinical insights with Nova')
@@ -39,6 +48,12 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('[v0] Error generating clinical insights:', error)
+    if (error instanceof ClinicalAIUnavailableError && error.isThrottling) {
+      return NextResponse.json(
+        { error: 'Too Many Requests', message: 'AWS Bedrock model capacity exceeded. Please retry in a few moments.' },
+        { status: 429, headers: { 'Retry-After': '5' } }
+      )
+    }
     return NextResponse.json(
       {
         error: 'Failed to generate clinical insights',

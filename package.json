@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "node --test tests/webmcp.test.mjs tests/auth.test.mjs"
+    "test": "node --test tests/webmcp.test.mjs tests/auth.test.mjs tests/ratelimit.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1124.0",

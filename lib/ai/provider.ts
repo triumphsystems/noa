@@ -13,6 +13,8 @@ export type AIModelTier = 'fast' | 'reasoning' | 'intake'
 export type AIProvider = 'bedrock' | 'local'
 
 export class ClinicalAIUnavailableError extends Error {
+  public isThrottling = false
+
   constructor(
     public provider: AIProvider,
     public model: string,
@@ -20,12 +22,19 @@ export class ClinicalAIUnavailableError extends Error {
     public remediation?: string
   ) {
     const errorDetails = originalError instanceof Error ? originalError.message : String(originalError || '')
+    const errorName = (originalError as any)?.name || ''
+    const statusCode = (originalError as any)?.$metadata?.httpStatusCode
+
     super(
       `Clinical AI service unavailable via ${provider} [${model}]. ` +
       `${errorDetails ? `(${errorDetails}) ` : ''}` +
       `${remediation || 'Please verify service connectivity and credentials.'}`
     )
     this.name = 'ClinicalAIUnavailableError'
+
+    if (errorName === 'ThrottlingException' || errorName === 'RequestLimitExceeded' || statusCode === 429) {
+      this.isThrottling = true
+    }
   }
 }
 
@@ -49,6 +58,8 @@ const credentials = getAwsCredentials(region)
 
 const bedrockClient = new BedrockRuntimeClient({
   region,
+  maxAttempts: 5,
+  retryMode: 'adaptive',
   ...(credentials ? { credentials } : {}),
 })
 

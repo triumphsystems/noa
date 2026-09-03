@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateSOAPWithNova } from '@/lib/bedrock-nova'
 import { updateSession } from '@/lib/db'
+import { checkRateLimit, getClientIdentifier, rateLimitResponse } from '@/lib/ratelimit'
+import { ClinicalAIUnavailableError } from '@/lib/ai/provider'
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,6 +14,13 @@ export async function POST(request: NextRequest) {
         { error: 'Transcript is required' },
         { status: 400 }
       )
+    }
+
+    // Rate limiting: max 20 requests per minute per client
+    const clientId = getClientIdentifier(request, patientId)
+    const rateCheck = await checkRateLimit(clientId, { limit: 20, windowSeconds: 60 })
+    if (!rateCheck.success) {
+      return rateLimitResponse(rateCheck)
     }
 
     console.log('[v0] Generating SOAP note with Nova AI')
@@ -46,6 +55,12 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('[v0] Error generating SOAP note:', error)
+    if (error instanceof ClinicalAIUnavailableError && error.isThrottling) {
+      return NextResponse.json(
+        { error: 'Too Many Requests', message: 'AWS Bedrock model capacity exceeded. Please retry in a few moments.' },
+        { status: 429, headers: { 'Retry-After': '5' } }
+      )
+    }
     return NextResponse.json(
       { error: 'Failed to generate SOAP note', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

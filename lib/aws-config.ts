@@ -47,9 +47,11 @@ export const s3Client = new S3Client({
   ...(getAwsCredentials(region) ? { credentials: getAwsCredentials(region) } : {}),
 })
 
-// Bedrock Runtime Client (for Nova & Sonic models)
+// Bedrock Runtime Client (for Nova & Sonic models with adaptive backoff)
 export const bedrockClient = new BedrockRuntimeClient({
   region: bedrockRegion,
+  maxAttempts: 5,
+  retryMode: 'adaptive',
   ...(getAwsCredentials(bedrockRegion) ? { credentials: getAwsCredentials(bedrockRegion) } : {}),
 })
 
