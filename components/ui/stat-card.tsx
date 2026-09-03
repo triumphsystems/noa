@@ -12,13 +12,13 @@ interface StatCardProps {
 
 export function StatCard({ label, value, icon, helperText, className }: StatCardProps) {
   return (
-    <Card className={cn('bg-soft-meadow border-deep-ink/10 p-4 sm:p-6', className)}>
+    <Card className={cn('bg-white border-deep-ink/8 p-5 sm:p-6 shadow-editorial', className)}>
       <div className="flex items-center justify-between mb-2 gap-2">
-        <p className="text-slate text-xs sm:text-sm font-medium truncate">{label}</p>
-        {icon && <div className="text-slate shrink-0">{icon}</div>}
+        <p className="text-slate text-xs sm:text-sm font-medium tracking-tight truncate">{label}</p>
+        {icon && <div className="text-slate/70 shrink-0">{icon}</div>}
       </div>
-      <p className="text-2xl sm:text-3xl font-bold font-serif text-deep-ink tracking-tight truncate">{value}</p>
-      {helperText && <p className="text-xs text-slate mt-1 truncate">{helperText}</p>}
+      <p className="text-2xl sm:text-3xl font-medium font-serif text-deep-ink tracking-tight truncate">{value}</p>
+      {helperText && <p className="text-xs text-slate/80 mt-1 truncate">{helperText}</p>}
     </Card>
   )
 }

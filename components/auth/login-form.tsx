@@ -73,45 +73,45 @@ export default function LoginForm({ userType }: LoginFormProps) {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 font-sans">
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-3 text-sm text-red-700">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700">
             {error}
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-deep-ink mb-1">Email</label>
+        <div className="space-y-1">
+          <label className="block text-xs font-medium text-deep-ink">Email</label>
           <input
             type="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2.5 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm bg-transparent"
+            className="w-full px-3.5 py-2 border border-deep-ink/15 rounded-lg text-deep-ink placeholder:text-slate/60 focus:outline-none focus:border-deep-ink focus:ring-1 focus:ring-deep-ink/20 text-sm bg-white shadow-2xs transition-colors"
             placeholder="you@example.com"
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-deep-ink mb-1">Password</label>
+        <div className="space-y-1">
+          <label className="block text-xs font-medium text-deep-ink">Password</label>
           <input
             type="password"
             name="password"
             value={formData.password}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2.5 border border-deep-ink/20 rounded-full text-deep-ink placeholder-slate focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm bg-transparent"
+            className="w-full px-3.5 py-2 border border-deep-ink/15 rounded-lg text-deep-ink placeholder:text-slate/60 focus:outline-none focus:border-deep-ink focus:ring-1 focus:ring-deep-ink/20 text-sm bg-white shadow-2xs transition-colors"
             placeholder="••••••••"
           />
         </div>
 
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center justify-between text-xs pt-1">
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" className="rounded text-deep-ink focus:ring-hi-yellow" />
+            <input type="checkbox" className="rounded border-deep-ink/20 text-deep-ink focus:ring-deep-ink" />
             <span className="text-slate">Remember me</span>
           </label>
-          <a href="#" className="font-medium text-deep-ink hover:underline">
+          <a href="#" className="font-medium text-slate hover:text-deep-ink underline-offset-4 hover:underline">
             Forgot password?
           </a>
         </div>
@@ -119,7 +119,8 @@ export default function LoginForm({ userType }: LoginFormProps) {
         <Button
           type="submit"
           disabled={loading}
-          className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium py-5 shadow-xs"
+          variant="dark"
+          className="w-full rounded-lg font-medium py-2.5 h-10 shadow-2xs"
         >
           {loading ? 'Signing in...' : 'Sign In'}
         </Button>
@@ -127,20 +128,20 @@ export default function LoginForm({ userType }: LoginFormProps) {
 
       <div className="text-center text-xs text-slate">
         Don't have an account?{' '}
-        <Link href={`/auth/signup?type=${userType}`} className="font-semibold text-deep-ink hover:underline">
+        <Link href={`/auth/signup?type=${userType}`} className="font-medium text-deep-ink hover:underline">
           Sign up
         </Link>
       </div>
 
       <div className="pt-4 border-t border-deep-ink/10">
-        <div className="flex gap-2 text-xs">
+        <div className="flex gap-1.5 p-1 bg-soft-meadow/80 rounded-xl border border-deep-ink/8 text-xs font-sans">
           <Link
             href="/auth/login?type=doctor"
             className={cn(
-              'flex-1 text-center py-2 px-3 rounded-full font-medium transition-colors',
+              'flex-1 text-center py-1.5 px-3 rounded-lg font-medium transition-all',
               userType === 'doctor'
-                ? 'bg-hi-yellow text-deep-ink shadow-2xs'
-                : 'bg-soft-meadow text-deep-ink/80 hover:bg-soft-meadow/80'
+                ? 'bg-white text-deep-ink font-semibold shadow-2xs'
+                : 'text-slate hover:text-deep-ink hover:bg-white/50'
             )}
           >
             Doctor Sign In
@@ -148,10 +149,10 @@ export default function LoginForm({ userType }: LoginFormProps) {
           <Link
             href="/auth/login?type=patient"
             className={cn(
-              'flex-1 text-center py-2 px-3 rounded-full font-medium transition-colors',
+              'flex-1 text-center py-1.5 px-3 rounded-lg font-medium transition-all',
               userType === 'patient'
-                ? 'bg-hi-yellow text-deep-ink shadow-2xs'
-                : 'bg-soft-meadow text-deep-ink/80 hover:bg-soft-meadow/80'
+                ? 'bg-white text-deep-ink font-semibold shadow-2xs'
+                : 'text-slate hover:text-deep-ink hover:bg-white/50'
             )}
           >
             Patient Sign In

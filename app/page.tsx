@@ -28,18 +28,18 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-canvas text-deep-ink">
       {/* Navigation */}
-      <nav className="border-b border-deep-ink/10 bg-soft-meadow/80 backdrop-blur-md sticky top-0 z-30">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between">
+      <nav className="border-b border-deep-ink/8 bg-canvas/90 backdrop-blur-md sticky top-0 z-30 font-sans">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo.svg" alt="Noa Logo" className="w-9 h-9 rounded-xl shadow-xs" />
-            <span className="text-2xl font-bold font-serif text-deep-ink tracking-tight">Noa</span>
-            <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">
+            <img src="/logo.svg" alt="Noa Logo" className="w-8 h-8 rounded-lg shadow-2xs" />
+            <span className="text-xl sm:text-2xl font-bold font-serif text-deep-ink tracking-tight">Noa</span>
+            <Badge variant="secondary" className="hidden sm:inline-flex text-[11px] font-sans">
               Clinical Intelligence
             </Badge>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-7">
             <Link href="#features" className="text-sm font-medium text-slate hover:text-deep-ink transition-colors">
               Features
             </Link>
@@ -48,12 +48,12 @@ export default function LandingPage() {
             </Link>
             <div className="flex items-center gap-3">
               <Link href="/auth/login">
-                <Button variant="outline" className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow font-medium">
+                <Button variant="outline" size="sm" className="rounded-lg text-xs font-medium px-3.5 h-8">
                   Log In
                 </Button>
               </Link>
               <Link href="/auth/signup">
-                <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium">
+                <Button variant="dark" size="sm" className="rounded-lg text-xs font-medium px-4 h-8 shadow-2xs">
                   Get Started
                 </Button>
               </Link>
@@ -63,13 +63,13 @@ export default function LandingPage() {
           {/* Mobile Navigation Toggle & Quick Actions */}
           <div className="flex md:hidden items-center gap-2">
             <Link href="/auth/login">
-              <Button variant="outline" size="sm" className="rounded-full border-deep-ink/20 text-deep-ink text-xs px-3 py-1.5 h-8">
+              <Button variant="outline" size="xs" className="rounded-lg text-xs px-2.5 h-7">
                 Log In
               </Button>
             </Link>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-full hover:bg-deep-ink/10 transition-colors text-deep-ink"
+              className="p-1.5 rounded-lg hover:bg-deep-ink/5 transition-colors text-deep-ink cursor-pointer"
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -79,26 +79,26 @@ export default function LandingPage() {
 
         {/* Mobile Dropdown Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-deep-ink/10 bg-soft-meadow px-4 py-4 space-y-3">
-            <div className="flex flex-col space-y-2">
+          <div className="md:hidden border-t border-deep-ink/8 bg-canvas px-4 py-4 space-y-3">
+            <div className="flex flex-col space-y-1">
               <Link
                 href="#features"
                 onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-2 rounded-lg text-sm font-medium text-deep-ink hover:bg-deep-ink/5"
+                className="px-3 py-2 rounded-lg text-sm font-medium text-deep-ink hover:bg-soft-meadow transition-colors"
               >
                 Features
               </Link>
               <Link
                 href="#how-it-works"
                 onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-2 rounded-lg text-sm font-medium text-deep-ink hover:bg-deep-ink/5"
+                className="px-3 py-2 rounded-lg text-sm font-medium text-deep-ink hover:bg-soft-meadow transition-colors"
               >
                 How It Works
               </Link>
             </div>
-            <div className="pt-2 border-t border-deep-ink/10 flex flex-col gap-2">
+            <div className="pt-2 border-t border-deep-ink/8 flex flex-col gap-2">
               <Link href="/auth/signup" onClick={() => setMobileMenuOpen(false)} className="w-full">
-                <Button className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium">
+                <Button variant="dark" className="w-full rounded-lg font-medium">
                   Get Started
                 </Button>
               </Link>
@@ -108,23 +108,23 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-12 sm:py-16 lg:py-24">
+      <section className="relative overflow-hidden py-16 sm:py-20 lg:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            <div className="space-y-5 sm:space-y-6">
-              <Badge variant="secondary" className="px-3.5 py-1 text-xs gap-1.5 inline-flex items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+            <div className="space-y-6">
+              <Badge variant="default" className="px-3 py-1 gap-1.5 inline-flex items-center">
                 <Sparkles className="w-3.5 h-3.5 text-deep-ink" />
-                <span>Next-Generation Voice AI for Healthcare</span>
+                <span>Next-Generation Clinical Voice AI</span>
               </Badge>
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold font-serif leading-tight text-balance text-deep-ink">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-normal font-serif leading-[1.15] text-balance text-deep-ink">
                 Medical memory, powered by AI
               </h1>
-              <p className="text-sm sm:text-lg text-slate leading-relaxed text-balance">
-                Noa transforms your voice consultations into structured clinical intelligence in real time. Document patient visits naturally, synthesize accurate SOAP notes, and never lose clinical context.
+              <p className="text-sm sm:text-base text-slate leading-relaxed text-balance">
+                Noa transforms your patient consultations into structured clinical intelligence in real time. Document patient visits naturally, synthesize accurate SOAP notes, and eliminate chart documentation debt.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2">
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Link href="/auth/signup?type=doctor" className="block w-full sm:w-auto">
-                  <Button className="w-full sm:w-auto rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-6 sm:px-8 py-5 sm:py-6 text-base font-semibold shadow-xs gap-2">
+                  <Button variant="default" className="w-full sm:w-auto rounded-lg px-6 py-2.5 h-11 text-sm font-semibold shadow-2xs gap-2">
                     <span>Start for Doctors</span>
                     <ArrowRight className="w-4 h-4" />
                   </Button>
@@ -132,7 +132,7 @@ export default function LandingPage() {
                 <Link href="/auth/signup?type=patient" className="block w-full sm:w-auto">
                   <Button
                     variant="outline"
-                    className="w-full sm:w-auto rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow px-6 sm:px-8 py-5 sm:py-6 text-base font-medium"
+                    className="w-full sm:w-auto rounded-lg px-6 py-2.5 h-11 text-sm font-medium hover:bg-soft-meadow"
                   >
                     Patient Portal
                   </Button>
@@ -331,11 +331,11 @@ export default function LandingPage() {
             ].map((feature, idx) => {
               const Icon = feature.icon
               return (
-                <Card key={idx} className="p-6 sm:p-8 hover:border-hi-yellow/60 transition-colors">
-                  <div className="w-12 h-12 rounded-2xl bg-hi-yellow/40 border border-hi-yellow flex items-center justify-center mb-5 text-deep-ink">
-                    <Icon className="w-6 h-6" />
+                <Card key={idx} className="p-6 sm:p-8 hover:border-deep-ink/20 transition-colors bg-white shadow-editorial">
+                  <div className="w-10 h-10 rounded-xl bg-hi-yellow/20 border border-hi-yellow/40 flex items-center justify-center mb-5 text-deep-ink">
+                    <Icon className="w-5 h-5" />
                   </div>
-                  <h3 className="text-lg sm:text-xl font-semibold font-serif text-deep-ink mb-2">{feature.title}</h3>
+                  <h3 className="text-lg font-medium font-serif text-deep-ink mb-2">{feature.title}</h3>
                   <p className="text-slate text-sm leading-relaxed">{feature.description}</p>
                 </Card>
               )
@@ -345,16 +345,16 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-14 sm:py-20">
+      <section id="how-it-works" className="py-16 sm:py-24">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-16 space-y-3">
-            <h2 className="text-2xl sm:text-4xl font-bold font-serif text-deep-ink">How Noa works</h2>
+          <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16 space-y-3">
+            <h2 className="text-2xl sm:text-4xl font-normal font-serif text-deep-ink">How Noa works</h2>
             <p className="text-slate text-sm sm:text-base">
               Four frictionless steps to eliminate consultation documentation backlogs.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {[
               {
                 step: '01',
@@ -377,12 +377,12 @@ export default function LandingPage() {
                 description: 'Review the note, sign off, and send an easy-to-read summary to the patient portal.',
               },
             ].map((item, idx) => (
-              <Card key={idx} className="p-5 sm:p-8 flex gap-4 sm:gap-6 items-start">
-                <span className="text-2xl sm:text-3xl font-bold font-serif text-deep-ink/20 shrink-0">
+              <Card key={idx} className="p-6 sm:p-7 flex gap-4 sm:gap-5 items-start bg-white shadow-editorial">
+                <span className="text-2xl sm:text-3xl font-medium font-serif text-deep-ink/25 shrink-0">
                   {item.step}
                 </span>
-                <div className="space-y-1.5 sm:space-y-2">
-                  <h3 className="text-lg sm:text-xl font-semibold font-serif text-deep-ink">{item.title}</h3>
+                <div className="space-y-1 sm:space-y-1.5">
+                  <h3 className="text-base sm:text-lg font-medium font-serif text-deep-ink">{item.title}</h3>
                   <p className="text-slate text-sm leading-relaxed">{item.description}</p>
                 </div>
               </Card>
@@ -392,17 +392,17 @@ export default function LandingPage() {
       </section>
 
       {/* Bottom CTA Banner */}
-      <section className="bg-soft-meadow/80 py-14 sm:py-20 border-t border-deep-ink/10">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center space-y-5 sm:space-y-6">
-          <h2 className="text-2xl sm:text-4xl font-bold font-serif text-deep-ink">
+      <section className="bg-soft-meadow py-16 sm:py-24 border-t border-deep-ink/8">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center space-y-5">
+          <h2 className="text-2xl sm:text-4xl font-normal font-serif text-deep-ink">
             Ready to reclaim hours on clinical documentation?
           </h2>
-          <p className="text-slate text-sm sm:text-base max-w-xl mx-auto">
-            Join medical professionals who have transformed consultation flow with Noa.
+          <p className="text-slate text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
+            Join healthcare professionals who have transformed consultation flow with Noa.
           </p>
           <div className="pt-2">
             <Link href="/auth/signup?type=doctor" className="inline-block w-full sm:w-auto">
-              <Button className="w-full sm:w-auto rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-8 py-5 sm:py-6 text-base font-semibold shadow-xs">
+              <Button variant="default" className="w-full sm:w-auto rounded-lg px-8 py-3 h-12 text-sm font-semibold shadow-2xs">
                 Start Your Practice Trial
               </Button>
             </Link>
@@ -410,14 +410,24 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-deep-ink/10 bg-canvas py-8 sm:py-12">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate">
-          <div className="flex items-center gap-2">
-            <span className="font-serif font-bold text-sm text-deep-ink">Noa</span>
-            <span>— Medical Memory Platform</span>
+      {/* Dark Footer Band (Deliberate Tonal Break) */}
+      <footer className="bg-deep-ink text-white/70 py-12 sm:py-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-hi-yellow">
+              <Sparkles className="w-3.5 h-3.5" />
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="font-serif font-medium text-base text-white">Noa</span>
+              <span className="text-white/50">— Medical Memory Platform</span>
+            </div>
           </div>
-          <p>&copy; 2026 Noa Health. All rights reserved.</p>
+          <div className="flex items-center gap-6 text-white/60">
+            <Link href="#features" className="hover:text-white transition-colors">Features</Link>
+            <Link href="#how-it-works" className="hover:text-white transition-colors">How It Works</Link>
+            <Link href="/auth/login" className="hover:text-white transition-colors">Portal Login</Link>
+          </div>
+          <p className="text-white/40">&copy; 2026 Noa Health. All rights reserved.</p>
         </div>
       </footer>
     </div>

@@ -1,6 +1,6 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-import { getAwsCredentials } from './aws-config'
+import { getAwsCredentials, awsConfig } from './aws-config'
 import { invokeClinicalAI } from '@/lib/ai/provider'
 
 const region = process.env.AWS_REGION || 'us-east-1'

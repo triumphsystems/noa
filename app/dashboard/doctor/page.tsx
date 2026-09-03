@@ -52,14 +52,15 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap sm:flex-nowrap">
           <Button
             variant="outline"
+            size="sm"
             onClick={handleRefresh}
-            className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow gap-2 flex-1 sm:flex-initial text-xs sm:text-sm"
+            className="rounded-lg gap-2 text-xs font-medium"
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className="h-3.5 w-3.5" />
             Refresh
           </Button>
           <Link href="/dashboard/doctor/settings" className="flex-1 sm:flex-initial">
-            <Button className="w-full sm:w-auto rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 text-xs sm:text-sm">
+            <Button size="sm" className="w-full sm:w-auto rounded-lg text-xs font-semibold">
               Edit Profile
             </Button>
           </Link>
@@ -67,7 +68,7 @@ export default function DashboardPage() {
       </div>
 
       {error && (
-        <div className="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-700">
           {error}
         </div>
       )}
@@ -77,46 +78,46 @@ export default function DashboardPage() {
         <StatCard
           label="Today's Sessions"
           value={stats?.todaySessions.toString() || '0'}
-          icon={<Calendar className="h-5 w-5" />}
+          icon={<Calendar className="h-4 w-4" />}
         />
         <StatCard
           label="Unique Patients"
           value={stats?.totalPatients.toString() || '0'}
-          icon={<Users className="h-5 w-5" />}
+          icon={<Users className="h-4 w-4" />}
         />
         <StatCard
           label="Completed Sessions"
           value={stats?.completedSessions.toString() || '0'}
-          icon={<CheckCircle2 className="h-5 w-5" />}
+          icon={<CheckCircle2 className="h-4 w-4" />}
         />
         <StatCard
           label="Pending Notes"
           value={stats?.pendingNotes.toString() || '0'}
-          icon={<FileEdit className="h-5 w-5" />}
+          icon={<FileEdit className="h-4 w-4" />}
         />
       </div>
 
       {/* Quick Actions */}
-      <Card>
-        <CardHeader>
+      <Card className="bg-white">
+        <CardHeader className="pb-3">
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Link href="/dashboard/doctor/sessions/new" className="block">
-              <Button className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 py-5 font-medium gap-2">
+              <Button className="w-full rounded-lg py-2.5 h-10 font-semibold gap-2 text-xs">
                 <Plus className="h-4 w-4" />
                 Start New Session
               </Button>
             </Link>
             <Link href="/dashboard/doctor/patients" className="block">
-              <Button variant="outline" className="w-full rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow py-5 font-medium gap-2">
+              <Button variant="outline" className="w-full rounded-lg py-2.5 h-10 font-medium gap-2 text-xs">
                 <Search className="h-4 w-4" />
                 Search Patients
               </Button>
             </Link>
             <Link href="/dashboard/doctor/summaries" className="block">
-              <Button variant="outline" className="w-full rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow py-5 font-medium gap-2">
+              <Button variant="outline" className="w-full rounded-lg py-2.5 h-10 font-medium gap-2 text-xs">
                 <FileEdit className="h-4 w-4" />
                 Review Summaries
               </Button>
@@ -128,23 +129,23 @@ export default function DashboardPage() {
       {/* Recent Sessions */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold font-serif text-deep-ink">Recent Sessions</h3>
+          <h3 className="text-lg font-medium font-serif text-deep-ink">Recent Sessions</h3>
           {sessions.length > 0 && (
-            <Link href="/dashboard/doctor/sessions/new" className="text-xs font-semibold text-slate hover:text-deep-ink">
+            <Link href="/dashboard/doctor/sessions/new" className="text-xs font-medium text-slate hover:text-deep-ink">
               View all sessions →
             </Link>
           )}
         </div>
 
         {isLoading ? (
-          <div className="text-center py-12 text-slate">Loading sessions...</div>
+          <div className="text-center py-12 text-slate text-xs">Loading sessions...</div>
         ) : recentSessions.length === 0 ? (
           <EmptyState
             title="No sessions yet"
             description="Start your first AI-assisted clinical consultation to see transcripts and SOAP notes here."
             action={
               <Link href="/dashboard/doctor/sessions/new">
-                <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-2">
+                <Button size="sm" className="rounded-lg gap-2 text-xs font-semibold">
                   <Plus className="h-4 w-4" />
                   Start New Session
                 </Button>

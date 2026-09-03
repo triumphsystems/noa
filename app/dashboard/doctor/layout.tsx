@@ -107,7 +107,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto font-sans">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon
             const isActive =
@@ -121,23 +121,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 href={item.href}
                 onClick={() => setMobileNavOpen(false)}
                 className={cn(
-                  'w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors text-sm font-medium',
+                  'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-colors text-xs sm:text-sm font-medium',
                   isActive
-                    ? 'bg-hi-yellow text-deep-ink shadow-xs'
-                    : 'text-deep-ink/80 hover:bg-deep-ink/5 hover:text-deep-ink'
+                    ? 'bg-white text-deep-ink shadow-2xs border border-deep-ink/8 font-semibold'
+                    : 'text-slate hover:bg-white/60 hover:text-deep-ink'
                 )}
               >
-                <Icon className={cn('h-5 w-5 shrink-0', isActive ? 'text-deep-ink' : 'text-deep-ink/70')} />
+                <Icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-deep-ink' : 'text-slate')} />
                 <span className={cn('truncate', !sidebarOpen && 'md:hidden')}>{item.label}</span>
               </Link>
             )
           })}
         </nav>
 
-        <div className="border-t border-deep-ink/10 p-4">
+        <div className="border-t border-deep-ink/8 p-3">
           <Link href="/auth/logout" className="block">
-            <Button variant="outline" size="sm" className="w-full justify-center rounded-full gap-2">
-              <LogOut className="h-4 w-4 shrink-0" />
+            <Button variant="outline" size="sm" className="w-full justify-center rounded-lg gap-2 text-xs font-medium">
+              <LogOut className="h-3.5 w-3.5 shrink-0" />
               <span className={cn(!sidebarOpen && 'md:hidden')}>Log Out</span>
             </Button>
           </Link>

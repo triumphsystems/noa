@@ -4,16 +4,17 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-colors focus:outline-none',
+  'inline-flex items-center rounded-lg px-2.5 py-0.5 text-[11px] font-medium transition-colors border select-none',
   {
     variants: {
       variant: {
-        default: 'bg-hi-yellow text-deep-ink',
-        secondary: 'bg-soft-meadow text-deep-ink',
-        success: 'bg-moss-green/20 text-deep-ink',
-        draft: 'bg-slate/10 text-slate',
-        outline: 'border border-deep-ink/20 text-deep-ink',
-        danger: 'bg-red-100 text-red-700 border border-red-200',
+        // Claude signature chromatic accent (Hi-Yellow in Noa)
+        default: 'bg-hi-yellow/20 text-deep-ink border-hi-yellow/40 font-semibold',
+        secondary: 'bg-soft-meadow text-deep-ink border-deep-ink/10',
+        outline: 'border-deep-ink/15 text-slate bg-transparent',
+        success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        draft: 'bg-deep-ink/5 text-slate border-deep-ink/10',
+        danger: 'bg-red-50 text-red-700 border-red-200',
       },
     },
     defaultVariants: {

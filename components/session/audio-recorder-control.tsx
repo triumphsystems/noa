@@ -30,25 +30,25 @@ export function AudioRecorderControl({
   }
 
   return (
-    <Card className="p-5 sm:p-8 border-2 border-hi-yellow/30 bg-gradient-to-br from-soft-meadow via-white to-soft-meadow/50 text-center">
-      <div className="flex items-center justify-center mb-6">
+    <Card className="p-6 sm:p-8 bg-white border border-deep-ink/8 shadow-editorial text-center font-sans">
+      <div className="flex items-center justify-center mb-5">
         <div
           className={cn(
-            'w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center border-2 transition-all duration-300',
+            'w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center border transition-all duration-300',
             isRecording
-              ? 'bg-red-500 text-white border-red-400 animate-pulse ring-8 ring-red-100'
+              ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'
               : 'bg-soft-meadow text-deep-ink border-deep-ink/10'
           )}
         >
-          {isRecording ? <Square className="w-6 h-6 sm:w-8 sm:h-8 fill-current" /> : <Mic className="w-6 h-6 sm:w-8 sm:h-8" />}
+          {isRecording ? <Square className="w-5 h-5 sm:w-6 sm:h-6 fill-current" /> : <Mic className="w-5 h-5 sm:w-6 sm:h-6" />}
         </div>
       </div>
 
-      <div className="mb-6 space-y-1">
+      <div className="mb-5 space-y-1">
         <p className="text-slate text-xs sm:text-sm font-medium">
           {isRecording ? 'Recording consultation in progress...' : 'Ready to begin consultation'}
         </p>
-        <p className="text-2xl sm:text-3xl font-bold font-serif text-deep-ink tracking-tight">
+        <p className="text-2xl sm:text-3xl font-medium font-mono text-deep-ink tracking-tight">
           {formatDuration(sessionDuration)}
         </p>
       </div>
@@ -58,7 +58,8 @@ export function AudioRecorderControl({
           <Button
             onClick={onStartRecording}
             disabled={!selectedPatient}
-            className="w-full sm:w-auto rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 px-6 sm:px-8 py-5 font-semibold gap-2 shadow-xs text-sm"
+            variant="default"
+            className="w-full sm:w-auto rounded-lg px-5 py-2 h-10 font-semibold gap-2 shadow-2xs text-xs"
           >
             <Mic className="h-4 w-4" />
             Start Recording
@@ -66,7 +67,8 @@ export function AudioRecorderControl({
         ) : (
           <Button
             onClick={onStopRecording}
-            className="w-full sm:w-auto rounded-full bg-red-600 text-white hover:bg-red-700 px-6 sm:px-8 py-5 font-semibold gap-2 shadow-xs text-sm"
+            variant="destructive"
+            className="w-full sm:w-auto rounded-lg px-5 py-2 h-10 font-semibold gap-2 shadow-2xs text-xs"
           >
             <Square className="h-4 w-4 fill-current" />
             Stop Recording
@@ -77,7 +79,7 @@ export function AudioRecorderControl({
           <Button
             variant="outline"
             onClick={onSimulate}
-            className="w-full sm:w-auto rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow py-5 gap-2 text-sm"
+            className="w-full sm:w-auto rounded-lg h-10 px-4 gap-2 text-xs font-medium"
           >
             <Sparkles className="h-4 w-4 text-hi-yellow fill-hi-yellow" />
             Simulate Demo Audio

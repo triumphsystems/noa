@@ -72,12 +72,12 @@ export function RegisterTab({ onRegisterTool, onRefreshRegistry, logActivity }: 
   }
 
   return (
-    <div className="flex-1 p-5 md:p-6 overflow-y-auto space-y-5 bg-canvas max-w-4xl mx-auto w-full">
+    <div className="flex-1 p-5 md:p-6 overflow-y-auto space-y-5 bg-canvas max-w-4xl mx-auto w-full font-sans">
       <div>
-        <h3 className="font-serif font-bold text-lg text-deep-ink tracking-tight">Dynamic Tool Registration Builder</h3>
+        <h3 className="font-serif font-bold text-base text-deep-ink tracking-tight">Tool Registration</h3>
         <p className="text-xs text-slate mt-0.5">
           Register new callable clinical tools live into{' '}
-          <code className="bg-soft-meadow px-1.5 py-0.5 rounded-md font-mono text-xs text-deep-ink">
+          <code className="bg-soft-meadow px-1.5 py-0.5 rounded font-mono text-xs text-deep-ink">
             document.modelContext
           </code>{' '}
           at runtime.
@@ -87,25 +87,25 @@ export function RegisterTab({ onRegisterTool, onRefreshRegistry, logActivity }: 
       {/* Notification Banner */}
       {registrationNotice && (
         <div
-          className={`p-3.5 rounded-2xl text-xs font-semibold flex items-center gap-2 border ${
+          className={`p-3.5 rounded-xl text-xs font-medium flex items-center gap-2 border ${
             registrationNotice.type === 'success'
-              ? 'bg-moss-green/15 border-moss-green/30 text-deep-ink'
-              : 'bg-red-50 border-red-200 text-red-700'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-rose-50 border-rose-200 text-rose-800'
           }`}
         >
           {registrationNotice.type === 'success' ? (
-            <Check className="w-4 h-4 text-moss-green shrink-0" />
+            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
           )}
           <span>{registrationNotice.message}</span>
         </div>
       )}
 
       {/* Preset Picker Cards */}
-      <div className="space-y-2.5">
-        <span className="text-[10px] uppercase tracking-wider font-bold text-slate block">
-          Choose Clinical Formula Preset:
+      <div className="space-y-2">
+        <span className="text-xs font-medium text-deep-ink block">
+          Clinical Presets
         </span>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           {TOOL_PRESETS.map(preset => (
@@ -117,57 +117,57 @@ export function RegisterTab({ onRegisterTool, onRefreshRegistry, logActivity }: 
                 setCustomToolDesc(preset.desc)
                 setCustomToolCode(preset.code)
               }}
-              className={`text-left p-3.5 rounded-2xl border text-xs transition-all cursor-pointer ${
+              className={`text-left p-3.5 rounded-xl border text-xs transition-all cursor-pointer ${
                 selectedPresetId === preset.id
-                  ? 'bg-soft-meadow border-hi-yellow ring-1 ring-hi-yellow/50 shadow-xs'
-                  : 'bg-soft-meadow/50 border-deep-ink/10 hover:border-deep-ink/20 hover:bg-soft-meadow text-slate hover:text-deep-ink'
+                  ? 'bg-white border-deep-ink/30 shadow-xs'
+                  : 'bg-white/60 border-deep-ink/10 hover:border-deep-ink/20 hover:bg-white text-slate hover:text-deep-ink'
               }`}
             >
-              <span className="font-mono font-bold text-deep-ink text-xs block mb-0.5">{preset.name}</span>
-              <span className="text-[11px] text-slate line-clamp-2 leading-relaxed">{preset.desc}</span>
+              <span className="font-mono font-medium text-deep-ink text-xs block mb-0.5">{preset.name}</span>
+              <span className="text-xs text-slate line-clamp-2 leading-relaxed">{preset.desc}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Form Fields Card */}
-      <div className="p-5 rounded-2xl bg-soft-meadow/60 border border-deep-ink/10 space-y-3.5">
+      <div className="p-5 rounded-2xl bg-white border border-deep-ink/10 space-y-3.5 shadow-2xs">
         <div>
-          <label className="text-xs font-bold text-deep-ink block mb-1">Tool Name</label>
+          <label className="text-xs font-medium text-deep-ink block mb-1">Tool Name</label>
           <input
             type="text"
             value={customToolName}
             onChange={e => setCustomToolName(e.target.value)}
-            className="w-full px-3.5 py-2 text-xs bg-canvas border border-deep-ink/15 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-deep-ink/15 text-deep-ink shadow-xs"
+            className="w-full px-3 py-1.5 text-xs bg-canvas/60 border border-deep-ink/10 rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-deep-ink/20 text-deep-ink transition-colors"
           />
         </div>
 
         <div>
-          <label className="text-xs font-bold text-deep-ink block mb-1">Description</label>
+          <label className="text-xs font-medium text-deep-ink block mb-1">Description</label>
           <input
             type="text"
             value={customToolDesc}
             onChange={e => setCustomToolDesc(e.target.value)}
-            className="w-full px-3.5 py-2 text-xs bg-canvas border border-deep-ink/15 rounded-xl focus:outline-none focus:ring-2 focus:ring-deep-ink/15 text-deep-ink shadow-xs"
+            className="w-full px-3 py-1.5 text-xs bg-canvas/60 border border-deep-ink/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-deep-ink/20 text-deep-ink transition-colors"
           />
         </div>
 
         <div>
-          <label className="text-xs font-bold text-deep-ink block mb-1">
-            JavaScript Execution Function Body
+          <label className="text-xs font-medium text-deep-ink block mb-1">
+            JavaScript Execution Body
           </label>
           <textarea
             value={customToolCode}
             onChange={e => setCustomToolCode(e.target.value)}
             rows={7}
-            className="w-full font-mono text-xs p-3 bg-canvas border border-deep-ink/15 rounded-xl focus:outline-none focus:ring-2 focus:ring-deep-ink/15 leading-relaxed text-deep-ink shadow-xs"
+            className="w-full font-mono text-xs p-3 bg-canvas/60 border border-deep-ink/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-deep-ink/20 leading-relaxed text-deep-ink resize-y"
           />
         </div>
 
         <div className="flex items-center justify-end pt-1">
           <Button
             onClick={handleRegister}
-            className="rounded-full bg-hi-yellow hover:bg-[#ebd020] text-deep-ink text-xs font-bold gap-2 px-6 py-2 shadow-xs cursor-pointer transition-transform active:scale-95 border border-deep-ink/10 h-auto"
+            className="rounded-full bg-hi-yellow hover:bg-[#ebd020] text-deep-ink text-xs font-semibold gap-2 px-5 py-1.5 shadow-2xs cursor-pointer transition-transform active:scale-95 border border-deep-ink/10 h-auto"
           >
             <PlusCircle className="w-3.5 h-3.5" />
             <span>Register Tool in document.modelContext</span>

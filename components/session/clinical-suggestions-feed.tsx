@@ -26,11 +26,11 @@ export function ClinicalSuggestionsFeed({
   }
 
   return (
-    <Card className={`border-moss-green/30 bg-gradient-to-br from-moss-green/10 via-soft-meadow to-white ${className}`}>
+    <Card className={`border border-deep-ink/8 bg-white shadow-editorial font-sans ${className}`}>
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-moss-green animate-pulse" />
-          <CardTitle className="text-lg">Nova AI Clinical Guidance</CardTitle>
+          <Sparkles className="h-4 w-4 text-hi-yellow" />
+          <CardTitle className="text-base">Clinical Guidance</CardTitle>
           {isGenerating && (
             <span className="text-xs text-slate animate-pulse ml-auto">Analyzing...</span>
           )}
@@ -40,9 +40,9 @@ export function ClinicalSuggestionsFeed({
         {suggestions.map((suggestion, idx) => (
           <div
             key={idx}
-            className="bg-white rounded-2xl p-3 border border-deep-ink/10 shadow-2xs space-y-1.5"
+            className="bg-soft-meadow/40 rounded-xl p-3 border border-deep-ink/6 space-y-1.5"
           >
-            <p className="text-sm text-deep-ink leading-snug">{suggestion.text}</p>
+            <p className="text-xs text-deep-ink leading-relaxed">{suggestion.text}</p>
             <div className="flex justify-end">
               <Badge
                 variant={
@@ -52,9 +52,9 @@ export function ClinicalSuggestionsFeed({
                       ? 'default'
                       : 'secondary'
                 }
-                className="text-[10px] font-semibold uppercase"
+                className="text-[10px] font-medium uppercase"
               >
-                {suggestion.priority} priority
+                {suggestion.priority}
               </Badge>
             </div>
           </div>

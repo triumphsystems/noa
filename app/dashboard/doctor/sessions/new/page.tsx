@@ -313,14 +313,14 @@ export default function NewSessionPage() {
         {/* Main Recording & Transcript Area */}
         <div className="lg:col-span-2 space-y-6">
           {/* Patient Selector */}
-          <Card className="p-4 sm:p-6">
-            <label className="block text-sm font-semibold text-deep-ink mb-2">
+          <Card className="p-5 sm:p-6 bg-white border border-deep-ink/8 shadow-editorial font-sans">
+            <label className="block text-xs font-medium text-deep-ink mb-1.5">
               Select Patient Record
             </label>
             <select
               value={selectedPatient}
               onChange={e => setSelectedPatient(e.target.value)}
-              className="w-full px-4 py-3 border border-deep-ink/20 rounded-full text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow bg-transparent text-base sm:text-sm"
+              className="w-full px-3.5 py-2.5 border border-deep-ink/15 rounded-lg text-deep-ink focus:outline-none focus:border-deep-ink focus:ring-1 focus:ring-deep-ink/20 bg-white text-xs sm:text-sm shadow-2xs transition-colors cursor-pointer"
             >
               <option value="">Choose a patient...</option>
               {patients.map(patient => (

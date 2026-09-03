@@ -55,49 +55,49 @@ export function SoapNoteCard({
               variant="outline"
               size="xs"
               onClick={handleCopy}
-              className="rounded-full gap-1 text-xs"
+              className="rounded-lg gap-1 text-xs"
             >
-              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
               {copied ? 'Copied' : 'Copy'}
             </Button>
           )}
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 font-sans">
         {isGenerating ? (
-          <div className="p-8 text-center text-slate text-sm space-y-2">
-            <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-deep-ink/20 border-t-deep-ink mb-2" />
+          <div className="p-8 text-center text-slate text-xs space-y-2">
+            <div className="inline-block animate-spin rounded-full h-5 w-5 border-2 border-deep-ink/20 border-t-deep-ink mb-1" />
             <p>Nova is synthesizing session notes...</p>
           </div>
         ) : soapNote ? (
-          <div className="space-y-3 text-sm">
-            <div className="bg-soft-meadow/50 rounded-2xl p-3 border border-deep-ink/5">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+          <div className="space-y-2.5 text-xs">
+            <div className="bg-soft-meadow/50 rounded-xl p-3 border border-deep-ink/6">
+              <span className="text-[11px] font-medium font-serif text-deep-ink block mb-0.5">
                 Subjective
               </span>
-              <p className="text-deep-ink leading-relaxed">{soapNote.subjective}</p>
+              <p className="text-deep-ink text-xs leading-relaxed">{soapNote.subjective}</p>
             </div>
 
-            <div className="bg-soft-meadow/50 rounded-2xl p-3 border border-deep-ink/5">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+            <div className="bg-soft-meadow/50 rounded-xl p-3 border border-deep-ink/6">
+              <span className="text-[11px] font-medium font-serif text-deep-ink block mb-0.5">
                 Objective
               </span>
-              <p className="text-deep-ink leading-relaxed">{soapNote.objective}</p>
+              <p className="text-deep-ink text-xs leading-relaxed">{soapNote.objective}</p>
             </div>
 
-            <div className="bg-soft-meadow/50 rounded-2xl p-3 border border-deep-ink/5">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+            <div className="bg-soft-meadow/50 rounded-xl p-3 border border-deep-ink/6">
+              <span className="text-[11px] font-medium font-serif text-deep-ink block mb-0.5">
                 Assessment
               </span>
-              <p className="text-deep-ink leading-relaxed">{soapNote.assessment}</p>
+              <p className="text-deep-ink text-xs leading-relaxed">{soapNote.assessment}</p>
             </div>
 
-            <div className="bg-soft-meadow/50 rounded-2xl p-3 border border-deep-ink/5">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+            <div className="bg-soft-meadow/50 rounded-xl p-3 border border-deep-ink/6">
+              <span className="text-[11px] font-medium font-serif text-deep-ink block mb-0.5">
                 Plan
               </span>
-              <p className="text-deep-ink leading-relaxed">{soapNote.plan}</p>
+              <p className="text-deep-ink text-xs leading-relaxed">{soapNote.plan}</p>
             </div>
           </div>
         ) : null}
@@ -108,7 +108,8 @@ export function SoapNoteCard({
           <Button
             onClick={onSave}
             disabled={isSaving}
-            className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-semibold gap-2"
+            variant="default"
+            className="w-full rounded-lg font-semibold gap-2 text-xs py-2.5 h-10 shadow-2xs"
           >
             <Save className="h-4 w-4" />
             {isSaving ? 'Saving session...' : 'Save Consultation Record'}

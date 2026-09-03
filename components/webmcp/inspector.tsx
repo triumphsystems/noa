@@ -158,105 +158,107 @@ export function WebMCPInspector() {
         />
 
         {/* Segmented Tabs Bar */}
-        <div className="px-5 py-2.5 border-b border-deep-ink/10 bg-canvas flex items-center justify-between gap-2 overflow-x-auto scrollbar-none shrink-0">
-          <div className="flex items-center gap-1 p-1 bg-soft-meadow rounded-full border border-deep-ink/10 shadow-inner">
+        <div className="px-5 py-2 border-b border-deep-ink/10 bg-canvas flex items-center justify-between gap-2 overflow-x-auto scrollbar-none shrink-0 font-sans">
+          <div className="flex items-center gap-1 p-1 bg-soft-meadow/80 rounded-xl border border-deep-ink/8">
             <button
               onClick={() => setActiveTab('tools')}
-              className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 rounded-full transition-all cursor-pointer ${
+              className={`px-3 py-1 text-xs font-medium flex items-center gap-1.5 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'tools'
-                  ? 'bg-deep-ink text-white shadow-xs'
-                  : 'text-slate hover:text-deep-ink hover:bg-canvas/80'
+                  ? 'bg-white text-deep-ink font-semibold shadow-2xs'
+                  : 'text-slate hover:text-deep-ink hover:bg-white/50'
               }`}
             >
-              <Terminal className="w-3.5 h-3.5" />
+              <Terminal className="w-3.5 h-3.5 opacity-80" />
               <span>Tools</span>
-              <Badge
-                className={`text-[10px] px-1.5 py-0 h-4 font-mono font-bold rounded-full border-none ${
-                  activeTab === 'tools' ? 'bg-hi-yellow text-deep-ink' : 'bg-canvas text-slate'
+              <span
+                className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md ${
+                  activeTab === 'tools' ? 'bg-hi-yellow text-deep-ink font-bold' : 'bg-deep-ink/5 text-slate'
                 }`}
               >
                 {tools.length}
-              </Badge>
+              </span>
             </button>
 
             <button
               onClick={() => setActiveTab('resources')}
-              className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 rounded-full transition-all cursor-pointer ${
+              className={`px-3 py-1 text-xs font-medium flex items-center gap-1.5 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'resources'
-                  ? 'bg-deep-ink text-white shadow-xs'
-                  : 'text-slate hover:text-deep-ink hover:bg-canvas/80'
+                  ? 'bg-white text-deep-ink font-semibold shadow-2xs'
+                  : 'text-slate hover:text-deep-ink hover:bg-white/50'
               }`}
             >
-              <Database className="w-3.5 h-3.5" />
+              <Database className="w-3.5 h-3.5 opacity-80" />
               <span>Resources</span>
-              <Badge
-                className={`text-[10px] px-1.5 py-0 h-4 font-mono font-bold rounded-full border-none ${
-                  activeTab === 'resources' ? 'bg-hi-yellow text-deep-ink' : 'bg-canvas text-slate'
+              <span
+                className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md ${
+                  activeTab === 'resources' ? 'bg-hi-yellow text-deep-ink font-bold' : 'bg-deep-ink/5 text-slate'
                 }`}
               >
                 {resources.length}
-              </Badge>
+              </span>
             </button>
 
             <button
               onClick={() => setActiveTab('prompts')}
-              className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 rounded-full transition-all cursor-pointer ${
+              className={`px-3 py-1 text-xs font-medium flex items-center gap-1.5 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'prompts'
-                  ? 'bg-deep-ink text-white shadow-xs'
-                  : 'text-slate hover:text-deep-ink hover:bg-canvas/80'
+                  ? 'bg-white text-deep-ink font-semibold shadow-2xs'
+                  : 'text-slate hover:text-deep-ink hover:bg-white/50'
               }`}
             >
-              <FileText className="w-3.5 h-3.5" />
+              <FileText className="w-3.5 h-3.5 opacity-80" />
               <span>Prompts</span>
-              <Badge
-                className={`text-[10px] px-1.5 py-0 h-4 font-mono font-bold rounded-full border-none ${
-                  activeTab === 'prompts' ? 'bg-hi-yellow text-deep-ink' : 'bg-canvas text-slate'
+              <span
+                className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md ${
+                  activeTab === 'prompts' ? 'bg-hi-yellow text-deep-ink font-bold' : 'bg-deep-ink/5 text-slate'
                 }`}
               >
                 {prompts.length || 6}
-              </Badge>
+              </span>
             </button>
 
             <button
               onClick={() => setActiveTab('state')}
-              className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 rounded-full transition-all cursor-pointer ${
+              className={`px-3 py-1 text-xs font-medium flex items-center gap-1.5 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'state'
-                  ? 'bg-deep-ink text-white shadow-xs'
-                  : 'text-slate hover:text-deep-ink hover:bg-canvas/80'
+                  ? 'bg-white text-deep-ink font-semibold shadow-2xs'
+                  : 'text-slate hover:text-deep-ink hover:bg-white/50'
               }`}
             >
-              <Activity className="w-3.5 h-3.5" />
+              <Activity className="w-3.5 h-3.5 opacity-80" />
               <span>State</span>
-              {clientState?.isRecording && <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />}
+              {clientState?.isRecording && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
             </button>
 
             <button
               onClick={() => setActiveTab('register')}
-              className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 rounded-full transition-all cursor-pointer ${
+              className={`px-3 py-1 text-xs font-medium flex items-center gap-1.5 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'register'
-                  ? 'bg-deep-ink text-white shadow-xs'
-                  : 'text-slate hover:text-deep-ink hover:bg-canvas/80'
+                  ? 'bg-white text-deep-ink font-semibold shadow-2xs'
+                  : 'text-slate hover:text-deep-ink hover:bg-white/50'
               }`}
             >
-              <PlusCircle className="w-3.5 h-3.5 text-moss-green" />
+              <PlusCircle className="w-3.5 h-3.5 text-emerald-600" />
               <span>Register</span>
             </button>
           </div>
 
           <button
             onClick={() => setActiveTab('activity')}
-            className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 rounded-full transition-all cursor-pointer ${
+            className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 rounded-xl border transition-colors cursor-pointer ${
               activeTab === 'activity'
-                ? 'bg-deep-ink text-white shadow-xs'
-                : 'bg-soft-meadow border border-deep-ink/10 text-slate hover:text-deep-ink hover:bg-canvas'
+                ? 'bg-deep-ink text-white font-semibold border-deep-ink shadow-2xs'
+                : 'bg-soft-meadow/80 border-deep-ink/10 text-slate hover:text-deep-ink hover:bg-white'
             }`}
           >
-            <Clock className="w-3.5 h-3.5" />
+            <Clock className="w-3.5 h-3.5 opacity-80" />
             <span>Activity</span>
             {activityLog.length > 0 && (
-              <Badge className="bg-hi-yellow text-deep-ink text-[10px] px-1.5 py-0 h-4 font-mono font-bold rounded-full border-none">
+              <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md font-bold ${
+                activeTab === 'activity' ? 'bg-hi-yellow text-deep-ink' : 'bg-deep-ink/10 text-deep-ink'
+              }`}>
                 {activityLog.length}
-              </Badge>
+              </span>
             )}
           </button>
         </div>
