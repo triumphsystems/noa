@@ -16,6 +16,7 @@ import {
 } from '../core/types'
 import { useSessionStore } from '@/lib/stores/session.store'
 import { useDoctorStore } from '@/lib/stores/doctor.store'
+import { CLINICAL_SERVER_TOOL_DEFINITIONS } from '../tools/definitions'
 
 export class BrowserModelContextRuntime implements BrowserModelContext {
   public version = '1.0.0'
@@ -26,6 +27,7 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
 
   constructor(private apiEndpoint = '/api/mcp') {
     this.registerClientStoreTools()
+    this.registerServerProxyTools()
   }
 
   /**
@@ -334,7 +336,24 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
       },
     })
   }
+
+  /**
+   * Pre-register clinical server tools as proxy callers so Chrome DevTools discovers them instantly
+   */
+  private registerServerProxyTools(): void {
+    CLINICAL_SERVER_TOOL_DEFINITIONS.forEach((toolDef) => {
+      if (!this.localTools.has(toolDef.name)) {
+        this.registerTool({
+          name: toolDef.name,
+          description: toolDef.description,
+          inputSchema: toolDef.inputSchema as any,
+          execute: async (input) => this.executeTool(toolDef.name, input),
+        })
+      }
+    })
+  }
 }
+
 
 /**
  * Attaches the WebMCP runtime to document.modelContext and bridges with Chrome DevTools
