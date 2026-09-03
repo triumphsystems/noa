@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { useDoctorDashboardStore } from '@/lib/stores/doctor-dashboard-store'
+import { useDoctorStore } from '@/lib/stores/doctor.store'
 
 type SettingsFormState = {
   name: string
@@ -22,13 +22,13 @@ const defaultFormState: SettingsFormState = {
 }
 
 export default function DoctorSettingsPage() {
-  const doctor = useDoctorDashboardStore(state => state.doctor)
-  const doctorId = useDoctorDashboardStore(state => state.doctorId)
-  const isSaving = useDoctorDashboardStore(state => state.isSaving)
-  const isLoading = useDoctorDashboardStore(state => state.isLoading)
-  const error = useDoctorDashboardStore(state => state.error)
-  const loadDashboard = useDoctorDashboardStore(state => state.loadDashboard)
-  const updateDoctorProfile = useDoctorDashboardStore(state => state.updateDoctorProfile)
+  const doctor = useDoctorStore(state => state.doctor)
+  const doctorId = useDoctorStore(state => state.doctorId)
+  const isSaving = useDoctorStore(state => state.isSaving)
+  const isLoading = useDoctorStore(state => state.isLoading)
+  const error = useDoctorStore(state => state.error)
+  const loadDashboard = useDoctorStore(state => state.loadDashboard)
+  const updateDoctorProfile = useDoctorStore(state => state.updateDoctorProfile)
 
   const [formState, setFormState] = useState<SettingsFormState>(defaultFormState)
   const [success, setSuccess] = useState('')

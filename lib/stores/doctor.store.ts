@@ -3,7 +3,7 @@ import { create } from 'zustand'
 import type { DoctorDashboardPayload, DoctorProfile, DoctorProfileUpdateInput } from '@/lib/contracts/doctor-dashboard'
 import type { Patient, Session } from '@/lib/db'
 
-interface DoctorDashboardState {
+export interface DoctorState {
   doctorId: string | null
   doctor: DoctorProfile | null
   patients: Patient[]
@@ -45,7 +45,7 @@ const fetchJson = async <T,>(url: string, init?: RequestInit): Promise<T> => {
   return data.data as T
 }
 
-export const useDoctorDashboardStore = create<DoctorDashboardState>((set, get) => ({
+export const useDoctorStore = create<DoctorState>((set, get) => ({
   ...initialState,
 
   setDoctorId: doctorId => set({ doctorId }),
@@ -54,7 +54,7 @@ export const useDoctorDashboardStore = create<DoctorDashboardState>((set, get) =
     const activeDoctorId = doctorId ?? get().doctorId
 
     if (!activeDoctorId) {
-      set({ error: 'A doctor ID is required to load the dashboard' })
+      set({ error: 'A doctor ID is required to load doctor data' })
       return
     }
 
@@ -76,7 +76,7 @@ export const useDoctorDashboardStore = create<DoctorDashboardState>((set, get) =
     } catch (error) {
       set({
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to load dashboard',
+        error: error instanceof Error ? error.message : 'Failed to load doctor data',
       })
     }
   },
@@ -118,3 +118,6 @@ export const useDoctorDashboardStore = create<DoctorDashboardState>((set, get) =
 
   clearDashboard: () => set(initialState),
 }))
+
+// Backward-compatible alias
+export const useDoctorDashboardStore = useDoctorStore

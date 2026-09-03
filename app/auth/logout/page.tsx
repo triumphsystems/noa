@@ -3,8 +3,8 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { useDoctorDashboardStore } from '@/lib/stores/doctor-dashboard-store'
-import { useSessionStore } from '@/lib/stores/session-store'
+import { useDoctorStore } from '@/lib/stores/doctor.store'
+import { useSessionStore } from '@/lib/stores/session.store'
 
 export default function LogoutPage() {
   const router = useRouter()
@@ -21,7 +21,7 @@ export default function LogoutPage() {
 
     keysToRemove.forEach(key => window.localStorage.removeItem(key))
 
-    useDoctorDashboardStore.getState().clearDashboard()
+    useDoctorStore.getState().clearDashboard()
     useSessionStore.getState().resetSession()
 
     router.replace('/auth/login?type=doctor')

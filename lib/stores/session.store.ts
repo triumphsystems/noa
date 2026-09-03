@@ -1,19 +1,19 @@
 import { create } from 'zustand'
 
-interface SessionMessage {
+export interface SessionMessage {
   role: 'doctor' | 'patient' | 'system' | 'ai'
   text: string
   timestamp: number
 }
 
-interface SOAPNote {
+export interface SOAPNote {
   subjective: string
   objective: string
   assessment: string
   plan: string
 }
 
-interface SessionState {
+export interface SessionState {
   // Session info
   sessionId: string
   doctorId: string
@@ -72,7 +72,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   ...initialState,
 
   initializeSession: (doctorId, patientId, patientName) => {
-    const sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    const sessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
     set({
       sessionId,
       doctorId,

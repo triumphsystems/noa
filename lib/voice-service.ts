@@ -17,7 +17,7 @@ const s3Client = new S3Client({
 })
 
 // Sonic model ID for real-time voice conversations
-const SONIC_MODEL = 'anthropic.nova-sonic-v1:0'
+const SONIC_MODEL = process.env.BEDROCK_SONIC_MODEL || 'anthropic.nova-sonic-v1:0'
 
 interface VoiceMessage {
   role: 'doctor' | 'patient' | 'system'
@@ -84,7 +84,7 @@ export async function processVoiceInput(
     .map(msg => `${msg.role}: ${msg.content}`)
     .join('\n')
 
-  const systemPrompt = `You are a supportive clinical AI assistant during a doctor-patient consultation. 
+  const systemPrompt = `You are a supportive clinical AI assistant during a doctor-patient consultation.
 Your role is to:
 1. Assist the doctor by providing relevant clinical suggestions
 2. Help clarify patient symptoms and history
@@ -129,7 +129,7 @@ export async function transcribeAudio(audioBuffer: Buffer, sessionId: string): P
   // Note: In production, this would call AWS Transcribe Medical
   // For now, we're simulating with placeholder
   console.log('[v0] Transcribing audio for session:', sessionId)
-  
+
   // Save audio to S3
   try {
     await saveAudioToS3(audioBuffer, sessionId)
@@ -140,7 +140,7 @@ export async function transcribeAudio(audioBuffer: Buffer, sessionId: string): P
   // In production, would integrate with AWS Transcribe Medical:
   // const transcribeClient = new TranscribeClient({ ... })
   // const result = await transcribeClient.send(new StartMedicalTranscriptionJobCommand({ ... }))
-  
+
   return 'Audio transcribed - integration with AWS Transcribe Medical pending'
 }
 
@@ -213,7 +213,7 @@ Return as JSON:
 
     const responseBody = JSON.parse(new TextDecoder().decode(response.body))
     const text = responseBody.content[0]?.text || '{}'
-    
+
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0])
@@ -266,7 +266,7 @@ Provide actionable clinical suggestions as a JSON array:
 
     const responseBody = JSON.parse(new TextDecoder().decode(response.body))
     const text = responseBody.content[0]?.text || '[]'
-    
+
     const arrayMatch = text.match(/\[[\s\S]*\]/)
     if (arrayMatch) {
       return JSON.parse(arrayMatch[0])
@@ -319,7 +319,7 @@ Respond as JSON:
 
     const responseBody = JSON.parse(new TextDecoder().decode(response.body))
     const text = responseBody.content[0]?.text || '{}'
-    
+
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0])

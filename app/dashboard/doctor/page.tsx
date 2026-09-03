@@ -8,16 +8,16 @@ import { StatCard } from '@/components/ui/stat-card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Calendar, CheckCircle2, Clock, FileEdit, Plus, RefreshCw, Search, Users } from 'lucide-react'
 
-import { useDoctorDashboardStore } from '@/lib/stores/doctor-dashboard-store'
+import { useDoctorStore } from '@/lib/stores/doctor.store'
 
 export default function DashboardPage() {
-  const doctor = useDoctorDashboardStore(state => state.doctor)
-  const patients = useDoctorDashboardStore(state => state.patients)
-  const sessions = useDoctorDashboardStore(state => state.sessions)
-  const stats = useDoctorDashboardStore(state => state.stats)
-  const isLoading = useDoctorDashboardStore(state => state.isLoading)
-  const error = useDoctorDashboardStore(state => state.error)
-  const loadDashboard = useDoctorDashboardStore(state => state.loadDashboard)
+  const doctor = useDoctorStore(state => state.doctor)
+  const patients = useDoctorStore(state => state.patients)
+  const sessions = useDoctorStore(state => state.sessions)
+  const stats = useDoctorStore(state => state.stats)
+  const isLoading = useDoctorStore(state => state.isLoading)
+  const error = useDoctorStore(state => state.error)
+  const loadDashboard = useDoctorStore(state => state.loadDashboard)
 
   const handleRefresh = () => {
     if (typeof window === 'undefined') return

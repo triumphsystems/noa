@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Bell, FileText, LayoutDashboard, LogOut, Menu, Mic, Settings, Users, X } from 'lucide-react'
 
-import { useDoctorDashboardStore } from '@/lib/stores/doctor-dashboard-store'
+import { useDoctorStore } from '@/lib/stores/doctor.store'
 import { cn } from '@/lib/utils'
 
 interface NavItemConfig {
@@ -27,10 +27,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const doctor = useDoctorDashboardStore(state => state.doctor)
-  const doctorId = useDoctorDashboardStore(state => state.doctorId)
-  const setDoctorId = useDoctorDashboardStore(state => state.setDoctorId)
-  const loadDashboard = useDoctorDashboardStore(state => state.loadDashboard)
+  const doctor = useDoctorStore(state => state.doctor)
+  const doctorId = useDoctorStore(state => state.doctorId)
+  const setDoctorId = useDoctorStore(state => state.setDoctorId)
+  const loadDashboard = useDoctorStore(state => state.loadDashboard)
 
   // Auto-close mobile drawer on route change
   useEffect(() => {

@@ -7,7 +7,7 @@ import { AudioRecorderControl } from '@/components/session/audio-recorder-contro
 import { TranscriptFeed, type TranscriptItem } from '@/components/session/transcript-feed'
 import { ClinicalSuggestionsFeed, type ClinicalSuggestionItem } from '@/components/session/clinical-suggestions-feed'
 import { SoapNoteCard, type SOAPNoteData } from '@/components/session/soap-note-card'
-import { useDoctorDashboardStore } from '@/lib/stores/doctor-dashboard-store'
+import { useDoctorStore } from '@/lib/stores/doctor.store'
 
 export default function NewSessionPage() {
   const [isRecording, setIsRecording] = useState(false)
@@ -21,9 +21,9 @@ export default function NewSessionPage() {
   const [sessionId, setSessionId] = useState<string>('')
   const [socket, setSocket] = useState<Socket | null>(null)
 
-  const doctorId = useDoctorDashboardStore(state => state.doctorId)
-  const patients = useDoctorDashboardStore(state => state.patients)
-  const loadDashboard = useDoctorDashboardStore(state => state.loadDashboard)
+  const doctorId = useDoctorStore(state => state.doctorId)
+  const patients = useDoctorStore(state => state.patients)
+  const loadDashboard = useDoctorStore(state => state.loadDashboard)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])

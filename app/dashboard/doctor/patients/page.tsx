@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Search, UserPlus, Users } from 'lucide-react'
 
-import { useDoctorDashboardStore } from '@/lib/stores/doctor-dashboard-store'
+import { useDoctorStore } from '@/lib/stores/doctor.store'
 
 interface PatientData {
   id: string
@@ -26,10 +26,10 @@ interface PatientData {
 export default function PatientsPage() {
   const [searchTerm, setSearchTerm] = useState('')
 
-  const doctorId = useDoctorDashboardStore(state => state.doctorId)
-  const patients = useDoctorDashboardStore(state => state.patients)
-  const isLoading = useDoctorDashboardStore(state => state.isLoading)
-  const loadDashboard = useDoctorDashboardStore(state => state.loadDashboard)
+  const doctorId = useDoctorStore(state => state.doctorId)
+  const patients = useDoctorStore(state => state.patients)
+  const isLoading = useDoctorStore(state => state.isLoading)
+  const loadDashboard = useDoctorStore(state => state.loadDashboard)
 
   useEffect(() => {
     if (doctorId && patients.length === 0 && !isLoading) {

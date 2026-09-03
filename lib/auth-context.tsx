@@ -3,8 +3,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { CognitoUser, CognitoUserPool, AuthenticationDetails } from 'amazon-cognito-identity-js'
 
-import { useDoctorDashboardStore } from '@/lib/stores/doctor-dashboard-store'
-import { useSessionStore } from '@/lib/stores/session-store'
+import { useDoctorStore } from '@/lib/stores/doctor.store'
+import { useSessionStore } from '@/lib/stores/session.store'
 
 interface AuthContextType {
   user: CognitoUser | null
@@ -125,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
     }
 
-    useDoctorDashboardStore.getState().clearDashboard()
+    useDoctorStore.getState().clearDashboard()
     useSessionStore.getState().resetSession()
 
     setUser(null)

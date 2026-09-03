@@ -15,7 +15,7 @@ import {
   JsonRpcResponse,
 } from '../core/types'
 import { useSessionStore } from '@/lib/stores/session.store'
-import { useDoctorDashboardStore } from '@/lib/stores/doctor.store'
+import { useDoctorStore } from '@/lib/stores/doctor.store'
 
 export class BrowserModelContextRuntime implements BrowserModelContext {
   public version = '1.0.0'
