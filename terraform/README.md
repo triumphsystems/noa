@@ -24,11 +24,6 @@ AWS Account (Separate)
 │   └── S3 Role
 ├── CloudWatch Logs
 └── SNS Topics (optional)
-
-↓ 
-
-Vercel Project (configured with Terraform outputs)
-└── Application uses AWS resources from above
 ```
 
 ## Prerequisites
@@ -108,6 +103,7 @@ Use these values to configure Vercel environment variables.
 | `provider.tf` | AWS provider configuration |
 | `variables.tf` | Input variable definitions |
 | `main.tf` | Main resource definitions |
+| `cognito.tf` | AWS Cognito User Pool, Client, and Groups |
 | `outputs.tf` | Output definitions |
 | `terraform.tfvars.example` | Example variables file |
 
@@ -236,6 +232,9 @@ DYNAMODB_TABLE_NAME=noa-data
 S3_BUCKET=noa-audio-prod-123456789012
 S3_BACKUP_BUCKET=noa-backup-prod-123456789012
 CLOUDWATCH_LOG_GROUP=/aws/noa/prod
+COGNITO_USER_POOL_ID=us-east-1_abcdef123
+COGNITO_CLIENT_ID=1234567890abcdefghijklmnop
+
 ```
 
 **To get outputs:**
