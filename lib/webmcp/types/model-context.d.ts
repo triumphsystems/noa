@@ -9,15 +9,6 @@ declare global {
   interface Document {
     modelContext: BrowserModelContext
   }
-
-  interface Navigator {
-    modelContext: BrowserModelContext
-  }
-
-  interface Window {
-    webmcp: BrowserModelContext
-    modelContext?: BrowserModelContext
-  }
 }
 
 export {}

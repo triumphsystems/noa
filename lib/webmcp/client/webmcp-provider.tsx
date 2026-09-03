@@ -53,8 +53,3 @@ export function useModelContext(): BrowserModelContext | null {
   const { modelContext } = useContext(WebMCPContext)
   return modelContext
 }
-
-/**
- * Alias hook for WebMCP
- */
-export const useWebMCP = useModelContext

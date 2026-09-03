@@ -318,7 +318,7 @@ export function injectBrowserModelContext(): BrowserModelContextRuntime {
 
   const runtime = new BrowserModelContextRuntime()
 
-  // 1. Standard: document.modelContext
+  // Standard: document.modelContext
   if (!(document as any).modelContext) {
     Object.defineProperty(document, 'modelContext', {
       value: runtime,
@@ -326,21 +326,6 @@ export function injectBrowserModelContext(): BrowserModelContextRuntime {
       configurable: true,
       enumerable: true,
     })
-  }
-
-  // 2. Alias: navigator.modelContext
-  if (typeof navigator !== 'undefined' && !(navigator as any).modelContext) {
-    Object.defineProperty(navigator, 'modelContext', {
-      value: runtime,
-      writable: false,
-      configurable: true,
-      enumerable: true,
-    })
-  }
-
-  // 3. Alias: window.webmcp
-  if (!(window as any).webmcp) {
-    ;(window as any).webmcp = runtime
   }
 
   // Sync server definitions in background

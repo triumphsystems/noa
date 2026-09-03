@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-import type { DoctorDashboardPayload, DoctorProfile, DoctorProfileUpdateInput } from '@/lib/contracts/doctor-dashboard'
+import type { DoctorDashboardPayload, DoctorProfile, DoctorProfileUpdateInput } from '@/lib/types/doctor.types'
 import type { Patient, Session } from '@/lib/db'
 
 export interface DoctorState {
@@ -118,6 +118,3 @@ export const useDoctorStore = create<DoctorState>((set, get) => ({
 
   clearDashboard: () => set(initialState),
 }))
-
-// Backward-compatible alias
-export const useDoctorDashboardStore = useDoctorStore

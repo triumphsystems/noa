@@ -71,9 +71,42 @@ curl -X POST http://localhost:3000/api/mcp \
 
 ---
 
-## 2. Browser-Native WebMCP Standard (`document.modelContext`)
+## 2. Connecting External Agents (Cursor IDE & Claude Desktop)
 
-On the client side, Noa polyfills and exposes `document.modelContext` (aliased to `navigator.modelContext` and `window.webmcp`).
+Noa provides pre-configured integration profiles for external coding assistants and desktop agents:
+
+### Cursor IDE
+A ready-to-use configuration file is provided at [`.cursor/mcp.json`](file:///E:/Documents/Projects/noa/.cursor/mcp.json):
+```json
+{
+  "mcpServers": {
+    "noa-clinical": {
+      "url": "http://localhost:3000/api/mcp"
+    }
+  }
+}
+```
+Open Cursor settings &rarr; **Features** &rarr; **MCP**, and Noa's 23+ clinical tools will be discovered automatically.
+
+### Claude Desktop
+A ready-to-use configuration example is provided at [`claude_desktop_config.example.json`](file:///E:/Documents/Projects/noa/claude_desktop_config.example.json). Add the entry to your Claude Desktop configuration:
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+```json
+{
+  "mcpServers": {
+    "noa-clinical": {
+      "url": "http://localhost:3000/api/mcp"
+    }
+  }
+}
+```
+
+---
+
+## 3. Browser-Native WebMCP Standard (`document.modelContext`)
+
+On the client side, Noa polyfills and exposes `document.modelContext`.
 
 ### Registering Tools Locally in Any Page or Component
 ```typescript

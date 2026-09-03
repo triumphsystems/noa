@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-import type { ApiSuccess, DoctorDashboardPayload } from '@/lib/contracts/doctor-dashboard'
+import type { ApiSuccess } from '@/lib/types/api.types'
+import type { DoctorDashboardPayload } from '@/lib/types/doctor.types'
 import { getDoctorById, getPatientsByDoctor, getSessionsByDoctor } from '@/lib/db'
 
 export async function GET(request: NextRequest) {

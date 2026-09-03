@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json.schemastore.org/claude-desktop-config.json",
+  "mcpServers": {
+    "noa-clinical": {
+      "url": "http://localhost:3000/api/mcp"
+    }
+  }
+}

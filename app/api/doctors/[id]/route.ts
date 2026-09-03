@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-import type { ApiSuccess, DoctorProfile, DoctorProfileUpdateInput } from '@/lib/contracts/doctor-dashboard'
+import type { ApiSuccess } from '@/lib/types/api.types'
+import type { DoctorProfile, DoctorProfileUpdateInput } from '@/lib/types/doctor.types'
 import { getDoctorById, updateDoctor } from '@/lib/db'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
