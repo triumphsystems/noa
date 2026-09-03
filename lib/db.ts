@@ -257,6 +257,16 @@ export async function updatePatient(id: string, updates: Partial<Patient>): Prom
   return (result.Attributes as Patient) || null
 }
 
+export async function deletePatient(id: string): Promise<boolean> {
+  await docClient.send(
+    new DeleteCommand({
+      TableName: TABLE_NAME,
+      Key: { [PK]: id, [SK]: 'patient' },
+    }),
+  )
+  return true
+}
+
 // ============ SESSION OPERATIONS ============
 export async function createSession(data: Omit<Session, 'id' | 'type' | 'createdAt' | 'updatedAt'>): Promise<Session> {
   const session: Session = {
@@ -443,3 +453,27 @@ export async function updateIntake(id: string, updates: Partial<PatientIntake>):
 
   return (result.Attributes as PatientIntake) || null
 }
+
+export async function completeSession(id: string): Promise<Session | null> {
+  return updateSession(id, { status: 'completed', endedAt: Date.now() })
+}
+
+export async function updateSessionSoapNote(id: string, soapNote: SoapNote): Promise<Session | null> {
+  return updateSession(id, { soapNote })
+}
+
+export async function updateSessionTranscript(id: string, transcript: string): Promise<Session | null> {
+  return updateSession(id, { transcript })
+}
+
+export async function getPatientIntake(patientId: string): Promise<PatientIntake | null> {
+  const intakes = await getIntakesByPatient(patientId)
+  return intakes[0] || null
+}
+
+export async function savePatientIntake(
+  data: Omit<PatientIntake, 'id' | 'type' | 'createdAt' | 'updatedAt'>
+): Promise<PatientIntake> {
+  return createIntake(data)
+}
+
