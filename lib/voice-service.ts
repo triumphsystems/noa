@@ -1,6 +1,7 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getAwsCredentials } from './aws-config'
+import { invokeClinicalAI } from '@/lib/ai/provider'
 
 const region = process.env.AWS_REGION || 'us-east-1'
 const bedrockCredentials = getAwsCredentials(region)
@@ -413,21 +414,13 @@ Completion criteria:
 - The latest user response may contain multiple answers; extract them.`
 
   try {
-    const response = await bedrockClient.send(
-      new InvokeModelCommand({
-        modelId: SONIC_MODEL,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          prompt: `${prompt}\n\nIntake assistant response:`,
-          max_tokens: 900,
-          temperature: 0.2,
-          top_p: 0.9,
-        }),
-      })
-    )
+    const { text } = await invokeClinicalAI({
+      prompt: `${prompt}\n\nIntake assistant response:`,
+      maxTokens: 900,
+      temperature: 0.2,
+      modelTier: 'intake',
+    })
 
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body))
-    const text = responseBody.content[0]?.text || '{}'
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text)
 
@@ -441,15 +434,8 @@ Completion criteria:
       summary: parsed.summary || 'Intake captured.',
     }
   } catch (error) {
-    console.error('[v0] Error generating intake conversation turn:', error)
-    return {
-      assistantMessage: 'I’m sorry, I missed that. Please repeat your answer or speak a little more slowly.',
-      detectedLanguage: language,
-      normalizedTranscript: transcript,
-      draft,
-      missingFields: [],
-      isComplete: false,
-      summary: 'Unable to process the latest response.',
-    }
+    console.error('[Voice Service] Error generating intake conversation turn:', error)
+    throw error
   }
 }
+

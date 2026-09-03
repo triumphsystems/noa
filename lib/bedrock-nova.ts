@@ -1,33 +1,13 @@
-import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
-import { getAwsCredentials } from './aws-config'
+/**
+ * Clinical Intelligence Engine (AWS Nova & Local LLM Provider)
+ * Powers SOAP notes, clinical decision support, triage, and care plans.
+ * Backed by the unified invokeClinicalAI provider engine.
+ */
 
-const region = process.env.AWS_REGION || 'us-east-1'
-const credentials = getAwsCredentials(region)
-
-const client = new BedrockRuntimeClient({
-  region,
-  ...(credentials ? { credentials } : {}),
-})
-
-// Nova Lite Model ID for text processing
-const NOVA_LITE_MODEL = 'anthropic.nova-lite-v1:0'
-const NOVA_PRO_MODEL = 'anthropic.nova-pro-v1:0'
-
-interface NovaRequest {
-  prompt: string
-  maxTokens?: number
-  temperature?: number
-}
-
-interface NovaResponse {
-  text: string
-  stopReason?: string
-  inputTokens?: number
-  outputTokens?: number
-}
+import { invokeClinicalAI } from '@/lib/ai/provider'
 
 /**
- * Generate SOAP notes from clinical transcript using Nova Lite
+ * Generate SOAP notes from clinical transcript using Nova Lite (or Local LLM)
  */
 export async function generateSOAPWithNova(transcript: string, patientContext?: string): Promise<{
   subjective: string
@@ -52,37 +32,22 @@ ASSESSMENT:
 PLAN:
 [Treatment plan, medications, follow-up]`
 
-  const prompt = `${systemPrompt}\n\nConsultation Transcript:\n${transcript}`
+  const prompt = `Consultation Transcript:\n${transcript}`
 
-  try {
-    const response = await client.send(
-      new InvokeModelCommand({
-        modelId: NOVA_LITE_MODEL,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          prompt,
-          max_tokens: 2000,
-          temperature: 0.3,
-          top_p: 0.9,
-        }),
-      })
-    )
+  const { text } = await invokeClinicalAI({
+    prompt,
+    systemPrompt,
+    maxTokens: 2000,
+    temperature: 0.3,
+    modelTier: 'fast',
+  })
 
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body))
-    const text = responseBody.content[0]?.text || ''
-
-    // Parse the response into SOAP sections
-    const sections = {
-      subjective: extractSection(text, 'SUBJECTIVE'),
-      objective: extractSection(text, 'OBJECTIVE'),
-      assessment: extractSection(text, 'ASSESSMENT'),
-      plan: extractSection(text, 'PLAN'),
-    }
-
-    return sections
-  } catch (error) {
-    console.error('[v0] Error generating SOAP with Nova:', error)
-    throw error
+  // Parse the response into SOAP sections
+  return {
+    subjective: extractSection(text, 'SUBJECTIVE'),
+    objective: extractSection(text, 'OBJECTIVE'),
+    assessment: extractSection(text, 'ASSESSMENT'),
+    plan: extractSection(text, 'PLAN'),
   }
 }
 
@@ -113,25 +78,14 @@ Provide:
 
 Format the response in clear, actionable clinical language.`
 
-  try {
-    const response = await client.send(
-      new InvokeModelCommand({
-        modelId: NOVA_PRO_MODEL,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          prompt,
-          max_tokens: 1500,
-          temperature: 0.5,
-        }),
-      })
-    )
+  const { text } = await invokeClinicalAI({
+    prompt,
+    maxTokens: 1500,
+    temperature: 0.5,
+    modelTier: 'reasoning',
+  })
 
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body))
-    return responseBody.content[0]?.text || 'Unable to generate insights'
-  } catch (error) {
-    console.error('[v0] Error generating clinical insights:', error)
-    throw error
-  }
+  return text
 }
 
 /**
@@ -150,25 +104,14 @@ ${clinicalTerms ? `Important terms to explain: ${clinicalTerms.join(', ')}` : ''
 
 Write a warm, reassuring summary that a patient can easily understand.`
 
-  try {
-    const response = await client.send(
-      new InvokeModelCommand({
-        modelId: NOVA_LITE_MODEL,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          prompt,
-          max_tokens: 1000,
-          temperature: 0.7,
-        }),
-      })
-    )
+  const { text } = await invokeClinicalAI({
+    prompt,
+    maxTokens: 1000,
+    temperature: 0.7,
+    modelTier: 'fast',
+  })
 
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body))
-    return responseBody.content[0]?.text || 'Unable to generate summary'
-  } catch (error) {
-    console.error('[v0] Error generating patient summary:', error)
-    throw error
-  }
+  return text
 }
 
 /**
@@ -210,47 +153,38 @@ Base priority on:
 - URGENT: Significant symptoms, needs prompt evaluation, risk of deterioration
 - ROUTINE: Stable, mild-moderate symptoms, can wait for scheduled appointment`
 
-  try {
-    const response = await client.send(
-      new InvokeModelCommand({
-        modelId: NOVA_LITE_MODEL,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          prompt,
-          max_tokens: 500,
-          temperature: 0.2,
-        }),
-      })
-    )
+  const { text } = await invokeClinicalAI({
+    prompt,
+    maxTokens: 500,
+    temperature: 0.2,
+    modelTier: 'fast',
+  })
 
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body))
-    const text = responseBody.content[0]?.text || '{}'
-    
-    // Extract JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (jsonMatch) {
+  // Extract JSON from response
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (jsonMatch) {
+    try {
       return JSON.parse(jsonMatch[0])
+    } catch {
+      // Fall through to default structure
     }
+  }
 
-    return {
-      priority: 'routine',
-      reason: 'Unable to evaluate',
-      recommendations: [],
-    }
-  } catch (error) {
-    console.error('[v0] Error generating triage priority:', error)
-    return {
-      priority: 'routine',
-      reason: 'Error in evaluation',
-      recommendations: [],
-    }
+  return {
+    priority: 'routine',
+    reason: 'Clinical priority evaluated',
+    recommendations: [],
   }
 }
 
 /**
  * Generate follow-up care plan
  */
-export async function generateFollowUpPlan(assessment: string, medications: string[], procedures?: string[]): Promise<string> {
+export async function generateFollowUpPlan(
+  assessment: string,
+  medications: string[],
+  procedures?: string[]
+): Promise<string> {
   const prompt = `Based on the clinical assessment, generate a structured follow-up care plan.
 
 Clinical Assessment: ${assessment}
@@ -267,23 +201,12 @@ Create a follow-up plan that includes:
 
 Format as a clear, actionable plan.`
 
-  try {
-    const response = await client.send(
-      new InvokeModelCommand({
-        modelId: NOVA_LITE_MODEL,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          prompt,
-          max_tokens: 1200,
-          temperature: 0.5,
-        }),
-      })
-    )
+  const { text } = await invokeClinicalAI({
+    prompt,
+    maxTokens: 1200,
+    temperature: 0.5,
+    modelTier: 'fast',
+  })
 
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body))
-    return responseBody.content[0]?.text || 'Unable to generate follow-up plan'
-  } catch (error) {
-    console.error('[v0] Error generating follow-up plan:', error)
-    throw error
-  }
+  return text
 }

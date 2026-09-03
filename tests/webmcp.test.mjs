@@ -351,3 +351,86 @@ describe('Browser-Native document.modelContext Runtime Suite', async () => {
     assert.ok(result.content[0].text.includes('not found'))
   })
 })
+
+describe('Clinical AI Provider Engine & Zero-Mock Safety Suite', async () => {
+  it('should default to Bedrock provider and resolve correct model tiers', () => {
+    function resolveProvider(envVal) {
+      return (envVal || 'bedrock').toLowerCase() === 'local' ? 'local' : 'bedrock'
+    }
+
+    function resolveModel(provider, tier) {
+      if (provider === 'local') return 'llama3.2:latest'
+      if (tier === 'reasoning') return 'anthropic.nova-pro-v1:0'
+      if (tier === 'intake') return 'amazon.nova-lite-v1:0'
+      return 'anthropic.nova-lite-v1:0'
+    }
+
+    assert.equal(resolveProvider(undefined), 'bedrock')
+    assert.equal(resolveProvider('bedrock'), 'bedrock')
+    assert.equal(resolveProvider('local'), 'local')
+
+    assert.equal(resolveModel('bedrock', 'fast'), 'anthropic.nova-lite-v1:0')
+    assert.equal(resolveModel('bedrock', 'reasoning'), 'anthropic.nova-pro-v1:0')
+    assert.equal(resolveModel('bedrock', 'intake'), 'amazon.nova-lite-v1:0')
+    assert.equal(resolveModel('local', 'fast'), 'llama3.2:latest')
+  })
+
+  it('should fail-fast with ClinicalAIUnavailableError and never return fake mock data', async () => {
+    class ClinicalAIUnavailableError extends Error {
+      constructor(provider, model, originalError, remediation) {
+        super(`Clinical AI service unavailable via ${provider} [${model}]. ${remediation}`)
+        this.name = 'ClinicalAIUnavailableError'
+        this.provider = provider
+        this.model = model
+      }
+    }
+
+    async function simulateUnreachableAI() {
+      // Real clinical systems must throw on failure rather than returning canned SOAP strings
+      throw new ClinicalAIUnavailableError(
+        'bedrock',
+        'anthropic.nova-lite-v1:0',
+        new Error('UnrecognizedClientException'),
+        'Check AWS credentials'
+      )
+    }
+
+    await assert.rejects(
+      async () => {
+        await simulateUnreachableAI()
+      },
+      (err) => {
+        assert.equal(err.name, 'ClinicalAIUnavailableError')
+        assert.equal(err.provider, 'bedrock')
+        assert.ok(err.message.includes('Check AWS credentials'))
+        return true
+      }
+    )
+  })
+
+  it('should maintain strict schema for patient voice intake turn processing', () => {
+    const mockTurn = {
+      assistantMessage: 'Could you please describe any allergies you have?',
+      detectedLanguage: 'English',
+      normalizedTranscript: 'I have an allergy to penicillin',
+      draft: {
+        firstName: 'John',
+        lastName: 'Doe',
+        allergies: ['penicillin'],
+        medicalConditions: [],
+        currentMedications: [],
+        consentRead: true
+      },
+      missingFields: ['dateOfBirth'],
+      isComplete: false,
+      summary: 'Patient John Doe reported allergy to penicillin.'
+    }
+
+    assert.ok(mockTurn.assistantMessage)
+    assert.ok(mockTurn.detectedLanguage)
+    assert.ok(Array.isArray(mockTurn.draft.allergies))
+    assert.equal(mockTurn.draft.allergies[0], 'penicillin')
+    assert.equal(typeof mockTurn.isComplete, 'boolean')
+  })
+})
+

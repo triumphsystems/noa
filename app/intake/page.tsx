@@ -1,11 +1,26 @@
- 'use client'
+'use client'
 
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Volume2, VolumeX, Mic, MicOff, Sparkles } from 'lucide-react'
 
 import type { IntakeConversationDraft, IntakeConversationMessage } from '@/lib/voice-service'
+
+function mapLanguageToBcp47(langName: string): string {
+  const normalized = (langName || '').toLowerCase()
+  if (normalized.includes('spanish') || normalized.includes('español')) return 'es-ES'
+  if (normalized.includes('french') || normalized.includes('français')) return 'fr-FR'
+  if (normalized.includes('german') || normalized.includes('deutsch')) return 'de-DE'
+  if (normalized.includes('chinese') || normalized.includes('mandarin')) return 'zh-CN'
+  if (normalized.includes('yoruba')) return 'yo-NG'
+  if (normalized.includes('igbo')) return 'ig-NG'
+  if (normalized.includes('hausa')) return 'ha-NG'
+  if (normalized.includes('arabic')) return 'ar-SA'
+  if (normalized.includes('portuguese')) return 'pt-BR'
+  return 'en-US'
+}
 
 type IntakeTurn = {
   assistantMessage: string
@@ -83,11 +98,17 @@ function PatientIntake() {
   const isSubmittingRef = useRef(false)
   const committedTranscriptRef = useRef('')
   const lastSubmittedTranscriptRef = useRef('')
+  const isHandsFreeRef = useRef(true)
+  const isCompleteRef = useRef(false)
+  const isVoiceOutputRef = useRef(true)
 
   const [isRecording, setIsRecording] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
+  const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true)
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [isHandsFree, setIsHandsFree] = useState(true)
   const [assistantMessage, setAssistantMessage] = useState(initialPrompt)
   const [detectedLanguage, setDetectedLanguage] = useState('English')
   const [draft, setDraft] = useState<IntakeConversationDraft>(initialDraft)
@@ -103,6 +124,22 @@ function PatientIntake() {
   const canPersist = Boolean(doctorId && patientId)
 
   const chatItems = useMemo(() => history.filter(item => item.role !== 'system'), [history])
+
+  useEffect(() => {
+    isHandsFreeRef.current = isHandsFree
+  }, [isHandsFree])
+
+  useEffect(() => {
+    isCompleteRef.current = isComplete
+  }, [isComplete])
+
+  useEffect(() => {
+    isVoiceOutputRef.current = isVoiceOutputEnabled
+    if (!isVoiceOutputEnabled && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+      setIsSpeaking(false)
+    }
+  }, [isVoiceOutputEnabled])
 
   useEffect(() => {
     const resolvedDoctorId = searchParams?.get('doctorId') || window.localStorage.getItem('doctorId') || ''
@@ -205,11 +242,41 @@ function PatientIntake() {
     setHistory(previous => [...previous, { id: `${role}-${Date.now()}-${Math.random().toString(16).slice(2)}`, role, text }])
   }
 
+  const speakMessage = (text: string, language: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window) || !isVoiceOutputRef.current) {
+      return
+    }
+
+    try {
+      window.speechSynthesis.cancel()
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = mapLanguageToBcp47(language)
+      utterance.rate = 0.95
+      utterance.pitch = 1.0
+
+      utterance.onstart = () => setIsSpeaking(true)
+      utterance.onend = () => {
+        setIsSpeaking(false)
+        if (isHandsFreeRef.current && !isCompleteRef.current) {
+          setTimeout(() => {
+            void startRecording()
+          }, 400)
+        }
+      }
+      utterance.onerror = () => setIsSpeaking(false)
+
+      window.speechSynthesis.speak(utterance)
+    } catch {
+      setIsSpeaking(false)
+    }
+  }
+
   const syncDraftAndHistory = (nextDraft: IntakeConversationDraft, nextAssistantMessage: string, nextLanguage: string) => {
     setDraft(nextDraft)
     setAssistantMessage(nextAssistantMessage)
     setDetectedLanguage(nextLanguage)
     pushHistory('assistant', nextAssistantMessage)
+    speakMessage(nextAssistantMessage, nextLanguage)
   }
 
   const sendTranscript = async (transcript: string) => {
@@ -285,6 +352,11 @@ function PatientIntake() {
 
     isStartingRef.current = true
     setError('')
+
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+      setIsSpeaking(false)
+    }
 
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
@@ -383,7 +455,41 @@ function PatientIntake() {
             <div className="flex h-full flex-col justify-between gap-6">
               <div className="space-y-4">
                 <div className="rounded-2xl sm:rounded-3xl bg-soft-meadow/50 p-4 sm:p-5">
-                  <p className="text-xs uppercase tracking-[0.3em] text-slate mb-2 sm:mb-3">Noa says</p>
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs uppercase tracking-[0.3em] text-slate">Noa says</p>
+                      {isSpeaking && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-moss-green bg-moss-green/15 px-2 py-0.5 rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-moss-green animate-ping" />
+                          Speaking
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isVoiceOutputEnabled && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                          window.speechSynthesis.cancel()
+                          setIsSpeaking(false)
+                        }
+                        setIsVoiceOutputEnabled(prev => !prev)
+                      }}
+                      className="inline-flex items-center gap-1.5 text-xs text-slate hover:text-deep-ink px-2.5 py-1 rounded-full border border-deep-ink/10 bg-white shadow-2xs transition-colors cursor-pointer"
+                      title={isVoiceOutputEnabled ? 'Mute spoken responses' : 'Enable spoken responses'}
+                    >
+                      {isVoiceOutputEnabled ? (
+                        <>
+                          <Volume2 className="w-3.5 h-3.5 text-moss-green" />
+                          <span className="text-[11px] font-medium">Voice on</span>
+                        </>
+                      ) : (
+                        <>
+                          <VolumeX className="w-3.5 h-3.5 text-slate" />
+                          <span className="text-[11px] font-medium">Voice muted</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                   <p className="text-lg sm:text-xl font-medium leading-7 sm:leading-8 text-deep-ink">{assistantMessage}</p>
                 </div>
 
