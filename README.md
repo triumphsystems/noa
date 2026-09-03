@@ -161,7 +161,7 @@ curl https://your-domain.com/api/health
 - [ ] IAM roles scoped to least privilege
 - [ ] CloudWatch monitoring active
 
-See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for the full production runbook.
+See [deployment.md](docs/deployment.md) for the full production runbook.
 
 ## Security
 
