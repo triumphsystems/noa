@@ -1,37 +1,29 @@
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="favBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#130E30" />
-      <stop offset="100%" stop-color="#0B081E" />
-    </linearGradient>
-    <linearGradient id="favStroke" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFE228" />
-      <stop offset="100%" stop-color="#59E25D" />
+    <linearGradient id="favCanvasBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#EFF2E5" />
     </linearGradient>
   </defs>
 
-  <!-- Base Icon Background -->
-  <rect width="64" height="64" rx="16" fill="url(#favBg)" />
-  <rect x="1" y="1" width="62" height="62" rx="15" stroke="#FFE228" stroke-opacity="0.2" stroke-width="1.5" />
+  <!-- Squircle Base in Brand Soft Canvas -->
+  <rect width="64" height="64" rx="15" fill="url(#favCanvasBg)" />
+  <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="14.25" stroke="#130E30" stroke-opacity="0.1" stroke-width="1.5" />
 
-  <!-- Stylized 'N' Structure -->
+  <!-- Bold Geometric 'N' in Deep Ink -->
   <path 
-    d="M17 47 V22 C17 18 20 16 23.5 16 C25.5 16 27 17 28.5 18.5 L32 23 L35.5 18.5 C37 17 38.5 16 40.5 16 C44 16 47 18 47 22 V47" 
-    stroke="url(#favStroke)" 
-    stroke-width="4.5" 
-    stroke-linecap="round" 
-    stroke-linejoin="round"
+    d="M17 16 H25 L39 39 V16 H47 V48 H39 L25 25 V48 H17 Z" 
+    fill="#130E30" 
   />
 
-  <!-- Sound Pulse / EKG Heartbeat Wave -->
+  <!-- Voice Frequency / Clinical Pulse in Signature Hi-Yellow -->
   <path 
-    d="M11 37 H20 L23.5 30 L27 44 L32 26 L37 44 L40.5 30 L44 37 H53" 
+    d="M10 32 H18 L22 26 L27 40 L32 20 L37 40 L42 26 L46 32 H54" 
+    fill="none" 
     stroke="#FFE228" 
-    stroke-width="2.5" 
+    stroke-width="3" 
     stroke-linecap="round" 
     stroke-linejoin="round" 
   />
-
-  <!-- Clinical Centerpoint -->
-  <circle cx="32" cy="21" r="2.5" fill="#59E25D" />
+  <circle cx="32" cy="20" r="1.5" fill="#FFE228" />
 </svg>
