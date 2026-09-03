@@ -32,8 +32,8 @@ terraform.rc
 # Ignore plan files
 *.tfplan
 
-# Ignore lock files (optional - uncomment to commit lock files)
-.terraform.lock.hcl
+# Lock file (tracked in version control per HashiCorp best practices)
+# .terraform.lock.hcl
 
 # Terraform cloud
 .terraform.cloud/
