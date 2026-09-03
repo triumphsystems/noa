@@ -68,9 +68,11 @@ const initialPrompt =
 
 const defaultPrompt = 'Tap the microphone and answer in your own words.'
 export default function PatientIntakePage() {
-    <Suspense fallback={<div className="space-y-6" />}>
-        <PatientIntake />
+  return (
+    <Suspense fallback={<div className="space-y-6 min-h-screen bg-canvas" />}>
+      <PatientIntake />
     </Suspense>
+  )
 }
 function PatientIntake() {
   const router = useRouter()
@@ -360,59 +362,59 @@ function PatientIntake() {
 
   return (
     <div className="min-h-screen bg-canvas text-deep-ink">
-      <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <header className="mb-6 flex items-center justify-between gap-4">
+      <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
+        <header className="mb-6 flex items-start sm:items-center justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-hi-yellow font-semibold mb-2">Voice intake</p>
-            <h1 className="text-3xl font-bold font-serif">Talk, don’t type</h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate">
+            <p className="text-xs uppercase tracking-[0.35em] text-hi-yellow font-semibold mb-1 sm:mb-2">Voice intake</p>
+            <h1 className="text-2xl sm:text-3xl font-bold font-serif">Talk, don’t type</h1>
+            <p className="mt-1 sm:mt-2 max-w-2xl text-xs sm:text-sm text-slate">
               One microphone. No forms. Noa will listen, translate, and ask the next question conversationally.
             </p>
           </div>
-          <Link href="/">
-            <Button variant="outline" className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow">
+          <Link href="/" className="shrink-0">
+            <Button variant="outline" size="sm" className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow text-xs sm:text-sm">
               Exit
             </Button>
           </Link>
         </header>
 
         <main className="grid flex-1 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <section className="rounded-[2rem] border border-deep-ink/10 bg-white p-6 shadow-sm">
+          <section className="rounded-3xl sm:rounded-[2rem] border border-deep-ink/10 bg-white p-4 sm:p-6 shadow-sm">
             <div className="flex h-full flex-col justify-between gap-6">
               <div className="space-y-4">
-                <div className="rounded-3xl bg-soft-meadow/50 p-5">
-                  <p className="text-xs uppercase tracking-[0.3em] text-slate mb-3">Noa says</p>
-                  <p className="text-xl font-medium leading-8 text-deep-ink">{assistantMessage}</p>
+                <div className="rounded-2xl sm:rounded-3xl bg-soft-meadow/50 p-4 sm:p-5">
+                  <p className="text-xs uppercase tracking-[0.3em] text-slate mb-2 sm:mb-3">Noa says</p>
+                  <p className="text-lg sm:text-xl font-medium leading-7 sm:leading-8 text-deep-ink">{assistantMessage}</p>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-3xl border border-deep-ink/10 bg-canvas p-4">
-                    <p className="text-xs uppercase tracking-[0.25em] text-slate mb-2">Detected language</p>
-                    <p className="font-medium text-deep-ink">{detectedLanguage}</p>
+                <div className="grid gap-3 sm:gap-4 grid-cols-2">
+                  <div className="rounded-2xl sm:rounded-3xl border border-deep-ink/10 bg-canvas p-3 sm:p-4">
+                    <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.25em] text-slate mb-1 sm:mb-2">Language</p>
+                    <p className="font-medium text-sm sm:text-base text-deep-ink truncate">{detectedLanguage}</p>
                   </div>
-                  <div className="rounded-3xl border border-deep-ink/10 bg-canvas p-4">
-                    <p className="text-xs uppercase tracking-[0.25em] text-slate mb-2">Status</p>
-                    <p className="font-medium text-deep-ink">
+                  <div className="rounded-2xl sm:rounded-3xl border border-deep-ink/10 bg-canvas p-3 sm:p-4">
+                    <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.25em] text-slate mb-1 sm:mb-2">Status</p>
+                    <p className="font-medium text-sm sm:text-base text-deep-ink truncate">
                       {isSubmitting ? 'Processing' : isRecording ? 'Listening' : isComplete ? 'Complete' : 'Ready'}
                     </p>
                   </div>
                 </div>
 
                 {supportMessage && (
-                  <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  <div className="rounded-2xl sm:rounded-3xl border border-amber-200 bg-amber-50 p-3.5 sm:p-4 text-xs sm:text-sm text-amber-900">
                     {supportMessage}
                   </div>
                 )}
 
                 {error && (
-                  <div className="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                  <div className="rounded-2xl sm:rounded-3xl border border-red-200 bg-red-50 p-3.5 sm:p-4 text-xs sm:text-sm text-red-700">
                     {error}
                   </div>
                 )}
 
-                <div className="rounded-3xl border border-deep-ink/10 bg-canvas p-5">
-                  <p className="text-xs uppercase tracking-[0.25em] text-slate mb-3">Live transcript</p>
-                  <p className="min-h-24 text-base leading-7 text-deep-ink">
+                <div className="rounded-2xl sm:rounded-3xl border border-deep-ink/10 bg-canvas p-4 sm:p-5">
+                  <p className="text-xs uppercase tracking-[0.25em] text-slate mb-2 sm:mb-3">Live transcript</p>
+                  <p className="min-h-20 sm:min-h-24 text-sm sm:text-base leading-6 sm:leading-7 text-deep-ink">
                     {transcriptPreview || defaultPrompt}
                   </p>
                 </div>
@@ -421,59 +423,61 @@ function PatientIntake() {
                 </p>
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="flex flex-col gap-2.5 sm:gap-3 sm:flex-row">
                 <Button
                   onClick={handleMicPress}
                   disabled={isSubmitting}
-                  className={`flex-1 rounded-full px-6 py-4 text-base font-semibold ${isRecording ? 'bg-deep-ink text-white hover:bg-deep-ink/90' : 'bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90'}`}
+                  className={`flex-1 rounded-full px-6 py-4 text-sm sm:text-base font-semibold ${isRecording ? 'bg-deep-ink text-white hover:bg-deep-ink/90' : 'bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90'}`}
                 >
                   <span className="mr-2 inline-flex h-3 w-3 rounded-full bg-current opacity-70" />
                   {isRecording ? 'Stop microphone' : 'Start microphone'}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={skipToText}
-                  className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow"
-                >
-                  Type fallback
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={resetConversation}
-                  className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow"
-                >
-                  Reset
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={skipToText}
+                    className="flex-1 sm:flex-initial rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow text-xs sm:text-sm"
+                  >
+                    Type fallback
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={resetConversation}
+                    className="flex-1 sm:flex-initial rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow text-xs sm:text-sm"
+                  >
+                    Reset
+                  </Button>
+                </div>
               </div>
             </div>
           </section>
 
-          <aside className="space-y-6">
-            <div className="rounded-[2rem] border border-deep-ink/10 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold font-serif mb-4">Conversation</h2>
-              <div className="space-y-4">
+          <aside className="space-y-4 sm:space-y-6">
+            <div className="rounded-3xl sm:rounded-[2rem] border border-deep-ink/10 bg-white p-4 sm:p-6 shadow-sm">
+              <h2 className="text-base sm:text-lg font-semibold font-serif mb-3 sm:mb-4">Conversation</h2>
+              <div className="space-y-3 sm:space-y-4 max-h-80 overflow-y-auto">
                 {chatItems.map(item => (
                   <div
                     key={item.id}
-                    className={`rounded-3xl px-4 py-3 text-sm leading-6 ${item.role === 'assistant' ? 'bg-soft-meadow/50 text-deep-ink' : 'bg-canvas text-deep-ink border border-deep-ink/10'}`}
+                    className={`rounded-2xl sm:rounded-3xl px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm leading-5 sm:leading-6 ${item.role === 'assistant' ? 'bg-soft-meadow/50 text-deep-ink' : 'bg-canvas text-deep-ink border border-deep-ink/10'}`}
                   >
-                    <p className="mb-1 text-xs uppercase tracking-[0.25em] text-slate">{item.role}</p>
+                    <p className="mb-1 text-[10px] uppercase tracking-[0.25em] text-slate">{item.role}</p>
                     <p>{item.text}</p>
                   </div>
                 ))}
                 {chatItems.length === 0 && (
-                  <div className="rounded-3xl border border-dashed border-deep-ink/15 p-6 text-sm text-slate">
+                  <div className="rounded-2xl sm:rounded-3xl border border-dashed border-deep-ink/15 p-4 sm:p-6 text-xs sm:text-sm text-slate">
                     Your conversation will appear here as Noa asks questions and translates answers.
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-deep-ink/10 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold font-serif mb-4">Captured so far</h2>
-              <div className="space-y-3 text-sm">
+            <div className="rounded-3xl sm:rounded-[2rem] border border-deep-ink/10 bg-white p-4 sm:p-6 shadow-sm">
+              <h2 className="text-base sm:text-lg font-semibold font-serif mb-3 sm:mb-4">Captured so far</h2>
+              <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
                 <Row label="Name" value={`${draft.firstName || '—'} ${draft.lastName || ''}`.trim()} />
                 <Row label="DOB" value={draft.dateOfBirth || '—'} />
                 <Row label="Email" value={draft.email || '—'} />
@@ -484,18 +488,18 @@ function PatientIntake() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-hi-yellow/30 bg-hi-yellow/10 p-6">
-              <h2 className="text-lg font-semibold font-serif mb-2">Next step</h2>
-              <p className="text-sm text-deep-ink leading-6">
+            <div className="rounded-3xl sm:rounded-[2rem] border border-hi-yellow/30 bg-hi-yellow/10 p-4 sm:p-6">
+              <h2 className="text-base sm:text-lg font-semibold font-serif mb-1 sm:mb-2">Next step</h2>
+              <p className="text-xs sm:text-sm text-deep-ink leading-5 sm:leading-6">
                 {canPersist
-                  ? 'We can save the intake once complete.' : ''
+                  ? 'We can save the intake once complete.' : 'Intake is in progress.'
             }
               </p>
             </div>
           </aside>
         </main>
 
-        <footer className="mt-6 flex items-center justify-between gap-4 text-xs text-slate">
+        <footer className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 text-[11px] sm:text-xs text-slate text-center sm:text-left">
           <p>Speak naturally. You can switch languages mid-conversation.</p>
           <p>{isComplete ? 'Ready for confirmation.' : 'Keep talking until Noa says you are done.'}</p>
         </footer>

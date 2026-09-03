@@ -49,64 +49,51 @@ export default function PatientConsultationPage({ params }: { params: Promise<{ 
   }
 
   return (
-    <div className="min-h-screen bg-canvas text-deep-ink">
-      {/* Navigation Header */}
-      <nav className="border-b border-deep-ink/10 bg-soft-meadow sticky top-0 z-10">
-        <div className="mx-auto max-w-4xl px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard/patient"
-              className="text-slate hover:text-deep-ink p-1 -ml-1 rounded-full transition-colors flex items-center gap-1.5 text-sm font-medium"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Portal</span>
-            </Link>
-          </div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold font-serif text-deep-ink">Noa</h1>
-            <Badge variant="secondary" className="text-xs">Consultation Summary</Badge>
-          </div>
-        </div>
-      </nav>
-
-      <div className="p-8 max-w-4xl mx-auto space-y-6">
-        {/* Top bar with metadata and actions */}
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-          <div>
-            <h2 className="text-3xl font-bold font-serif mb-2 text-deep-ink">Consultation Summary</h2>
-            <div className="flex items-center gap-4 text-sm text-slate">
-              <span className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4" />
-                {consultation.date}
-              </span>
-              <span>•</span>
-              <span className="flex items-center gap-1.5">
-                <UserCheck className="w-4 h-4" />
-                Provider: {consultation.doctorName}
-              </span>
-            </div>
-          </div>
-          <div className="flex gap-2.5">
-            <Button
-              onClick={handleDownloadPDF}
-              className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-1.5 font-medium"
-            >
-              <Download className="w-4 h-4" />
-              Download PDF
-            </Button>
-            <Button
-              onClick={handlePrintPage}
-              variant="outline"
-              className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow gap-1.5 font-medium"
-            >
-              <Printer className="w-4 h-4" />
-              Print
-            </Button>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
+      <Link
+        href="/dashboard/patient"
+        className="text-slate hover:text-deep-ink rounded-full transition-colors inline-flex items-center gap-1.5 text-xs font-semibold"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" />
+        <span>Back to Portal</span>
+      </Link>
+      {/* Top bar with metadata and actions */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold font-serif mb-2 text-deep-ink">Consultation Summary</h2>
+          <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-slate flex-wrap">
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 shrink-0" />
+              {consultation.date}
+            </span>
+            <span>•</span>
+            <span className="flex items-center gap-1.5">
+              <UserCheck className="w-4 h-4 shrink-0" />
+              Provider: {consultation.doctorName}
+            </span>
           </div>
         </div>
+        <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
+          <Button
+            onClick={handleDownloadPDF}
+            className="w-full sm:w-auto rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-1.5 font-medium text-xs sm:text-sm"
+          >
+            <Download className="w-4 h-4" />
+            Download PDF
+          </Button>
+          <Button
+            onClick={handlePrintPage}
+            variant="outline"
+            className="w-full sm:w-auto rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow gap-1.5 font-medium text-xs sm:text-sm"
+          >
+            <Printer className="w-4 h-4" />
+            Print
+          </Button>
+        </div>
+      </div>
 
-        {/* Visit Summary Card */}
-        <Card className="p-8 space-y-8">
+      {/* Visit Summary Card */}
+      <Card className="p-4 sm:p-8 space-y-6 sm:space-y-8">
           <div>
             <h3 className="text-xl font-bold font-serif text-deep-ink mb-3">Visit Summary</h3>
             <p className="text-slate leading-relaxed whitespace-pre-line text-sm">
@@ -138,7 +125,6 @@ export default function PatientConsultationPage({ params }: { params: Promise<{ 
             </div>
           </div>
         </Card>
-      </div>
     </div>
   )
 }
