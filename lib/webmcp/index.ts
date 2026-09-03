@@ -35,4 +35,4 @@ export {
   WebMCPProvider,
   useModelContext,
 } from './client/webmcp-provider'
-export { WebMCPInspector } from '@/components/webmcp/webmcp-inspector'
+export { WebMCPInspector } from '@/components/webmcp/inspector'

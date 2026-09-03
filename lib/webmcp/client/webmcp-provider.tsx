@@ -9,7 +9,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { BrowserModelContext } from '../core/types'
 import { BrowserModelContextRuntime, injectBrowserModelContext } from './model-context-runtime'
 
-import { WebMCPInspector } from '@/components/webmcp/webmcp-inspector'
+import { WebMCPInspector } from '@/components/webmcp/inspector'
 
 interface WebMCPContextValue {
   modelContext: BrowserModelContext | null

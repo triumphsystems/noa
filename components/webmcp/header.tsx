@@ -2,7 +2,6 @@
 
 import React from 'react'
 import { Sparkles, RefreshCw, Maximize2, Minimize2, X } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 
 interface InspectorHeaderProps {
   isExpanded: boolean
@@ -20,58 +19,54 @@ export function InspectorHeader({
   onClose,
 }: InspectorHeaderProps) {
   return (
-    <div className="p-4 border-b border-deep-ink/10 bg-canvas flex items-center justify-between gap-3">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-2xl bg-deep-ink flex items-center justify-center text-hi-yellow shadow-xs">
-          <Sparkles className="w-5 h-5" />
+    <div className="px-5 py-3 border-b border-deep-ink/10 bg-canvas flex items-center justify-between gap-3 shrink-0">
+      {/* Left: Brand Identity */}
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="w-8 h-8 rounded-xl bg-deep-ink flex items-center justify-center text-hi-yellow shadow-xs shrink-0">
+          <Sparkles className="w-4 h-4" />
         </div>
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h2 className="font-serif font-bold text-deep-ink text-base">WebMCP Studio</h2>
-            <Badge variant="outline" className="text-[10px] font-mono bg-white border-deep-ink/15 text-deep-ink">
-              v2024-11-05
-            </Badge>
-            <div className="flex items-center gap-1 text-[11px] text-moss-green font-medium">
-              <span className="w-2 h-2 rounded-full bg-moss-green inline-block animate-pulse" />
-              <span className="text-[11px] text-slate font-sans">Ready</span>
+            <h2 className="font-serif font-bold text-deep-ink text-base whitespace-nowrap leading-none">
+              WebMCP Studio
+            </h2>
+            <div className="flex items-center gap-1 text-[10px] font-mono text-slate bg-soft-meadow px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 border border-deep-ink/5">
+              <span className="w-1.5 h-1.5 rounded-full bg-moss-green" />
+              <span>Ready</span>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-[11px] text-slate mt-0.5 font-mono">
-            <span>document.modelContext</span>
-            <span>•</span>
-            <span>/api/mcp</span>
-          </div>
+          <p className="text-[10px] text-slate font-mono mt-0.5 truncate leading-tight">
+            document.modelContext <span className="text-slate/40">•</span> /api/mcp
+          </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5">
+      {/* Right: Studio Controls */}
+      <div className="flex items-center gap-1.5 shrink-0">
         <button
           onClick={onRefresh}
           disabled={isSyncing}
-          className="p-2 rounded-xl text-slate hover:text-deep-ink hover:bg-soft-meadow transition-colors cursor-pointer"
-          title="Sync tools and resources from server"
+          className="p-1.5 rounded-full text-slate hover:text-deep-ink hover:bg-soft-meadow transition-all cursor-pointer"
+          title="Sync definitions from server"
         >
-          <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin text-hi-yellow' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-deep-ink' : ''}`} />
         </button>
 
         <button
           onClick={onToggleExpand}
-          className="p-2 rounded-xl text-slate hover:text-deep-ink hover:bg-soft-meadow transition-colors cursor-pointer"
-          title={isExpanded ? 'Collapse drawer width' : 'Maximize workbench width'}
+          className="p-1.5 rounded-full text-slate hover:text-deep-ink hover:bg-soft-meadow transition-all cursor-pointer"
+          title={isExpanded ? 'Collapse width' : 'Expand width'}
         >
-          {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
         </button>
-
-        <kbd className="hidden sm:inline-block px-2 py-1 text-[10px] font-mono text-slate bg-soft-meadow rounded-lg border border-deep-ink/10">
-          Ctrl+Shift+M
-        </kbd>
 
         <button
           onClick={onClose}
-          className="p-2 rounded-xl text-slate hover:text-deep-ink hover:bg-soft-meadow transition-colors cursor-pointer"
-          title="Close Inspector (Esc)"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold text-deep-ink bg-hi-yellow hover:bg-[#ebd020] transition-all cursor-pointer border border-deep-ink/15 shadow-xs shrink-0"
+          title="Close (Esc)"
         >
-          <X className="w-4 h-4" />
+          <X className="w-3.5 h-3.5" />
+          <span>Close</span>
         </button>
       </div>
     </div>

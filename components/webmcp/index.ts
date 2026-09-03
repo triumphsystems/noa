@@ -1,5 +1,5 @@
-export { WebMCPInspector } from './webmcp-inspector'
-export { LauncherButton } from './launcher-button'
+export { WebMCPInspector } from './inspector'
+export { Launcher } from './launcher'
 export { InspectorHeader } from './header'
 export * from './types'
 export * from './constants'
