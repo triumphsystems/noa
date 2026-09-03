@@ -71,36 +71,17 @@ curl -X POST http://localhost:3000/api/mcp \
 
 ---
 
-## 2. Connecting External Agents (Cursor IDE & Claude Desktop)
+## 2. Connecting External Agents (Cursor, Claude Desktop, ChatGPT)
 
-Noa provides pre-configured integration profiles for external coding assistants and desktop agents:
+All standalone configuration profiles and integration scripts are centralized in [`webmcp-examples/`](file:///E:/Documents/Projects/noa/webmcp-examples/):
 
-### Cursor IDE
-A ready-to-use configuration file is provided at [`.cursor/mcp.json`](file:///E:/Documents/Projects/noa/.cursor/mcp.json):
-```json
-{
-  "mcpServers": {
-    "noa-clinical": {
-      "url": "http://localhost:3000/api/mcp"
-    }
-  }
-}
-```
-Open Cursor settings &rarr; **Features** &rarr; **MCP**, and Noa's 23+ clinical tools will be discovered automatically.
+- **Cursor IDE**: [`webmcp-examples/cursor/mcp.json`](file:///E:/Documents/Projects/noa/webmcp-examples/cursor/mcp.json)
+- **Claude Desktop**: [`webmcp-examples/claude-desktop/claude_desktop_config.json`](file:///E:/Documents/Projects/noa/webmcp-examples/claude-desktop/claude_desktop_config.json)
+- **ChatGPT Custom Actions**: [`webmcp-examples/chatgpt/actions-openapi.json`](file:///E:/Documents/Projects/noa/webmcp-examples/chatgpt/actions-openapi.json)
+- **cURL Shell Scripts**: [`webmcp-examples/curl/test-tools.sh`](file:///E:/Documents/Projects/noa/webmcp-examples/curl/test-tools.sh)
+- **Browser Dynamic Tool Example**: [`webmcp-examples/browser/register-tool-example.js`](file:///E:/Documents/Projects/noa/webmcp-examples/browser/register-tool-example.js)
 
-### Claude Desktop
-A ready-to-use configuration example is provided at [`claude_desktop_config.example.json`](file:///E:/Documents/Projects/noa/claude_desktop_config.example.json). Add the entry to your Claude Desktop configuration:
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-```json
-{
-  "mcpServers": {
-    "noa-clinical": {
-      "url": "http://localhost:3000/api/mcp"
-    }
-  }
-}
-```
+Refer to the [`webmcp-examples/README.md`](file:///E:/Documents/Projects/noa/webmcp-examples/README.md) for step-by-step setup guides.
 
 ---
 

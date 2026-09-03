@@ -1,0 +1,76 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Noa Clinical AI WebMCP API",
+    "description": "Model Context Protocol JSON-RPC API for clinical AI, patient records, consultation sessions, and SOAP notes.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Development Server"
+    }
+  ],
+  "paths": {
+    "/api/mcp": {
+      "get": {
+        "summary": "Discover WebMCP Tools & Resources",
+        "description": "Returns metadata and catalog of all active clinical tools, resources, and prompt templates.",
+        "operationId": "discoverWebMCP",
+        "responses": {
+          "200": {
+            "description": "Successful discovery metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Execute WebMCP JSON-RPC Request",
+        "description": "Dispatches MCP commands such as tools/call, resources/read, and prompts/get.",
+        "operationId": "callWebMCP",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "jsonrpc": { "type": "string", "example": "2.0" },
+                  "id": { "type": "integer", "example": 1 },
+                  "method": { "type": "string", "example": "tools/call" },
+                  "params": {
+                    "type": "object",
+                    "properties": {
+                      "name": { "type": "string", "example": "generate_soap_note" },
+                      "arguments": { "type": "object" }
+                    },
+                    "required": ["name"]
+                  }
+                },
+                "required": ["jsonrpc", "method"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSON-RPC Response containing tool execution result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
