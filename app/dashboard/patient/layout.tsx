@@ -15,9 +15,10 @@ export default function PatientDashboardLayout({
       {/* Patient Portal Header */}
       <header className="border-b border-deep-ink/10 bg-soft-meadow sticky top-0 z-20">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <Link href="/dashboard/patient" className="text-xl sm:text-2xl font-bold font-serif text-deep-ink hover:opacity-90 transition-opacity shrink-0">
-              Noa
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <Link href="/dashboard/patient" className="flex items-center gap-2 hover:opacity-90 transition-opacity shrink-0">
+              <img src="/logo.svg" alt="Noa Logo" className="w-8 h-8 rounded-lg shadow-2xs" />
+              <span className="text-xl sm:text-2xl font-bold font-serif text-deep-ink">Noa</span>
             </Link>
             <Badge variant="secondary" className="text-[10px] sm:text-xs hidden sm:inline-flex shrink-0">
               Patient Portal

@@ -1,0 +1,72 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#130E30" />
+      <stop offset="50%" stop-color="#18133E" />
+      <stop offset="100%" stop-color="#0B081E" />
+    </linearGradient>
+
+    <!-- Sonic & Neural Pulse Gradient (Yellow -> Moss Green) -->
+    <linearGradient id="pulseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE228" />
+      <stop offset="60%" stop-color="#7BEB6E" />
+      <stop offset="100%" stop-color="#59E25D" />
+    </linearGradient>
+
+    <!-- Subtle Glow Filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Core Cross Accent Gradient -->
+    <linearGradient id="crossGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFE228" />
+      <stop offset="100%" stop-color="#FFF275" />
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle Base App Icon -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <rect x="2" y="2" width="508" height="508" rx="110" stroke="#FFE228" stroke-opacity="0.12" stroke-width="3" />
+
+  <!-- Inner Dynamic Glow Field -->
+  <circle cx="256" cy="256" r="160" fill="#59E25D" fill-opacity="0.04" />
+  <circle cx="256" cy="256" r="100" fill="#FFE228" fill-opacity="0.04" />
+
+  <!-- The NOA Symbol: Continuous Architectural Ribbon forming 'N' + Pulse Wave + Clinical Cross -->
+  <g filter="url(#glow)">
+    <!-- Main Ribbon Stroke -->
+    <path 
+      d="M136 376 V176 C136 149.5 157.5 128 184 128 C198 128 210.5 134 219 143.5 L240 168 L240 216 L224 216 L224 248 L240 248 L240 264 L272 264 L272 248 L288 248 L288 216 L272 216 L272 168 L293 143.5 C301.5 134 314 128 328 128 C354.5 128 376 149.5 376 176 V376" 
+      fill="none" 
+      stroke="url(#pulseGrad)" 
+      stroke-width="26" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
+    />
+
+    <!-- Real-time Voice Frequency & Bio-Telemetry Wave Line passing through the heart -->
+    <path 
+      d="M84 296 H160 L188 240 L216 352 L256 216 L296 352 L324 240 L352 296 H428" 
+      fill="none" 
+      stroke="#FFE228" 
+      stroke-width="12" 
+      stroke-linecap="round" 
+      stroke-linejoin="round" 
+      stroke-opacity="0.95"
+    />
+
+    <!-- Clinical Intelligence Plus/Cross at Central Apex -->
+    <g transform="translate(256, 172)">
+      <!-- Central Spark Dot -->
+      <circle cx="0" cy="0" r="14" fill="#59E25D" />
+      <circle cx="0" cy="0" r="7" fill="#FFE228" />
+    </g>
+  </g>
+
+  <!-- Sound Frequency Harmonic Resonance Dots -->
+  <circle cx="100" cy="296" r="6" fill="#59E25D" />
+  <circle cx="412" cy="296" r="6" fill="#FFE228" />
+</svg>

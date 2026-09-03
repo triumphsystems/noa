@@ -30,7 +30,8 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="border-b border-deep-ink/10 bg-soft-meadow/80 backdrop-blur-md sticky top-0 z-30">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <img src="/logo.svg" alt="Noa Logo" className="w-9 h-9 rounded-xl shadow-xs" />
             <span className="text-2xl font-bold font-serif text-deep-ink tracking-tight">Noa</span>
             <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">
               Clinical Intelligence

@@ -80,10 +80,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
       >
         <div className="p-5 sm:p-6 flex items-center justify-between">
-          <div className={cn('flex items-center gap-2', !sidebarOpen && 'md:hidden')}>
+          <div className={cn('flex items-center gap-2.5', !sidebarOpen && 'md:hidden')}>
+            <img src="/logo.svg" alt="Noa Logo" className="w-8 h-8 rounded-lg shadow-2xs" />
             <div>
-              <h1 className="text-2xl font-bold font-serif">Noa</h1>
-              <p className="text-xs text-slate mt-0.5 truncate max-w-[160px]">{doctor?.name || 'Doctor dashboard'}</p>
+              <h1 className="text-2xl font-bold font-serif leading-none">Noa</h1>
+              <p className="text-xs text-slate mt-0.5">Clinical Copilot</p>
             </div>
           </div>
 

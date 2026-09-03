@@ -1,0 +1,47 @@
+<svg width="240" height="60" viewBox="0 0 240 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="markBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#130E30" />
+      <stop offset="100%" stop-color="#0B081E" />
+    </linearGradient>
+    <linearGradient id="markGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE228" />
+      <stop offset="100%" stop-color="#59E25D" />
+    </linearGradient>
+  </defs>
+
+  <!-- Logo Mark Icon -->
+  <rect x="4" y="6" width="48" height="48" rx="12" fill="url(#markBg)" />
+  <rect x="5" y="7" width="46" height="46" rx="11" stroke="#FFE228" stroke-opacity="0.15" stroke-width="1" />
+
+  <!-- The N Ribbon -->
+  <path 
+    d="M17 40 V20 C17 17 19.5 15.5 22 15.5 C23.5 15.5 25 16.5 26 17.5 L28 21 L30 17.5 C31 16.5 32.5 15.5 34 15.5 C36.5 15.5 39 17 39 20 V40" 
+    stroke="url(#markGrad)" 
+    stroke-width="3.5" 
+    stroke-linecap="round" 
+    stroke-linejoin="round"
+  />
+
+  <!-- Pulse Wave -->
+  <path 
+    d="M12 32 H19 L21.5 26 L24 38 L28 23 L32 38 L34.5 26 L37 32 H44" 
+    stroke="#FFE228" 
+    stroke-width="2" 
+    stroke-linecap="round" 
+    stroke-linejoin="round" 
+  />
+
+  <circle cx="28" cy="19.5" r="1.75" fill="#59E25D" />
+
+  <!-- Wordmark 'Noa' -->
+  <text x="66" y="41" font-family="'Hedvig Letters Serif', Georgia, serif" font-size="34" font-weight="700" fill="#130E30" letter-spacing="-0.03em">
+    Noa
+  </text>
+
+  <!-- Subtitle / Tagline Badge -->
+  <rect x="136" y="22" width="94" height="18" rx="9" fill="#EFF2E5" />
+  <text x="183" y="34" font-family="'Inter', system-ui, sans-serif" font-size="9" font-weight="600" fill="#130E30" text-anchor="middle" letter-spacing="0.06em">
+    CLINICAL AI
+  </text>
+</svg>
