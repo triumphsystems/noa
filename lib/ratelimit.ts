@@ -1,7 +1,7 @@
 /**
- * Distributed Serverless Rate Limiter for Vercel & AWS Bedrock
+ * Distributed Serverless Rate Limiter
  * Backed by DynamoDB atomic counters with automatic TTL expiration.
- * Global synchronization across all Vercel serverless function instances.
+ * Global synchronization across all serverless function instances.
  */
 
 import { NextResponse } from 'next/server'
