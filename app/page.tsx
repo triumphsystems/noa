@@ -28,32 +28,36 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-canvas text-deep-ink">
       {/* Navigation */}
-      <nav className="border-b border-deep-ink/8 bg-canvas/90 backdrop-blur-md sticky top-0 z-30 font-sans">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/logo.svg" alt="Noa Logo" className="w-8 h-8 rounded-lg shadow-2xs" />
+      <nav className="border-b border-deep-ink/8 bg-canvas/90 backdrop-blur-md sticky top-0 z-30 font-sans transition-all">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3.5 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 group">
+            <img
+              src="/logo.svg"
+              alt="Noa Logo"
+              className="w-8 h-8 rounded-lg border border-deep-ink/10 shadow-2xs shrink-0 group-hover:scale-105 transition-transform"
+            />
             <span className="text-xl sm:text-2xl font-bold font-serif text-deep-ink tracking-tight">Noa</span>
             <Badge variant="secondary" className="hidden sm:inline-flex text-[11px] font-sans">
               Clinical Intelligence
             </Badge>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-7">
+          <div className="hidden md:flex items-center gap-6">
             <Link href="#features" className="text-sm font-medium text-slate hover:text-deep-ink transition-colors">
               Features
             </Link>
             <Link href="#how-it-works" className="text-sm font-medium text-slate hover:text-deep-ink transition-colors">
               How It Works
             </Link>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5 pl-2">
               <Link href="/auth/login">
-                <Button variant="outline" size="sm" className="rounded-lg text-xs font-medium px-3.5 h-8">
+                <Button variant="ghost" size="sm" className="rounded-lg text-xs font-semibold px-3.5 h-9 text-deep-ink/80 hover:text-deep-ink hover:bg-deep-ink/5">
                   Log In
                 </Button>
               </Link>
               <Link href="/auth/signup">
-                <Button variant="dark" size="sm" className="rounded-lg text-xs font-medium px-4 h-8 shadow-2xs">
+                <Button variant="dark" size="sm" className="rounded-lg text-xs font-semibold px-4 h-9 bg-deep-ink hover:bg-deep-ink/90 text-white shadow-xs hover:shadow transition-all">
                   Get Started
                 </Button>
               </Link>
@@ -108,7 +112,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-16 sm:py-20 lg:py-28">
+      <section className="relative overflow-hidden pt-6 pb-12 sm:pt-8 sm:pb-16 lg:pt-10 lg:pb-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
             <div className="space-y-6">
@@ -285,59 +289,98 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="bg-soft-meadow/60 py-14 sm:py-20 border-y border-deep-ink/10">
+      <section id="features" className="bg-soft-meadow/50 py-16 sm:py-24 border-y border-deep-ink/8 scroll-mt-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-16 space-y-3">
-            <h2 className="text-2xl sm:text-4xl font-bold font-serif text-deep-ink">
-              Clinical intelligence at your voice
+          <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16 space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-deep-ink/8 text-xs font-semibold text-deep-ink/75 shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-deep-ink" />
+              <span>Core Clinical Capabilities</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold font-serif text-deep-ink tracking-tight">
+              Ambient intelligence at the speed of speech
             </h2>
-            <p className="text-slate text-sm sm:text-base">
-              Engineered specifically for medical practitioners and patient outcomes, eliminating documentation overhead.
+            <p className="text-slate text-sm sm:text-base leading-relaxed">
+              Engineered specifically for practicing clinicians. Eliminate documentation backlog and focus entirely on patient care.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {[
               {
                 icon: Mic,
+                badge: 'Ambient Audio',
                 title: 'Voice-First Consultations',
-                description: 'Speak naturally with your patients. Noa ambiently captures every clinical detail without disrupting dialogue.',
+                description: 'Speak naturally with your patients. Noa ambiently captures dialogue, filtering background room noise and clinical interruptions.',
+                metric: 'Continuous streaming',
               },
               {
                 icon: FileText,
+                badge: 'Documentation',
                 title: 'Instant SOAP Synthesis',
-                description: 'Structured Subjective, Objective, Assessment, and Plan notes generated automatically before the visit ends.',
+                description: 'Generates structured Subjective, Objective, Assessment, and Plan notes automatically before the consultation ends.',
+                metric: 'Multi-format export',
               },
               {
                 icon: Brain,
+                badge: 'Clinical Memory',
                 title: 'Clinical Context Recall',
                 description: 'Instant recall of prior consultation notes, patient allergies, and active medication regimens at your fingertips.',
+                metric: 'Sub-second search',
               },
               {
                 icon: ShieldCheck,
+                badge: 'Security',
                 title: 'HIPAA-Ready Architecture',
-                description: 'Enterprise-grade encryption with rigorous data privacy standards to protect sensitive health records.',
+                description: 'Enterprise-grade encryption with rigorous data privacy standards to protect sensitive electronic health records.',
+                metric: 'AES-256 & TLS 1.3',
               },
               {
                 icon: Users,
+                badge: 'Patient Care',
                 title: 'Patient-Friendly Summaries',
-                description: 'Translates complex medical jargon into clear, actionable care plans patients can understand and follow.',
+                description: 'Translates complex medical jargon into clear, actionable care plans patients can easily understand and follow.',
+                metric: 'Plain-language AI',
               },
               {
                 icon: Layers,
-                title: 'Seamless Workflow',
-                description: 'Export notes, download PDF reports, and sync consultation summaries with minimal clicks.',
+                badge: 'Workflow',
+                title: 'Seamless EHR Workflow',
+                description: 'Export notes, download PDF reports, and sync consultation summaries to clinical workflows with minimal clicks.',
+                metric: 'PDF & clipboard sync',
               },
             ].map((feature, idx) => {
               const Icon = feature.icon
               return (
-                <Card key={idx} className="p-6 sm:p-8 hover:border-deep-ink/20 transition-colors bg-white shadow-editorial">
-                  <div className="w-10 h-10 rounded-xl bg-hi-yellow/20 border border-hi-yellow/40 flex items-center justify-center mb-5 text-deep-ink">
-                    <Icon className="w-5 h-5" />
+                <div
+                  key={idx}
+                  className="group relative p-6 sm:p-7 rounded-2xl bg-white hover:bg-white border border-deep-ink/8 hover:border-hi-yellow/80 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="w-11 h-11 rounded-xl bg-hi-yellow border border-deep-ink/15 flex items-center justify-center text-deep-ink shadow-2xs group-hover:scale-105 transition-transform duration-200">
+                        <Icon className="w-5 h-5 text-deep-ink" />
+                      </div>
+                      <span className="text-[11px] font-semibold text-deep-ink uppercase tracking-wider font-sans bg-hi-yellow/25 px-2.5 py-0.5 rounded-full border border-hi-yellow/50">
+                        {feature.badge}
+                      </span>
+                    </div>
+
+                    <h3 className="text-base sm:text-lg font-semibold font-sans text-deep-ink mb-2 tracking-tight">
+                      {feature.title}
+                    </h3>
+                    <p className="text-slate text-sm leading-relaxed font-sans">
+                      {feature.description}
+                    </p>
                   </div>
-                  <h3 className="text-lg font-medium font-serif text-deep-ink mb-2">{feature.title}</h3>
-                  <p className="text-slate text-sm leading-relaxed">{feature.description}</p>
-                </Card>
+
+                  <div className="pt-4 mt-5 border-t border-deep-ink/5 flex items-center justify-between text-xs text-slate/80 font-sans">
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-hi-yellow border border-deep-ink/30" />
+                      {feature.metric}
+                    </span>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate/40 group-hover:text-deep-ink group-hover:translate-x-0.5 transition-all" />
+                  </div>
+                </div>
               )
             })}
           </div>
@@ -345,7 +388,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-16 sm:py-24">
+      <section id="how-it-works" className="py-16 sm:py-24 scroll-mt-20">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16 space-y-3">
             <h2 className="text-2xl sm:text-4xl font-normal font-serif text-deep-ink">How Noa works</h2>

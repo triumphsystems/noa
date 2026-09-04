@@ -1,13 +1,18 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { CognitoUser, CognitoUserPool, AuthenticationDetails } from 'amazon-cognito-identity-js'
-
 import { useDoctorStore } from '@/lib/stores/doctor.store'
 import { useSessionStore } from '@/lib/stores/session.store'
 
+export interface UserSession {
+  id: string
+  email: string
+  name: string
+  userType: 'doctor' | 'patient'
+}
+
 interface AuthContextType {
-  user: CognitoUser | null
+  user: UserSession | null
   isAuthenticated: boolean
   userType: 'doctor' | 'patient' | null
   loading: boolean
@@ -20,105 +25,61 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<CognitoUser | null>(null)
+  const [user, setUser] = useState<UserSession | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [userType, setUserType] = useState<'doctor' | 'patient' | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check for existing session on mount
-    const checkSession = async () => {
-      try {
-        const userPoolId = process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID || ''
-        const clientId = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID || ''
+    // Check for existing session from localStorage on mount
+    if (typeof window !== 'undefined') {
+      const storedDoctorId = window.localStorage.getItem('doctorId')
+      const storedPatientId = window.localStorage.getItem('patientId')
+      const storedUserType = window.localStorage.getItem('userType') as 'doctor' | 'patient' | null
 
-        if (!userPoolId || !clientId) {
-          console.log('[v0] Cognito config not available')
-          setLoading(false)
-          return
-        }
-
-        const userPool = new CognitoUserPool({
-          UserPoolId: userPoolId,
-          ClientId: clientId,
+      if ((storedDoctorId || storedPatientId) && storedUserType) {
+        const id = storedUserType === 'doctor' ? (storedDoctorId || '') : (storedPatientId || '')
+        setUser({
+          id,
+          email: '',
+          name: '',
+          userType: storedUserType,
         })
-
-        const currentUser = userPool.getCurrentUser()
-        if (currentUser) {
-          currentUser.getSession((err: any, session: any) => {
-            if (err) {
-              console.log('[v0] No valid session:', err)
-              setLoading(false)
-            } else if (session && session.isValid()) {
-              setUser(currentUser)
-              setIsAuthenticated(true)
-              // Try to get user type from attributes
-              currentUser.getUserAttributes((err: any, attributes: any) => {
-                if (!err && attributes) {
-                  const type = attributes.find((attr: any) => attr.Name === 'custom:user_type')?.Value || 'patient'
-                  setUserType(type as 'doctor' | 'patient')
-                }
-                setLoading(false)
-              })
-            } else {
-              setLoading(false)
-            }
-          })
-        } else {
-          setLoading(false)
-        }
-      } catch (error) {
-        console.error('[v0] Error checking session:', error)
-        setLoading(false)
+        setIsAuthenticated(true)
+        setUserType(storedUserType)
       }
+      setLoading(false)
     }
-
-    checkSession()
   }, [])
 
   const login = async (email: string, password: string, type: 'doctor' | 'patient') => {
-    try {
-      const userPoolId = process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID || ''
-      const clientId = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID || ''
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, userType: type }),
+    })
 
-      const userPool = new CognitoUserPool({
-        UserPoolId: userPoolId,
-        ClientId: clientId,
-      })
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data.message || 'Login failed')
+    }
 
-      const cognitoUser = new CognitoUser({
-        Username: email,
-        Pool: userPool,
-      })
-
-      const authDetails = new AuthenticationDetails({
-        Username: email,
-        Password: password,
-      })
-
-      return new Promise<void>((resolve, reject) => {
-        cognitoUser.authenticateUser(authDetails, {
-          onSuccess: (result: any) => {
-            setUser(cognitoUser)
-            setIsAuthenticated(true)
-            setUserType(type)
-            resolve()
-          },
-          onFailure: (err: any) => {
-            reject(new Error(err.message || 'Authentication failed'))
-          },
-        })
-      })
-    } catch (error) {
-      throw error
+    if (data.user) {
+      setUser(data.user)
+      setIsAuthenticated(true)
+      setUserType(type)
+      if (typeof window !== 'undefined') {
+        if (type === 'doctor') {
+          window.localStorage.setItem('doctorId', data.user.id)
+        } else {
+          window.localStorage.setItem('patientId', data.user.id)
+        }
+        window.localStorage.setItem('userType', type)
+      }
     }
   }
 
   const logout = () => {
-    if (user) {
-      user.signOut()
-    }
-
     if (typeof window !== 'undefined') {
       ;['doctorId', 'patientId', 'userType', 'accessToken', 'idToken', 'refreshToken'].forEach(key => {
         window.localStorage.removeItem(key)
@@ -134,11 +95,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signup = async (email: string, password: string, type: 'doctor' | 'patient', userData: any) => {
-    throw new Error('Signup not implemented yet - use API route')
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, userType: type, ...userData }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data.message || 'Signup failed')
+    }
   }
 
   const verifyCode = async (email: string, code: string) => {
-    throw new Error('Code verification not implemented yet - use API route')
+    const res = await fetch('/api/auth/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data.message || 'Verification failed')
+    }
   }
 
   return (

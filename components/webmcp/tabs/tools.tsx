@@ -242,16 +242,18 @@ export function ToolsTab({ tools, onExecuteTool, logActivity }: ToolsProps) {
   return (
     <div className="flex-1 flex flex-col overflow-hidden min-h-0 bg-canvas font-sans">
       {/* Search & Category Header with Pure Cream Background */}
-      <div className="px-5 py-2.5 border-b border-deep-ink/10 bg-canvas flex flex-wrap items-center justify-between gap-3 shrink-0">
-        <div className="relative flex-1 min-w-[200px] max-w-xs">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate/70 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search tools..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-soft-meadow/70 border border-deep-ink/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-deep-ink/20 text-deep-ink placeholder:text-slate/60 transition-colors"
-          />
+      <div className="px-4 sm:px-5 py-2.5 border-b border-deep-ink/10 bg-canvas flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="flex-1 min-w-[180px] max-w-xs">
+          <div className="flex items-center gap-2 px-3 h-8 rounded-lg border border-deep-ink/10 bg-soft-meadow/70 focus-within:border-deep-ink/30 focus-within:bg-white focus-within:ring-1 focus-within:ring-deep-ink/15 transition-all">
+            <Search className="w-3.5 h-3.5 text-slate/70 shrink-0 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search tools..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full bg-transparent text-xs text-deep-ink placeholder:text-slate/60 outline-none border-none p-0 focus:ring-0"
+            />
+          </div>
         </div>
 
         {/* Category Filter Controls */}
@@ -275,7 +277,7 @@ export function ToolsTab({ tools, onExecuteTool, logActivity }: ToolsProps) {
       {/* Split View Layout with Cream Canvas */}
       <div className="flex-1 flex overflow-hidden min-h-0 bg-canvas">
         {/* Left Pane: Tool List Sidebar */}
-        <div className="w-60 sm:w-64 shrink-0 border-r border-deep-ink/10 flex flex-col bg-canvas/60 overflow-y-auto p-2 space-y-1">
+        <div className="w-64 min-w-[240px] max-w-[280px] shrink-0 border-r border-deep-ink/10 flex flex-col bg-canvas/60 overflow-y-auto p-2.5 space-y-1.5">
           {filteredTools.length === 0 ? (
             <div className="p-6 text-center text-xs text-slate">No tools match your criteria.</div>
           ) : (
@@ -288,25 +290,25 @@ export function ToolsTab({ tools, onExecuteTool, logActivity }: ToolsProps) {
                 <button
                   key={tool.name}
                   onClick={() => handleSelectTool(tool)}
-                  className={`w-full text-left p-2.5 rounded-xl transition-all text-xs cursor-pointer border ${
+                  className={`w-full text-left p-2.5 rounded-xl transition-all text-xs cursor-pointer border overflow-hidden ${
                     isSelected
                       ? 'bg-white border-deep-ink/20 shadow-xs'
                       : 'bg-transparent border-transparent hover:bg-white/60 hover:border-deep-ink/5 text-slate hover:text-deep-ink'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="font-mono font-medium text-deep-ink truncate text-xs">{tool.name}</span>
+                  <div className="flex items-center justify-between gap-1.5 mb-1 min-w-0">
+                    <span className="font-mono font-medium text-deep-ink truncate text-xs flex-1">{tool.name}</span>
                     <span
-                      className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono ${
+                      className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono shrink-0 ${
                         isClient ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-deep-ink/5 text-slate'
                       }`}
                     >
                       {isClient ? 'client' : 'rpc'}
                     </span>
                   </div>
-                  <p className="text-xs line-clamp-2 text-slate mb-1 leading-relaxed">{tool.description}</p>
+                  <p className="text-xs line-clamp-2 text-slate mb-1 leading-relaxed break-words">{tool.description}</p>
                   <div className="flex items-center gap-1.5 text-[11px] text-slate/70 font-mono">
-                    <Layers className="w-3 h-3 opacity-70" />
+                    <Layers className="w-3 h-3 opacity-70 shrink-0" />
                     <span>
                       {propCount} param{propCount === 1 ? '' : 's'}
                     </span>
@@ -437,15 +439,16 @@ export function ToolsTab({ tools, onExecuteTool, logActivity }: ToolsProps) {
               </div>
 
               {/* Execution Trigger Bar */}
-              <div className="flex items-center justify-between pt-1">
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 pb-1">
                 <p className="text-xs text-slate">
-                  Target runtime: <code className="font-mono text-deep-ink">document.modelContext</code>
+                  Target runtime: <code className="font-mono text-deep-ink bg-soft-meadow/80 px-1.5 py-0.5 rounded border border-deep-ink/5">document.modelContext</code>
                 </p>
                 <Button
+                  variant="default"
                   size="sm"
                   onClick={handleExecute}
                   disabled={isExecuting}
-                  className="rounded-full bg-hi-yellow hover:bg-[#ebd020] text-deep-ink text-xs font-semibold gap-1.5 px-4 py-1.5 shadow-2xs cursor-pointer border border-deep-ink/10 transition-transform active:scale-95"
+                  className="rounded-lg text-xs font-semibold gap-1.5 px-4 h-8 shadow-2xs cursor-pointer border border-deep-ink/10 transition-transform active:scale-95"
                 >
                   <Play className="w-3 h-3 fill-current" />
                   {isExecuting ? 'Executing...' : 'Execute Tool'}

@@ -86,9 +86,11 @@ export function ResourcesTab({ onReadResource, logActivity }: ResourcesProps) {
             className="flex-1 px-3.5 py-1.5 text-xs bg-soft-meadow/50 border border-deep-ink/10 rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-deep-ink/20 text-deep-ink transition-colors"
           />
           <Button
+            variant="default"
+            size="sm"
             onClick={() => handleRead()}
             disabled={isReadingResource}
-            className="rounded-full bg-hi-yellow hover:bg-[#ebd020] text-deep-ink text-xs font-semibold px-4 py-1.5 shadow-2xs cursor-pointer border border-deep-ink/10 transition-transform active:scale-95"
+            className="rounded-lg text-xs font-semibold px-4 h-8 shadow-2xs cursor-pointer border border-deep-ink/10 transition-transform active:scale-95"
           >
             {isReadingResource ? 'Reading...' : 'Read Resource'}
           </Button>
