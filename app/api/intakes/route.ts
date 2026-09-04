@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createIntake, getIntakesByPatient } from '@/lib/db'
+import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = getAuthenticatedUser(request)
+    if (!auth.isValid) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { patientId, doctorId, medicalHistory, medications, allergies, surgeries, familyHistory, socialHistory } = body
 
@@ -11,6 +17,11 @@ export async function POST(request: NextRequest) {
         { error: 'patientId and doctorId are required' },
         { status: 400 }
       )
+    }
+
+    const callerId = auth.dbId || auth.sub
+    if (auth.userType === 'patient' && callerId && callerId !== patientId && !auth.isDev) {
+      return NextResponse.json({ error: 'Forbidden: Cannot submit intake for another patient' }, { status: 403 })
     }
 
     // Create intake in DynamoDB
@@ -43,6 +54,11 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = getAuthenticatedUser(request)
+    if (!auth.isValid) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const patientId = request.nextUrl.searchParams.get('patientId')
 
     if (!patientId) {
@@ -50,6 +66,11 @@ export async function GET(request: NextRequest) {
         { error: 'patientId is required' },
         { status: 400 }
       )
+    }
+
+    const callerId = auth.dbId || auth.sub
+    if (auth.userType === 'patient' && callerId && callerId !== patientId && !auth.isDev) {
+      return NextResponse.json({ error: 'Forbidden: Cannot view another patient intake' }, { status: 403 })
     }
 
     const intakes = await getIntakesByPatient(patientId)

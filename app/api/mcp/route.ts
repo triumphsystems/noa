@@ -10,6 +10,7 @@ import { dispatcher } from '@/lib/webmcp/core/dispatcher'
 import { registry } from '@/lib/webmcp/core/registry'
 import { JsonRpcRequest, ExecutionContext } from '@/lib/webmcp/core/types'
 import { checkRateLimit, getClientIdentifier } from '@/lib/ratelimit'
+import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 // Ensure tools, resources, and prompts are registered
 initWebMCPServer()
@@ -64,9 +65,41 @@ export async function POST(req: NextRequest) {
 
     const rawBody = await req.json()
 
-    // Extract execution context from headers
+    // Extract execution context from headers and verified session cookies
     const authHeader = req.headers.get('authorization')
     const apiKeyHeader = req.headers.get('x-mcp-api-key')
+    const userAuth = getAuthenticatedUser(req)
+    const expectedApiKey = process.env.MCP_API_KEY || process.env.WEBMCP_API_KEY
+
+    const hasValidApiKey = Boolean(
+      expectedApiKey &&
+      (apiKeyHeader === expectedApiKey || authHeader === `Bearer ${expectedApiKey}`)
+    )
+    const isDevAuth =
+      (process.env.ALLOW_DEV_AUTH === 'true' || !expectedApiKey) &&
+      process.env.NODE_ENV !== 'production'
+
+    const isAuthorized = hasValidApiKey || userAuth.isValid || isDevAuth
+
+    // Guard: Tools execution and resource access require authentication in production
+    const requests = Array.isArray(rawBody) ? rawBody : [rawBody]
+    const requiresAuth = requests.some(
+      r => r?.method === 'tools/call' || r?.method === 'resources/read'
+    )
+
+    if (requiresAuth && !isAuthorized) {
+      return NextResponse.json(
+        {
+          jsonrpc: '2.0',
+          id: null,
+          error: {
+            code: -32001,
+            message: 'Unauthorized: A valid MCP API key or authenticated clinician session is required.',
+          },
+        },
+        { status: 401, headers: CORS_HEADERS }
+      )
+    }
 
     const context: ExecutionContext = {
       apiKey: apiKeyHeader || (authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined),

@@ -9,6 +9,7 @@ import { AUTH_COOKIE_NAMES } from './cookies'
 export interface VerifiedAuthPayload {
   isValid: boolean
   sub?: string
+  dbId?: string
   email?: string
   userType?: 'doctor' | 'patient'
   isDev?: boolean
@@ -103,8 +104,32 @@ export function verifyToken(idToken?: string, accessToken?: string): VerifiedAut
  * Extract authenticated user session securely from incoming NextRequest
  */
 export function getAuthenticatedUser(request: NextRequest): VerifiedAuthPayload {
-  const idToken = request.cookies.get(AUTH_COOKIE_NAMES.ID_TOKEN)?.value
-  const accessToken = request.cookies.get(AUTH_COOKIE_NAMES.ACCESS_TOKEN)?.value
+  const authHeader = request.headers.get('authorization')
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7).trim() : undefined
 
-  return verifyToken(idToken, accessToken)
+  const idToken = request.cookies.get(AUTH_COOKIE_NAMES.ID_TOKEN)?.value
+  const accessToken = bearerToken || request.cookies.get(AUTH_COOKIE_NAMES.ACCESS_TOKEN)?.value
+
+  const verified = verifyToken(idToken, accessToken)
+  if (!verified.isValid) {
+    return verified
+  }
+
+  // Once token is verified, extract internal database ID from server session metadata if present
+  const sessionMeta = request.cookies.get(AUTH_COOKIE_NAMES.SESSION_META)?.value
+  if (sessionMeta) {
+    try {
+      const parsed = JSON.parse(sessionMeta)
+      if (parsed.id) {
+        verified.dbId = parsed.id
+      }
+      if (!verified.userType && parsed.userType) {
+        verified.userType = parsed.userType
+      }
+    } catch {
+      // Ignore parse failure
+    }
+  }
+
+  return verified
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 import { createIntake } from '@/lib/db'
 import {
@@ -13,6 +14,11 @@ function mergeStringArrays(existing: string[] = [], incoming: string[] = []) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = getAuthenticatedUser(request)
+    if (!auth.isValid) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const transcript = typeof body.transcript === 'string' ? body.transcript.trim() : ''
     const language = typeof body.language === 'string' && body.language ? body.language : 'English'

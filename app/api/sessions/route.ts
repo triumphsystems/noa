@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSession, updateSession, getSessionsByDoctor, getSessionsByPatient, getSessionById, Session } from '@/lib/db'
+import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = getAuthenticatedUser(request)
+    if (!auth.isValid) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { doctorId, patientId, transcript, soapNote, sessionId, id } = body
 
@@ -11,6 +17,11 @@ export async function POST(request: NextRequest) {
         { error: 'doctorId and patientId are required' },
         { status: 400 }
       )
+    }
+
+    const callerId = auth.dbId || auth.sub
+    if (auth.userType === 'doctor' && callerId && callerId !== doctorId && !auth.isDev) {
+      return NextResponse.json({ error: 'Forbidden: Cannot manage sessions for another doctor' }, { status: 403 })
     }
 
     const targetId = sessionId || id
@@ -58,15 +69,30 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = getAuthenticatedUser(request)
+    if (!auth.isValid) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const sessionId = request.nextUrl.searchParams.get('sessionId')
     const doctorId = request.nextUrl.searchParams.get('doctorId')
     const patientId = request.nextUrl.searchParams.get('patientId')
+    const callerId = auth.dbId || auth.sub
 
     if (sessionId) {
       const session = await getSessionById(sessionId)
       if (!session) {
         return NextResponse.json({ error: 'Session not found' }, { status: 404 })
       }
+      // BOLA check: only the session's doctor, patient, or dev can view it
+      if (
+        !auth.isDev &&
+        callerId !== session.doctorId &&
+        callerId !== session.patientId
+      ) {
+        return NextResponse.json({ error: 'Forbidden: Access denied to this session' }, { status: 403 })
+      }
+
       return NextResponse.json({
         success: true,
         session,
@@ -83,8 +109,14 @@ export async function GET(request: NextRequest) {
     let sessions: Session[] = []
 
     if (doctorId) {
+      if (!auth.isDev && auth.userType === 'doctor' && callerId !== doctorId) {
+        return NextResponse.json({ error: 'Forbidden: Cannot list sessions for another doctor' }, { status: 403 })
+      }
       sessions = await getSessionsByDoctor(doctorId)
     } else if (patientId) {
+      if (!auth.isDev && auth.userType === 'patient' && callerId !== patientId) {
+        return NextResponse.json({ error: 'Forbidden: Cannot list sessions for another patient' }, { status: 403 })
+      }
       sessions = await getSessionsByPatient(patientId)
     }
 

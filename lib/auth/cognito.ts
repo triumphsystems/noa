@@ -101,6 +101,45 @@ export async function signInWithCognito(
 }
 
 /**
+ * Refresh Cognito session tokens using an active refresh token
+ */
+export async function refreshCognitoTokens(
+  refreshToken: string
+): Promise<CognitoTokens> {
+  const { clientId, isConfigured } = getCognitoConfig()
+
+  if (!isConfigured) {
+    throw new Error('AWS Cognito is not configured.')
+  }
+
+  try {
+    const command = new InitiateAuthCommand({
+      AuthFlow: AuthFlowType.REFRESH_TOKEN_AUTH,
+      ClientId: clientId,
+      AuthParameters: {
+        REFRESH_TOKEN: refreshToken,
+      },
+    })
+
+    const response = await cognitoClient.send(command)
+
+    if (!response.AuthenticationResult?.AccessToken || !response.AuthenticationResult?.IdToken) {
+      throw new Error('Failed to refresh tokens: No tokens returned by Cognito')
+    }
+
+    return {
+      accessToken: response.AuthenticationResult.AccessToken,
+      idToken: response.AuthenticationResult.IdToken,
+      refreshToken: response.AuthenticationResult.RefreshToken || refreshToken,
+      expiresIn: response.AuthenticationResult.ExpiresIn || 3600,
+    }
+  } catch (error: any) {
+    console.error('[Cognito] Refresh token error:', error?.name, error?.message)
+    throw new Error(error?.message || 'Failed to refresh authentication session')
+  }
+}
+
+/**
  * Register a new user in Cognito User Pool with custom attributes
  */
 export async function signUpWithCognito({

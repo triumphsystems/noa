@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { processVoiceInput, generateRealTimeNotes, transcribeAudio, getClinicaSuggestions } from '@/lib/voice-service'
 import { getSessionById, createSession, updateSession } from '@/lib/db'
+import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = getAuthenticatedUser(request)
+    if (!auth.isValid) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const contentType = request.headers.get('content-type') || ''
     let sessionId = ''
     let doctorId = ''

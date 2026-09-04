@@ -18,6 +18,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const callerId = auth.dbId || auth.sub
+    if (!auth.isDev && callerId && callerId !== doctorId) {
+      return NextResponse.json({ error: 'Forbidden: Cannot list patients for another doctor' }, { status: 403 })
+    }
+
     const patients = await getPatientsByDoctor(doctorId)
 
     return NextResponse.json({

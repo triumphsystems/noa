@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       const existing = await getDoctorByEmail(email)
       if (existing) {
         return NextResponse.json(
-          { message: 'Doctor with this email already exists' },
+          { message: 'An account with this email address already exists. Please sign in or reset your password.' },
           { status: 409 }
         )
       }
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       const existing = await getPatientByEmail(email)
       if (existing) {
         return NextResponse.json(
-          { message: 'Patient with this email already exists' },
+          { message: 'An account with this email address already exists. Please sign in or reset your password.' },
           { status: 409 }
         )
       }

@@ -22,6 +22,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'doctorId is required' }, { status: 400 })
     }
 
+    const callerId = auth.dbId || auth.sub
+    if (!auth.isDev && callerId && callerId !== doctorId) {
+      return NextResponse.json({ message: 'Forbidden: Cannot access another doctor dashboard' }, { status: 403 })
+    }
+
     const [doctor, patients, sessions] = await Promise.all([
       getDoctorById(doctorId),
       getPatientsByDoctor(doctorId),

@@ -3,9 +3,15 @@ import { generateSOAPWithNova } from '@/lib/bedrock-nova'
 import { updateSession } from '@/lib/db'
 import { checkRateLimit, getClientIdentifier, rateLimitResponse } from '@/lib/ratelimit'
 import { ClinicalAIUnavailableError } from '@/lib/ai/provider'
+import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = getAuthenticatedUser(request)
+    if (!auth.isValid) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { transcript, patientInfo, sessionId, patientId } = body
 
