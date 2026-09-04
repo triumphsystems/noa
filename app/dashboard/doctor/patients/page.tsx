@@ -12,7 +12,7 @@ import { useDoctorStore } from '@/lib/stores/doctor.store'
 
 interface PatientData {
   id: string
-  doctorId: string
+  doctorId?: string
   firstName: string
   lastName: string
   email: string
