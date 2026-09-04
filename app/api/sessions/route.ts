@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSession, getSessionsByDoctor, getSessionsByPatient, getSessionById, Session } from '@/lib/db'
+import { createSession, updateSession, getSessionsByDoctor, getSessionsByPatient, getSessionById, Session } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { doctorId, patientId, transcript, soapNote } = body
+    const { doctorId, patientId, transcript, soapNote, sessionId, id } = body
 
     if (!doctorId || !patientId) {
       return NextResponse.json(
@@ -13,15 +13,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create session in DynamoDB
-    const session = await createSession({
-      doctorId,
-      patientId,
-      startedAt: Date.now(),
-      transcript,
-      status: 'active',
-      soapNote: soapNote || undefined,
-    })
+    const targetId = sessionId || id
+    let session: Session | null = null
+
+    if (targetId) {
+      const existing = await getSessionById(targetId)
+      if (existing) {
+        session = await updateSession(targetId, {
+          doctorId,
+          patientId,
+          transcript: transcript || existing.transcript,
+          status: 'completed',
+          endedAt: Date.now(),
+          soapNote: soapNote || existing.soapNote,
+        })
+      }
+    }
+
+    if (!session) {
+      session = await createSession({
+        ...(targetId ? { id: targetId } : {}),
+        doctorId,
+        patientId,
+        startedAt: Date.now(),
+        endedAt: Date.now(),
+        transcript,
+        status: 'completed',
+        soapNote: soapNote || undefined,
+      })
+    }
 
     return NextResponse.json({
       success: true,

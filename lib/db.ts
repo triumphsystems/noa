@@ -291,9 +291,11 @@ export async function deletePatient(id: string): Promise<boolean> {
 }
 
 // ============ SESSION OPERATIONS ============
-export async function createSession(data: Omit<Session, 'id' | 'type' | 'createdAt' | 'updatedAt'>): Promise<Session> {
+export async function createSession(
+  data: Omit<Session, 'id' | 'type' | 'createdAt' | 'updatedAt'> & { id?: string }
+): Promise<Session> {
   const session: Session = {
-    id: `session-${nanoid()}`,
+    id: data.id || `session-${nanoid()}`,
     type: 'session',
     ...data,
     createdAt: Date.now(),

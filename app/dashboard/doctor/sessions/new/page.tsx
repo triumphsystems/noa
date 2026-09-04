@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import io, { Socket } from 'socket.io-client'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { AudioRecorderControl } from '@/components/session/audio-recorder-control'
 import { TranscriptFeed, type TranscriptItem } from '@/components/session/transcript-feed'
@@ -19,15 +18,22 @@ export default function NewSessionPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [sessionId, setSessionId] = useState<string>('')
-  const [socket, setSocket] = useState<Socket | null>(null)
 
   const doctorId = useDoctorStore(state => state.doctorId)
   const patients = useDoctorStore(state => state.patients)
   const loadDashboard = useDoctorStore(state => state.loadDashboard)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const audioChunksRef = useRef<Blob[]>([])
+  const audioStreamRef = useRef<MediaStream | null>(null)
+  const chunkIndexRef = useRef(0)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const recognitionRef = useRef<any>(null)
+  const latestSpeechRef = useRef<string>('')
+  const transcriptsRef = useRef<TranscriptItem[]>([])
+
+  useEffect(() => {
+    transcriptsRef.current = transcripts
+  }, [transcripts])
 
   // Ensure doctor data is loaded
   useEffect(() => {
@@ -38,71 +44,31 @@ export default function NewSessionPage() {
     }
   }, [doctorId, patients.length, loadDashboard])
 
-  // Initialize WebSocket connection safely
+  // Cleanup timer & audio stream on unmount
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || window.location.origin
-    const newSocket = io(wsUrl, {
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 3,
-    })
-
-    newSocket.on('suggestion-generated', (data: { suggestions: string[] }) => {
-      setSuggestions(
-        data.suggestions.map((text, idx) => ({
-          text,
-          priority: idx === 0 ? 'high' : idx === 1 ? 'medium' : 'low',
-        }))
-      )
-      setIsGenerating(false)
-    })
-
-    newSocket.on('transcript-updated', (data: { newLine: string }) => {
-      const now = new Date()
-      setTranscripts(prev => [
-        ...prev,
-        {
-          role: 'patient',
-          text: data.newLine,
-          timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        },
-      ])
-
-      if (data.newLine.length > 20) {
-        void getAISuggestions(data.newLine)
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop() } catch {}
       }
-    })
-
-    setSocket(newSocket)
-
-    return () => {
-      newSocket.disconnect()
-    }
-  }, [])
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach(track => track.stop())
       }
     }
   }, [])
 
-  const getAISuggestions = async (transcript: string) => {
+  const getAISuggestions = async (transcript: string, activeSessionId?: string) => {
     setIsGenerating(true)
     try {
       const response = await fetch('/api/clinical/suggestions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript, sessionId }),
+        body: JSON.stringify({ transcript, sessionId: activeSessionId || sessionId }),
       })
 
       if (response.ok) {
         const data = await response.json()
-        if (data.suggestions) {
+        if (data.suggestions && data.suggestions.length > 0) {
           setSuggestions(
             data.suggestions.map((text: string, idx: number) => ({
               text,
@@ -118,17 +84,22 @@ export default function NewSessionPage() {
     }
   }
 
-  const generateSOAPNote = useCallback(async (currentTranscripts: TranscriptItem[]) => {
+  const generateSOAPNote = useCallback(async (currentTranscripts: TranscriptItem[], activeSessionId?: string) => {
     setIsGenerating(true)
     try {
-      const fullTranscript = currentTranscripts.map(t => `${t.role}: ${t.text}`).join('\n')
+      const fullTranscript = currentTranscripts
+        .filter(t => t.role !== 'system')
+        .map(t => `${t.role}: ${t.text}`)
+        .join('\n')
+
+      if (!fullTranscript.trim()) return
 
       const response = await fetch('/api/clinical/soap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           transcript: fullTranscript,
-          sessionId,
+          sessionId: activeSessionId || sessionId,
           patientId: selectedPatient,
         }),
       })
@@ -144,43 +115,126 @@ export default function NewSessionPage() {
     }
   }, [sessionId, selectedPatient])
 
+  const uploadAudioChunk = async (chunk: Blob, currentSessionId: string, currentChunkIndex: number) => {
+    const formData = new FormData()
+    formData.append('audio', chunk, `chunk-${currentChunkIndex}.webm`)
+    formData.append('sessionId', currentSessionId)
+    formData.append('doctorId', doctorId || (typeof window !== 'undefined' ? window.localStorage.getItem('doctorId') || '' : ''))
+    formData.append('patientId', selectedPatient)
+    formData.append('chunkIndex', currentChunkIndex.toString())
+    formData.append('clientTranscript', latestSpeechRef.current)
+    latestSpeechRef.current = ''
+
+    try {
+      const res = await fetch('/api/sessions/voice', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        // If the browser speech recognition missed speech but Bedrock Nova Sonic transcribed it, append it
+        if (data.chunkTranscript && data.chunkTranscript.trim() && !recognitionRef.current) {
+          const now = new Date()
+          setTranscripts(prev => [
+            ...prev,
+            {
+              role: 'patient',
+              text: data.chunkTranscript.trim(),
+              timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+            },
+          ])
+        }
+
+        // Live clinical suggestions from Bedrock Nova
+        if (data.suggestions && data.suggestions.length > 0) {
+          setSuggestions(
+            data.suggestions.map((text: string, idx: number) => ({
+              text,
+              priority: idx === 0 ? 'high' : idx === 1 ? 'medium' : 'low',
+            }))
+          )
+        }
+      }
+    } catch (err) {
+      console.warn(`[Rolling Audio] Chunk ${currentChunkIndex} upload warning:`, err)
+    }
+  }
+
   const startRecording = async () => {
     try {
       const newSessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
       setSessionId(newSessionId)
-
-      if (socket) {
-        socket.emit('join-session', {
-          sessionId: newSessionId,
-          userId: doctorId,
-          userType: 'doctor',
-        })
-      }
+      chunkIndexRef.current = 0
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      audioStreamRef.current = stream
+
+      // Configure rolling 10-second incremental timeslices
       const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder
 
       mediaRecorder.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data)
-        if (socket) {
-          socket.emit('audio-chunk', {
-            sessionId: newSessionId,
-            chunk: event.data,
-            timestamp: Date.now(),
-          })
+        if (event.data && event.data.size > 0) {
+          const currentIndex = chunkIndexRef.current++
+          void uploadAudioChunk(event.data, newSessionId, currentIndex)
         }
       }
 
-      mediaRecorder.onstop = async () => {
-        audioChunksRef.current = []
-        await generateSOAPNote(transcripts)
-        stream.getTracks().forEach(track => track.stop())
+      mediaRecorder.onstop = () => {
+        void generateSOAPNote(transcriptsRef.current, newSessionId)
       }
 
-      mediaRecorder.start()
-      mediaRecorderRef.current = mediaRecorder
+      // Start with 10-second rolling interval (small ~150KB chunks safe for serverless)
+      mediaRecorder.start(10000)
       setIsRecording(true)
       setSessionDuration(0)
+
+      // Start Web Speech API for instantaneous zero-latency UI transcription
+      if (typeof window !== 'undefined') {
+        const Win = window as any
+        const SpeechRecognitionCtor = Win.SpeechRecognition || Win.webkitSpeechRecognition
+        if (SpeechRecognitionCtor) {
+          try {
+            const recognition = new SpeechRecognitionCtor()
+            recognition.continuous = true
+            recognition.interimResults = false
+            recognition.lang = 'en-US'
+
+            recognition.onresult = (event: any) => {
+              const lastResult = event.results[event.results.length - 1]
+              if (lastResult && lastResult[0]?.transcript) {
+                const text = lastResult[0].transcript.trim()
+                if (text) {
+                  latestSpeechRef.current = text
+                  const now = new Date()
+                  setTranscripts(prev => [
+                    ...prev,
+                    {
+                      role: 'patient',
+                      text,
+                      timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                    },
+                  ])
+
+                  if (text.length > 20) {
+                    void getAISuggestions(text, newSessionId)
+                  }
+                }
+              }
+            }
+
+            recognition.onerror = (err: any) => {
+              console.warn('[Web Speech] Recognition error:', err)
+            }
+
+            recognition.start()
+            recognitionRef.current = recognition
+          } catch (speechErr) {
+            console.warn('[Web Speech] Could not start speech recognition:', speechErr)
+          }
+        }
+      }
 
       timerRef.current = setInterval(() => {
         setSessionDuration(prev => prev + 1)
@@ -191,7 +245,7 @@ export default function NewSessionPage() {
         ...prev,
         {
           role: 'system',
-          text: 'Session started — Nova AI real-time transcription active.',
+          text: 'Session started — Nova AI rolling audio capture & real-time clinical intelligence active.',
           timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         },
       ])
@@ -205,6 +259,17 @@ export default function NewSessionPage() {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop()
       setIsRecording(false)
+
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop() } catch {}
+        recognitionRef.current = null
+      }
+
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach(track => track.stop())
+        audioStreamRef.current = null
+      }
+
       if (timerRef.current) {
         clearInterval(timerRef.current)
       }
@@ -214,7 +279,7 @@ export default function NewSessionPage() {
         ...prev,
         {
           role: 'system',
-          text: 'Recording stopped. Synthesizing consultation summary.',
+          text: 'Recording stopped. Synthesizing consultation summary and final SOAP note.',
           timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         },
       ])
@@ -270,11 +335,17 @@ export default function NewSessionPage() {
 
     setIsSaving(true)
     try {
+      const activeDoctorId =
+        doctorId || (typeof window !== 'undefined' ? window.localStorage.getItem('doctorId') || '' : '')
+
       const response = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          sessionId,
+          doctorId: activeDoctorId,
           patientId: selectedPatient,
+          transcript: transcripts.filter(t => t.role !== 'system').map(t => `${t.role}: ${t.text}`).join('\n'),
           transcripts,
           soapNote,
           duration: sessionDuration,

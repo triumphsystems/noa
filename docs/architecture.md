@@ -23,7 +23,7 @@ Noa is a Next.js (App Router) healthcare platform that combines generative AI cl
 ```
 
 - **Frontend**: Next.js 16, React 19, Tailwind CSS, Lucide icons, Zustand state stores.
-- **Real-Time Voice**: WebSocket server (`lib/websocket-service.ts`) streaming audio during live consultations.
+- **Real-Time Voice**: Serverless rolling audio pipeline (`app/api/sessions/voice`) with 10s incremental chunks, browser Web Speech live feedback, and Bedrock Nova Sonic transcription.
 - **Clinical AI Engine**: AWS Bedrock Runtime client (`lib/bedrock-nova.ts`) generating SOAP notes, triage priority, and diagnostic insights.
 - **Persistence**: AWS DynamoDB single-table design (`lib/db.ts`) with on-demand capacity.
 - **Media Storage**: AWS S3 bucket with AES-256 encryption and lifecycle archiving.
@@ -193,11 +193,13 @@ s3://<AWS_S3_BUCKET>/
 
 ---
 
-## 5. Real-Time Consultation & WebSocket Pipeline
+## 5. Real-Time Consultation & Serverless Voice Pipeline
 
-The live consultation interface communicates through Socket.io (`lib/websocket-service.ts`):
+The live consultation interface runs on a serverless-native rolling audio pipeline:
 
-1. **Client Connection**: Doctor and/or patient connects to the consultation room using the session ID.
-2. **Audio Streaming**: Audio chunks recorded via `react-mic` or MediaStream API are converted to WAV format and sent over the WebSocket.
-3. **Live Processing**: The audio stream triggers transcription and parallel Bedrock prompt execution, returning interim notes and suggestions back to the UI.
-4. **Session Finalization**: On session end, audio is committed to S3, final transcripts are saved to DynamoDB, and Bedrock Nova generates the structured SOAP note.
+1. **Zero-Latency Live Transcription**: Browser Web Speech API provides instant, on-screen text transcription as the doctor and patient speak.
+2. **Incremental Audio Chunking**: `MediaRecorder` captures rolling 10-second timeslices (~150KB per chunk), completely avoiding Vercel's 4.5MB serverless payload limit.
+3. **Serverless Transcription & S3 Archival**: Each 10s chunk is streamed to `/api/sessions/voice`, persisted to S3, and transcribed via Amazon Bedrock Nova Sonic.
+4. **Incremental DynamoDB Persistence**: Transcripts are automatically compiled into the session record in DynamoDB on each chunk, safeguarding against tab crashes or network drops.
+5. **Mid-Consultation Clinical Suggestions**: Bedrock generates real-time differential diagnosis considerations and alerts as the conversation progresses.
+6. **Instant Session Finalization**: Because the transcript is already assembled in DynamoDB throughout the call, generating the final structured SOAP note via Bedrock Nova Pro/Lite takes only 2–3 seconds when the doctor ends the session.

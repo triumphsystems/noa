@@ -1,58 +1,143 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { processVoiceInput, generateRealTimeNotes } from '@/lib/voice-service'
-import { updateSession } from '@/lib/db'
+import { processVoiceInput, generateRealTimeNotes, transcribeAudio, getClinicaSuggestions } from '@/lib/voice-service'
+import { getSessionById, createSession, updateSession } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { sessionId, userTranscript, sessionContext, patientInfo, transcript } = body
+    const contentType = request.headers.get('content-type') || ''
+    let sessionId = ''
+    let doctorId = ''
+    let patientId = ''
+    let chunkIndex = 0
+    let audioBuffer: Buffer | null = null
+    let clientTranscript = ''
+    let userTranscript = ''
+    let sessionContext: any = null
+    let patientInfo = ''
+    let legacyTranscript = ''
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData()
+      sessionId = (formData.get('sessionId') as string) || ''
+      doctorId = (formData.get('doctorId') as string) || ''
+      patientId = (formData.get('patientId') as string) || ''
+      chunkIndex = parseInt((formData.get('chunkIndex') as string) || '0', 10)
+      clientTranscript = (formData.get('clientTranscript') as string) || ''
+
+      const audioFile = formData.get('audio') as File | null
+      if (audioFile) {
+        const arrayBuffer = await audioFile.arrayBuffer()
+        audioBuffer = Buffer.from(arrayBuffer)
+      }
+    } else {
+      const body = await request.json()
+      sessionId = body.sessionId || ''
+      doctorId = body.doctorId || ''
+      patientId = body.patientId || ''
+      chunkIndex = body.chunkIndex || 0
+      clientTranscript = body.clientTranscript || ''
+      userTranscript = body.userTranscript || ''
+      sessionContext = body.sessionContext || null
+      patientInfo = body.patientInfo || ''
+      legacyTranscript = body.transcript || ''
+
+      if (body.audioBase64) {
+        audioBuffer = Buffer.from(body.audioBase64, 'base64')
+      }
+    }
 
     if (!sessionId) {
-      return NextResponse.json(
-        { error: 'Session ID is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Session ID is required' }, { status: 400 })
     }
 
-    console.log('[v0] Processing voice input for session:', sessionId)
-
-    let response = ''
-    
-    // Process voice input with Sonic for real-time conversation
+    // 1. Process legacy voice input if present
+    let aiResponse = ''
     if (userTranscript && sessionContext) {
-      response = await processVoiceInput(userTranscript, sessionContext, patientInfo)
+      aiResponse = await processVoiceInput(userTranscript, sessionContext, patientInfo)
     }
 
-    // Generate real-time notes when transcript is provided
-    let realTimeNotes = null
-    if (transcript) {
-      realTimeNotes = await generateRealTimeNotes(
-        transcript,
-        sessionContext || { sessionId, transcript: [], clientIds: [], isRecording: true, doctorId: '', patientId: '' }
-      )
-
-      // Update session with real-time notes
+    // 2. Transcribe incoming incremental audio chunk via Bedrock Nova Sonic
+    let chunkTranscript = ''
+    if (audioBuffer && audioBuffer.length > 0) {
       try {
-        await updateSession(sessionId, {
-          realTimeNotes,
-          transcript,
+        chunkTranscript = await transcribeAudio(audioBuffer, `${sessionId}-chunk-${chunkIndex}`)
+      } catch (err) {
+        console.warn(`[Voice Route] Chunk ${chunkIndex} Bedrock transcription warning:`, err)
+        if (clientTranscript) {
+          chunkTranscript = clientTranscript
+        }
+      }
+    } else if (clientTranscript) {
+      chunkTranscript = clientTranscript
+    } else if (legacyTranscript) {
+      chunkTranscript = legacyTranscript
+    }
+
+    // 3. Atomically update session in DynamoDB
+    let fullTranscript = ''
+    let suggestions: string[] = []
+    let realTimeNotes = null
+
+    const session = await getSessionById(sessionId)
+
+    if (chunkTranscript.trim()) {
+      if (session) {
+        fullTranscript = session.transcript
+          ? `${session.transcript}\n${chunkTranscript.trim()}`
+          : chunkTranscript.trim()
+        await updateSession(sessionId, { transcript: fullTranscript })
+      } else {
+        fullTranscript = chunkTranscript.trim()
+        await createSession({
+          id: sessionId,
+          doctorId: doctorId || 'doctor-session',
+          patientId: patientId || 'patient-session',
+          startedAt: Date.now(),
+          status: 'active',
+          transcript: fullTranscript,
         })
-      } catch (error) {
-        console.error('[v0] Error updating session notes:', error)
+      }
+
+      // Generate contextual clinical suggestions if chunk has meaningful content
+      if (chunkTranscript.length > 15) {
+        try {
+          suggestions = await getClinicaSuggestions(chunkTranscript, '', '')
+        } catch (suggErr) {
+          console.warn('[Voice Route] Suggestions generation warning:', suggErr)
+        }
+      }
+    } else {
+      fullTranscript = session?.transcript || ''
+    }
+
+    // 4. Generate real-time notes if requested
+    if (legacyTranscript) {
+      realTimeNotes = await generateRealTimeNotes(
+        legacyTranscript,
+        sessionContext || { sessionId, transcript: [], clientIds: [], isRecording: true, doctorId, patientId }
+      )
+      try {
+        await updateSession(sessionId, { realTimeNotes, transcript: fullTranscript })
+      } catch (noteErr) {
+        console.warn('[Voice Route] Error updating session notes:', noteErr)
       }
     }
 
     return NextResponse.json({
       success: true,
-      aiResponse: response,
-      realTimeNotes,
       sessionId,
+      chunkIndex,
+      chunkTranscript,
+      fullTranscript,
+      suggestions,
+      aiResponse,
+      realTimeNotes,
     })
   } catch (error) {
-    console.error('[v0] Error processing voice input:', error)
+    console.error('[Voice Route] Error processing voice session:', error)
     return NextResponse.json(
       {
-        error: 'Failed to process voice input',
+        error: 'Failed to process voice session',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
