@@ -289,9 +289,9 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="bg-soft-meadow/50 py-16 sm:py-24 border-y border-deep-ink/8 scroll-mt-20">
+      <section id="features" className="bg-soft-meadow/50 py-20 sm:py-28 border-y border-deep-ink/8 scroll-mt-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16 space-y-3">
+          <div className="text-center max-w-2xl mx-auto mb-14 sm:mb-18 space-y-3.5">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-deep-ink/8 text-xs font-semibold text-deep-ink/75 shadow-2xs">
               <Sparkles className="w-3.5 h-3.5 text-deep-ink" />
               <span>Core Clinical Capabilities</span>
@@ -304,7 +304,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
             {[
               {
                 icon: Mic,
@@ -353,11 +353,11 @@ export default function LandingPage() {
               return (
                 <div
                   key={idx}
-                  className="group relative p-6 sm:p-7 rounded-2xl bg-white hover:bg-white border border-deep-ink/8 hover:border-hi-yellow/80 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between"
+                  className="group relative p-7 sm:p-8 rounded-2xl bg-white hover:bg-white border border-deep-ink/8 hover:border-hi-yellow/80 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between"
                 >
                   <div>
-                    <div className="flex items-center justify-between mb-5">
-                      <div className="w-11 h-11 rounded-xl bg-hi-yellow border border-deep-ink/15 flex items-center justify-center text-deep-ink shadow-2xs group-hover:scale-105 transition-transform duration-200">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="w-12 h-12 rounded-xl bg-hi-yellow border border-deep-ink/15 flex items-center justify-center text-deep-ink shadow-2xs group-hover:scale-105 transition-transform duration-200">
                         <Icon className="w-5 h-5 text-deep-ink" />
                       </div>
                       <span className="text-[11px] font-semibold text-deep-ink uppercase tracking-wider font-sans bg-hi-yellow/25 px-2.5 py-0.5 rounded-full border border-hi-yellow/50">
@@ -365,7 +365,7 @@ export default function LandingPage() {
                       </span>
                     </div>
 
-                    <h3 className="text-lg sm:text-xl font-bold font-serif text-deep-ink mb-2 tracking-tight">
+                    <h3 className="text-lg sm:text-xl font-bold font-serif text-deep-ink mb-2.5 tracking-tight">
                       {feature.title}
                     </h3>
                     <p className="text-slate text-sm leading-relaxed font-sans">
@@ -373,7 +373,7 @@ export default function LandingPage() {
                     </p>
                   </div>
 
-                  <div className="pt-4 mt-5 border-t border-deep-ink/5 flex items-center justify-between text-xs text-slate/80 font-sans">
+                  <div className="pt-5 mt-6 border-t border-deep-ink/5 flex items-center justify-between text-xs text-slate/80 font-sans">
                     <span className="flex items-center gap-1.5 font-medium">
                       <span className="w-2 h-2 rounded-full bg-hi-yellow border border-deep-ink/30" />
                       {feature.metric}
@@ -388,9 +388,9 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="pt-24 pb-20 sm:pt-32 sm:pb-28 scroll-mt-24">
+      <section id="how-it-works" className="pt-28 pb-24 sm:pt-36 sm:pb-32 scroll-mt-24">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto mb-14 sm:mb-18 space-y-3.5">
+          <div className="text-center max-w-2xl mx-auto mb-16 sm:mb-20 space-y-4">
             <h2 className="text-3xl sm:text-4xl font-medium font-serif text-deep-ink tracking-tight">
               How Noa works
             </h2>
@@ -399,7 +399,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-7">
             {[
               {
                 step: '01',
@@ -422,12 +422,12 @@ export default function LandingPage() {
                 description: 'Review the note, sign off, and send an easy-to-read summary to the patient portal.',
               },
             ].map((item, idx) => (
-              <Card key={idx} className="p-6 sm:p-8 flex gap-4 sm:gap-5 items-start bg-white shadow-editorial rounded-2xl border border-deep-ink/8 hover:border-hi-yellow/60 transition-all">
-                <span className="text-2xl sm:text-3xl font-semibold font-serif text-deep-ink/30 shrink-0">
+              <Card key={idx} className="p-7 sm:p-9 flex gap-5 sm:gap-6 items-start bg-white shadow-editorial rounded-2xl border border-deep-ink/8 hover:border-hi-yellow/60 transition-all">
+                <span className="text-3xl sm:text-4xl font-semibold font-serif text-deep-ink/25 shrink-0 pt-0.5">
                   {item.step}
                 </span>
-                <div className="space-y-1 sm:space-y-1.5">
-                  <h3 className="text-base sm:text-lg font-semibold font-serif text-deep-ink tracking-tight">{item.title}</h3>
+                <div className="space-y-2">
+                  <h3 className="text-lg sm:text-xl font-semibold font-serif text-deep-ink tracking-tight">{item.title}</h3>
                   <p className="text-slate text-sm leading-relaxed">{item.description}</p>
                 </div>
               </Card>
