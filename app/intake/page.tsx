@@ -57,11 +57,7 @@ function PatientIntakeContent() {
           </div>
         )}
 
-        {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700 shrink-0">
-            {error}
-          </div>
-        )}
+        {error && <ErrorAlert message={error} className="shrink-0" />}
 
         {/* Studio Layout: Stacked on mobile, 2-column on desktop */}
         <main className="grid flex-1 gap-2.5 sm:gap-3.5 lg:grid-cols-[1.25fr_0.95fr] min-h-0 overflow-y-auto lg:overflow-hidden">

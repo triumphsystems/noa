@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { ErrorAlert } from '@/components/ui/error-alert'
 import { cn } from '@/lib/utils'
 
 type LoginFormProps = {
@@ -74,11 +75,7 @@ export default function LoginForm({ userType }: LoginFormProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 font-sans">
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700">
-            {error}
-          </div>
-        )}
+        {error && <ErrorAlert message={error} onDismiss={() => setError('')} />}
 
         <div className="space-y-1">
           <label className="block text-xs font-medium text-deep-ink">Email</label>

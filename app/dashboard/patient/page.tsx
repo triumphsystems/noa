@@ -9,6 +9,7 @@ import { HealthInfoCard } from '@/components/patient/health-info-card'
 import { PrivacyNoticeCard } from '@/components/patient/privacy-notice-card'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { ErrorAlert } from '@/components/ui/error-alert'
 
 export default function PatientDashboardPage() {
   const {
@@ -57,10 +58,13 @@ export default function PatientDashboardPage() {
 
   if (error && !patient) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
-        <Card className="p-8 text-center border-red-200 bg-red-50/50">
-          <h3 className="text-lg font-serif font-bold text-red-800 mb-2">Unable to Load Portal</h3>
-          <p className="text-sm text-red-600 mb-4">{error}</p>
+      <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-4">
+        <ErrorAlert
+          variant="card"
+          title="Unable to Load Health Portal"
+          message={error}
+        />
+        <div className="text-center">
           <Button
             variant="outline"
             className="rounded-full text-xs"
@@ -68,7 +72,7 @@ export default function PatientDashboardPage() {
           >
             Retry Loading
           </Button>
-        </Card>
+        </div>
       </div>
     )
   }

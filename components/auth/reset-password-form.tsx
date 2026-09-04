@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { ErrorAlert } from '@/components/ui/error-alert'
 import { ArrowLeft, CheckCircle2, KeyRound, Lock, Eye, EyeOff } from 'lucide-react'
 
 export default function ResetPasswordForm() {
@@ -110,11 +111,7 @@ export default function ResetPasswordForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 font-sans">
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700">
-            {error}
-          </div>
-        )}
+        {error && <ErrorAlert message={error} onDismiss={() => setError('')} />}
 
         <div className="space-y-1.5">
           <label className="block text-xs font-medium text-deep-ink">Email address</label>

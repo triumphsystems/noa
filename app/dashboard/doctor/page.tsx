@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { StatCard } from '@/components/ui/stat-card'
 import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorAlert } from '@/components/ui/error-alert'
 import { Calendar, CheckCircle2, Clock, FileEdit, Plus, RefreshCw, Search, Users } from 'lucide-react'
 
 import { useDoctorStore } from '@/lib/stores/doctor.store'
@@ -67,11 +68,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-700">
-          {error}
-        </div>
-      )}
+      {error && <ErrorAlert message={error} />}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

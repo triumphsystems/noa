@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { ErrorAlert } from '@/components/ui/error-alert'
 import { useDoctorStore } from '@/lib/stores/doctor.store'
 
 type SettingsFormState = {
@@ -83,11 +84,7 @@ export default function DoctorSettingsPage() {
         <h1 className="text-2xl sm:text-3xl font-bold font-serif mb-2">Profile and preferences</h1>
       </div>
 
-      {error && (
-        <div className="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      {error && <ErrorAlert message={error} />}
 
       {success && (
         <div className="rounded-3xl border border-moss-green/30 bg-moss-green/10 p-4 text-sm text-deep-ink">

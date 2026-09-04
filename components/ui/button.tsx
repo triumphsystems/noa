@@ -19,7 +19,7 @@ const buttonVariants = cva(
         ghost:
           'hover:bg-soft-meadow text-deep-ink/80 hover:text-deep-ink',
         destructive:
-          'bg-red-50 text-red-700 hover:bg-red-100 border-red-200 shadow-2xs',
+          'bg-red-50/90 text-red-800 hover:bg-red-100 border-red-200/80 shadow-2xs font-medium',
         link: 'text-deep-ink underline-offset-4 hover:underline p-0 h-auto',
       },
       size: {

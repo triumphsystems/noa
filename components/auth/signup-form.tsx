@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { ErrorAlert } from '@/components/ui/error-alert'
 
 type SignupFormProps = {
   userType: 'doctor' | 'patient'
@@ -90,11 +91,7 @@ export default function SignupForm({ userType }: SignupFormProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700">
-            {error}
-          </div>
-        )}
+        {error && <ErrorAlert message={error} onDismiss={() => setError('')} />}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1">
