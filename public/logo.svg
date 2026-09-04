@@ -1,16 +1,16 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Soft Canvas Gradient for Squircle -->
+    <!-- Vibrant Soft Meadow / Hi-Yellow subtle backdrop -->
     <linearGradient id="canvasBg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#FFFFFF" />
-      <stop offset="40%" stop-color="#F9FBF2" />
-      <stop offset="100%" stop-color="#EFF2E5" />
+      <stop offset="60%" stop-color="#F9FBF2" />
+      <stop offset="100%" stop-color="#FFE228" stop-opacity="0.22" />
     </linearGradient>
 
     <!-- Warm Radiant Yellow Pulse Glow -->
     <filter id="yellowGlow" x="-20%" y="-40%" width="140%" height="180%">
-      <feGaussianBlur stdDeviation="8" result="blur1" />
-      <feGaussianBlur stdDeviation="16" result="blur2" />
+      <feGaussianBlur stdDeviation="6" result="blur1" />
+      <feGaussianBlur stdDeviation="12" result="blur2" />
       <feMerge>
         <feMergeNode in="blur2" />
         <feMergeNode in="blur1" />
@@ -25,30 +25,30 @@
     </linearGradient>
   </defs>
 
-  <!-- Squircle Container in Brand Soft Canvas -->
+  <!-- Squircle Container in Brand Soft Canvas with distinct border -->
   <rect width="512" height="512" rx="112" fill="url(#canvasBg)" />
-  <rect x="2" y="2" width="508" height="508" rx="110" stroke="#130E30" stroke-opacity="0.08" stroke-width="4" />
+  <rect x="4" y="4" width="504" height="504" rx="108" stroke="#130E30" stroke-opacity="0.14" stroke-width="8" />
 
-  <!-- The Bold, Unmistakable Letter 'N' in Deep Ink (#130E30) -->
+  <!-- Bold, High-Contrast Letter 'N' scaled to fill container -->
   <path 
-    d="M136 124 H200 L312 308 V124 H376 V388 H312 L200 204 V388 H136 Z" 
+    d="M108 92 H192 L320 318 V92 H404 V420 H320 L192 194 V420 H108 Z" 
     fill="#130E30" 
   />
 
   <!-- Voice Frequency & Bio-Telemetry Pulse Wave in Signature Radiant Yellow (#FFE228) -->
   <g filter="url(#yellowGlow)">
     <path 
-      d="M80 256 H136 L154 236 L172 276 L192 256 L216 208 L238 320 L256 180 L274 320 L296 208 L320 256 L340 276 L358 236 L376 256 H432" 
+      d="M48 256 H120 L144 230 L168 282 L194 256 L224 196 L250 336 L272 168 L294 336 L318 196 L344 256 L368 282 L392 230 L416 256 H464" 
       fill="none" 
       stroke="url(#pulseYellow)" 
-      stroke-width="14" 
+      stroke-width="20" 
       stroke-linecap="round" 
-      stroke-linejoin="round"
+      stroke-linejoin="round" 
     />
   </g>
 
   <!-- Accent Focal Points on the Pulse Line -->
-  <circle cx="256" cy="180" r="8" fill="#FFE228" />
-  <circle cx="80" cy="256" r="6" fill="#FFE228" />
-  <circle cx="432" cy="256" r="6" fill="#FFE228" />
+  <circle cx="272" cy="168" r="12" fill="#FFE228" stroke="#130E30" stroke-width="4" />
+  <circle cx="48" cy="256" r="9" fill="#FFE228" />
+  <circle cx="464" cy="256" r="9" fill="#FFE228" />
 </svg>

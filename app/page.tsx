@@ -30,14 +30,14 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="border-b border-deep-ink/8 bg-canvas/90 backdrop-blur-md sticky top-0 z-30 font-sans transition-all">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3.5 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
+          <Link href="/" className="flex items-center gap-3.5 group">
             <img
               src="/logo.svg"
               alt="Noa Logo"
-              className="w-8 h-8 rounded-lg border border-deep-ink/10 shadow-2xs shrink-0 group-hover:scale-105 transition-transform"
+              className="w-10 h-10 rounded-xl border border-deep-ink/15 shadow-2xs shrink-0 group-hover:scale-105 transition-transform"
             />
-            <span className="text-xl sm:text-2xl font-bold font-serif text-deep-ink tracking-tight">Noa</span>
-            <Badge variant="secondary" className="hidden sm:inline-flex text-[11px] font-sans">
+            <span className="text-2xl sm:text-3xl font-bold font-serif text-deep-ink tracking-tight">Noa</span>
+            <Badge variant="secondary" className="hidden sm:inline-flex text-xs font-sans">
               Clinical Intelligence
             </Badge>
           </Link>
@@ -388,16 +388,18 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-16 sm:py-24 scroll-mt-20">
+      <section id="how-it-works" className="pt-24 pb-20 sm:pt-32 sm:pb-28 scroll-mt-24">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16 space-y-3">
-            <h2 className="text-2xl sm:text-4xl font-normal font-serif text-deep-ink">How Noa works</h2>
-            <p className="text-slate text-sm sm:text-base">
+          <div className="text-center max-w-2xl mx-auto mb-14 sm:mb-18 space-y-3.5">
+            <h2 className="text-3xl sm:text-4xl font-medium font-serif text-deep-ink tracking-tight">
+              How Noa works
+            </h2>
+            <p className="text-slate text-sm sm:text-base leading-relaxed">
               Four frictionless steps to eliminate consultation documentation backlogs.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
             {[
               {
                 step: '01',
@@ -420,12 +422,12 @@ export default function LandingPage() {
                 description: 'Review the note, sign off, and send an easy-to-read summary to the patient portal.',
               },
             ].map((item, idx) => (
-              <Card key={idx} className="p-6 sm:p-7 flex gap-4 sm:gap-5 items-start bg-white shadow-editorial">
-                <span className="text-2xl sm:text-3xl font-medium font-serif text-deep-ink/25 shrink-0">
+              <Card key={idx} className="p-6 sm:p-8 flex gap-4 sm:gap-5 items-start bg-white shadow-editorial rounded-2xl border border-deep-ink/8 hover:border-hi-yellow/60 transition-all">
+                <span className="text-2xl sm:text-3xl font-semibold font-serif text-deep-ink/30 shrink-0">
                   {item.step}
                 </span>
                 <div className="space-y-1 sm:space-y-1.5">
-                  <h3 className="text-base sm:text-lg font-medium font-serif text-deep-ink">{item.title}</h3>
+                  <h3 className="text-base sm:text-lg font-semibold font-serif text-deep-ink tracking-tight">{item.title}</h3>
                   <p className="text-slate text-sm leading-relaxed">{item.description}</p>
                 </div>
               </Card>
@@ -435,15 +437,15 @@ export default function LandingPage() {
       </section>
 
       {/* Bottom CTA Banner */}
-      <section className="bg-soft-meadow py-16 sm:py-24 border-t border-deep-ink/8">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center space-y-5">
-          <h2 className="text-2xl sm:text-4xl font-normal font-serif text-deep-ink">
+      <section className="bg-soft-meadow py-20 sm:py-28 border-t border-deep-ink/8">
+        <div className="mx-auto max-w-2xl px-4 sm:px-6 text-center space-y-4">
+          <h2 className="text-2xl sm:text-3xl font-medium font-serif text-deep-ink tracking-tight leading-snug">
             Ready to reclaim hours on clinical documentation?
           </h2>
-          <p className="text-slate text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
+          <p className="text-slate text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
             Join healthcare professionals who have transformed consultation flow with Noa.
           </p>
-          <div className="pt-2">
+          <div className="pt-3">
             <Link href="/auth/signup?type=doctor" className="inline-block w-full sm:w-auto">
               <Button variant="default" className="w-full sm:w-auto rounded-lg px-8 py-3 h-12 text-sm font-semibold shadow-2xs">
                 Start Your Practice Trial
