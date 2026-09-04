@@ -277,7 +277,7 @@ export function ToolsTab({ tools, onExecuteTool, logActivity }: ToolsProps) {
       {/* Split View Layout with Cream Canvas */}
       <div className="flex-1 flex overflow-hidden min-h-0 bg-canvas">
         {/* Left Pane: Tool List Sidebar */}
-        <div className="w-64 min-w-[240px] max-w-[280px] shrink-0 border-r border-deep-ink/10 flex flex-col bg-canvas/60 overflow-y-auto p-2.5 space-y-1.5">
+        <div className="w-72 min-w-[260px] max-w-[300px] shrink-0 border-r border-deep-ink/10 flex flex-col bg-canvas/60 overflow-y-auto p-3 space-y-2">
           {filteredTools.length === 0 ? (
             <div className="p-6 text-center text-xs text-slate">No tools match your criteria.</div>
           ) : (
@@ -287,51 +287,67 @@ export function ToolsTab({ tools, onExecuteTool, logActivity }: ToolsProps) {
               const propCount = Object.keys(tool.inputSchema?.properties || {}).length
 
               return (
-                <button
+                <div
                   key={tool.name}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => handleSelectTool(tool)}
-                  className={`w-full text-left p-2.5 rounded-xl transition-all text-xs cursor-pointer border overflow-hidden ${
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      handleSelectTool(tool)
+                    }
+                  }}
+                  className={`w-full text-left p-3 rounded-xl transition-all cursor-pointer border flex flex-col gap-1.5 ${
                     isSelected
-                      ? 'bg-white border-deep-ink/20 shadow-xs'
-                      : 'bg-transparent border-transparent hover:bg-white/60 hover:border-deep-ink/5 text-slate hover:text-deep-ink'
+                      ? 'bg-white border-deep-ink/25 shadow-xs ring-1 ring-deep-ink/10'
+                      : 'bg-white/50 border-deep-ink/6 hover:bg-white hover:border-deep-ink/15 text-slate hover:text-deep-ink'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-1.5 mb-1 min-w-0">
-                    <span className="font-mono font-medium text-deep-ink truncate text-xs flex-1">{tool.name}</span>
+                  <div className="flex items-center justify-between gap-2 w-full min-w-0">
+                    <span className="font-mono font-semibold text-deep-ink truncate text-xs flex-1 leading-normal">
+                      {tool.name}
+                    </span>
                     <span
-                      className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono shrink-0 ${
-                        isClient ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-deep-ink/5 text-slate'
+                      className={`text-[10px] px-2 py-0.5 rounded-md font-mono font-medium shrink-0 ${
+                        isClient
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-soft-meadow border border-deep-ink/10 text-deep-ink/80'
                       }`}
                     >
                       {isClient ? 'client' : 'rpc'}
                     </span>
                   </div>
-                  <p className="text-xs line-clamp-2 text-slate mb-1 leading-relaxed break-words">{tool.description}</p>
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate/70 font-mono">
+                  {tool.description && (
+                    <span className="text-[11px] leading-relaxed text-slate line-clamp-2 break-words block">
+                      {tool.description}
+                    </span>
+                  )}
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate/70 font-mono pt-0.5">
                     <Layers className="w-3 h-3 opacity-70 shrink-0" />
                     <span>
                       {propCount} param{propCount === 1 ? '' : 's'}
                     </span>
                   </div>
-                </button>
+                </div>
               )
             })
           )}
         </div>
 
         {/* Right Pane: Workbench & Execution Playground */}
-        <div className="flex-1 min-w-0 flex flex-col bg-canvas overflow-y-auto p-4 sm:p-5 space-y-4">
+        <div className="flex-1 min-w-0 flex flex-col bg-canvas overflow-y-auto p-5 sm:p-6 space-y-5">
           {currentToolObj ? (
             <>
               {/* Tool Header Card */}
-              <div className="bg-white border border-deep-ink/10 rounded-2xl p-4 space-y-2 shadow-2xs">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                    <h3 className="font-mono text-xs font-semibold text-deep-ink break-all">
+              <div className="bg-white border border-deep-ink/10 rounded-2xl p-5 sm:p-6 space-y-3 shadow-2xs">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
+                    <h3 className="font-mono text-sm font-semibold text-deep-ink break-all">
                       {currentToolObj.name}
                     </h3>
                     <span
-                      className={`whitespace-nowrap shrink-0 text-[10px] font-mono px-2 py-0.2 rounded-md ${
+                      className={`whitespace-nowrap shrink-0 text-[10px] font-mono px-2 py-0.5 rounded-md ${
                         currentToolObj.name.startsWith('client_')
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : 'bg-deep-ink/5 text-slate'
@@ -341,12 +357,12 @@ export function ToolsTab({ tools, onExecuteTool, logActivity }: ToolsProps) {
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleCopyCurl}
-                      className="text-xs h-7 rounded-lg gap-1 px-2.5 bg-canvas hover:bg-soft-meadow border-deep-ink/10 cursor-pointer"
+                      className="text-xs h-7 rounded-lg gap-1.5 px-3 bg-canvas hover:bg-soft-meadow border-deep-ink/10 cursor-pointer"
                       title="Copy as cURL command"
                     >
                       {copiedCurl ? <Check className="w-3 h-3 text-emerald-600" /> : <Share2 className="w-3 h-3" />}
@@ -357,7 +373,7 @@ export function ToolsTab({ tools, onExecuteTool, logActivity }: ToolsProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleSelectTool(currentToolObj)}
-                      className="text-xs h-7 rounded-lg text-slate hover:text-deep-ink px-2 cursor-pointer"
+                      className="text-xs h-7 rounded-lg text-slate hover:text-deep-ink px-2.5 cursor-pointer"
                       title="Reset to sample inputs"
                     >
                       Reset
@@ -365,7 +381,7 @@ export function ToolsTab({ tools, onExecuteTool, logActivity }: ToolsProps) {
                   </div>
                 </div>
 
-                <p className="text-xs text-slate leading-relaxed">{currentToolObj.description}</p>
+                <p className="text-xs sm:text-sm text-slate leading-relaxed">{currentToolObj.description}</p>
               </div>
 
               {/* Parameter Schema Breakdown */}
@@ -373,33 +389,34 @@ export function ToolsTab({ tools, onExecuteTool, logActivity }: ToolsProps) {
                 Object.keys(currentToolObj.inputSchema.properties).length > 0 && (
                   <div className="border border-deep-ink/10 rounded-2xl bg-white overflow-hidden shadow-2xs">
                     <button
+                      type="button"
                       onClick={() => setShowSchemaAccordion(prev => !prev)}
-                      className="w-full px-4 py-2.5 flex items-center justify-between text-xs font-medium text-deep-ink hover:bg-soft-meadow/40 transition-colors cursor-pointer"
+                      className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-medium text-deep-ink hover:bg-soft-meadow/40 transition-colors cursor-pointer"
                     >
                       <span className="flex items-center gap-2">
-                        <SlidersHorizontal className="w-3.5 h-3.5 text-slate" />
-                        <span>Parameters ({Object.keys(currentToolObj.inputSchema.properties).length})</span>
+                        <SlidersHorizontal className="w-3.5 h-3.5 text-slate shrink-0" />
+                        <span className="leading-normal">Parameters ({Object.keys(currentToolObj.inputSchema.properties).length})</span>
                       </span>
                       {showSchemaAccordion ? (
-                        <ChevronDown className="w-3.5 h-3.5 text-slate" />
+                        <ChevronDown className="w-3.5 h-3.5 text-slate shrink-0" />
                       ) : (
-                        <ChevronRight className="w-3.5 h-3.5 text-slate" />
+                        <ChevronRight className="w-3.5 h-3.5 text-slate shrink-0" />
                       )}
                     </button>
 
                     {showSchemaAccordion && (
-                      <div className="p-3 border-t border-deep-ink/8 space-y-1.5 bg-canvas/30">
+                      <div className="p-4 sm:p-5 border-t border-deep-ink/8 space-y-2 bg-canvas/30">
                         {Object.entries(currentToolObj.inputSchema.properties).map(([name, prop]: [string, any]) => {
                           const isRequired = currentToolObj.inputSchema?.required?.includes(name)
                           return (
                             <div
                               key={name}
-                              className="flex flex-col sm:flex-row sm:items-baseline gap-2 bg-white p-2.5 rounded-xl border border-deep-ink/6"
+                              className="flex flex-col sm:flex-row sm:items-baseline gap-2.5 bg-white p-3.5 rounded-xl border border-deep-ink/6"
                             >
-                              <div className="flex items-center gap-1.5 min-w-[140px]">
+                              <div className="flex items-center gap-2 min-w-[140px]">
                                 <span className="font-mono font-medium text-deep-ink text-xs">{name}</span>
                                 {isRequired && (
-                                  <span className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1 py-0.2 rounded-md font-medium">
+                                  <span className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded-md font-medium">
                                     Required
                                   </span>
                                 )}
@@ -417,7 +434,7 @@ export function ToolsTab({ tools, onExecuteTool, logActivity }: ToolsProps) {
                 )}
 
               {/* Input Arguments JSON Editor */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-medium text-deep-ink">
                     Input Arguments (JSON)
@@ -432,27 +449,26 @@ export function ToolsTab({ tools, onExecuteTool, logActivity }: ToolsProps) {
                 <textarea
                   value={toolInputJson}
                   onChange={e => setToolInputJson(e.target.value)}
-                  rows={7}
-                  className="w-full font-mono text-xs p-3.5 bg-white border border-deep-ink/15 rounded-xl focus:outline-none focus:ring-1 focus:ring-deep-ink/30 leading-relaxed text-deep-ink shadow-2xs resize-y"
+                  rows={8}
+                  className="w-full font-mono text-xs p-4 bg-white border border-deep-ink/15 rounded-xl focus:outline-none focus:ring-1 focus:ring-deep-ink/30 leading-relaxed text-deep-ink shadow-2xs resize-y"
                   placeholder="{}"
                 />
               </div>
 
               {/* Execution Trigger Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 pb-1">
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 pb-2 border-t border-deep-ink/8">
                 <p className="text-xs text-slate">
-                  Target runtime: <code className="font-mono text-deep-ink bg-soft-meadow/80 px-1.5 py-0.5 rounded border border-deep-ink/5">document.modelContext</code>
+                  Target runtime: <code className="font-mono text-deep-ink bg-soft-meadow/80 px-2 py-0.5 rounded border border-deep-ink/8">document.modelContext</code>
                 </p>
-                <Button
-                  variant="default"
-                  size="sm"
+                <button
+                  type="button"
                   onClick={handleExecute}
                   disabled={isExecuting}
-                  className="rounded-lg text-xs font-semibold gap-1.5 px-4 h-8 shadow-2xs cursor-pointer border border-deep-ink/10 transition-transform active:scale-95"
+                  className="inline-flex items-center justify-center gap-2 px-5 h-10 min-h-[40px] rounded-xl bg-hi-yellow hover:bg-[#ebd020] text-deep-ink font-bold text-xs shadow-xs hover:shadow active:scale-[0.98] transition-all cursor-pointer border border-deep-ink/15 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                 >
-                  <Play className="w-3 h-3 fill-current" />
-                  {isExecuting ? 'Executing...' : 'Execute Tool'}
-                </Button>
+                  <Play className="w-3.5 h-3.5 fill-deep-ink text-deep-ink shrink-0" />
+                  <span>{isExecuting ? 'Executing...' : 'Execute Tool'}</span>
+                </button>
               </div>
 
               {/* Result Console Display */}
