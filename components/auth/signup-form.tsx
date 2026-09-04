@@ -23,6 +23,8 @@ export default function SignupForm({ userType: initialUserType }: SignupFormProp
     lastName: '',
     specialty: '',
     clinic: '',
+    license: '',
+    issuingAuthority: '',
     dateOfBirth: '',
     doctorId: '',
   })
@@ -188,30 +190,60 @@ export default function SignupForm({ userType: initialUserType }: SignupFormProp
         </div>
 
         {userType === 'doctor' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-deep-ink">Medical Specialty</label>
-              <input
-                type="text"
-                name="specialty"
-                value={formData.specialty}
-                onChange={handleChange}
-                required
-                className="w-full px-3.5 py-2.5 border border-deep-ink/15 rounded-xl text-deep-ink placeholder:text-slate/50 focus:outline-none focus:border-deep-ink focus:ring-2 focus:ring-deep-ink/10 text-sm bg-white shadow-2xs transition-all"
-                placeholder="e.g. Cardiology"
-              />
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-deep-ink">Medical Specialty</label>
+                <input
+                  type="text"
+                  name="specialty"
+                  value={formData.specialty}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3.5 py-2.5 border border-deep-ink/15 rounded-xl text-deep-ink placeholder:text-slate/50 focus:outline-none focus:border-deep-ink focus:ring-2 focus:ring-deep-ink/10 text-sm bg-white shadow-2xs transition-all"
+                  placeholder="e.g. Cardiology"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-deep-ink">Clinic / Hospital</label>
+                <input
+                  type="text"
+                  name="clinic"
+                  value={formData.clinic}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3.5 py-2.5 border border-deep-ink/15 rounded-xl text-deep-ink placeholder:text-slate/50 focus:outline-none focus:border-deep-ink focus:ring-2 focus:ring-deep-ink/10 text-sm bg-white shadow-2xs transition-all"
+                  placeholder="e.g. St. Jude Clinic"
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-deep-ink">Clinic / Hospital</label>
-              <input
-                type="text"
-                name="clinic"
-                value={formData.clinic}
-                onChange={handleChange}
-                required
-                className="w-full px-3.5 py-2.5 border border-deep-ink/15 rounded-xl text-deep-ink placeholder:text-slate/50 focus:outline-none focus:border-deep-ink focus:ring-2 focus:ring-deep-ink/10 text-sm bg-white shadow-2xs transition-all"
-                placeholder="e.g. St. Jude Clinic"
-              />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-deep-ink">
+                  Medical License Number <span className="text-amber-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="license"
+                  value={formData.license || ''}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3.5 py-2.5 border border-deep-ink/15 rounded-xl text-deep-ink placeholder:text-slate/50 focus:outline-none focus:border-deep-ink focus:ring-2 focus:ring-deep-ink/10 text-sm bg-white shadow-2xs transition-all font-mono"
+                  placeholder="e.g. MD-982341"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-deep-ink">Issuing Board / Authority</label>
+                <input
+                  type="text"
+                  name="issuingAuthority"
+                  value={formData.issuingAuthority || ''}
+                  onChange={handleChange}
+                  className="w-full px-3.5 py-2.5 border border-deep-ink/15 rounded-xl text-deep-ink placeholder:text-slate/50 focus:outline-none focus:border-deep-ink focus:ring-2 focus:ring-deep-ink/10 text-sm bg-white shadow-2xs transition-all"
+                  placeholder="e.g. Medical Board / GMC"
+                />
+              </div>
             </div>
           </div>
         ) : (
