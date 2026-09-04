@@ -56,7 +56,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const callerId = auth.dbId || auth.sub
-    if (!auth.isDev && callerId !== id) {
+    if (callerId !== id) {
       return NextResponse.json({ message: 'Forbidden: Cannot update another doctor profile' }, { status: 403 })
     }
 

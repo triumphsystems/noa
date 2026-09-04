@@ -29,17 +29,16 @@ export async function GET(request: NextRequest) {
     }
 
     const callerId = auth.dbId || auth.sub
-    if (!auth.isDev) {
-      if (auth.userType === 'patient' && callerId && callerId !== patientId) {
-        return NextResponse.json({ message: 'Forbidden: Cannot access another patient dashboard' }, { status: 403 })
-      }
-      if (auth.userType === 'doctor' && callerId && patient.doctorId && patient.doctorId !== callerId) {
-        return NextResponse.json({ message: 'Forbidden: Cannot access a patient assigned to another doctor' }, { status: 403 })
-      }
+    if (auth.userType === 'patient' && callerId && callerId !== patientId) {
+      return NextResponse.json({ message: 'Forbidden: Cannot access another patient dashboard' }, { status: 403 })
+    }
+    if (auth.userType === 'doctor' && callerId && patient.doctorId && patient.doctorId !== callerId) {
+      return NextResponse.json({ message: 'Forbidden: Cannot access a patient assigned to another doctor' }, { status: 403 })
     }
 
-    const [doctor, sessions, intakes] = await Promise.all([
+    const [doctor, pendingDoctor, sessions, intakes] = await Promise.all([
       patient.doctorId ? getDoctorById(patient.doctorId) : Promise.resolve(null),
+      patient.pendingDoctorId ? getDoctorById(patient.pendingDoctorId) : Promise.resolve(null),
       getSessionsByPatient(patientId),
       getIntakesByPatient(patientId),
     ])
@@ -57,6 +56,7 @@ export async function GET(request: NextRequest) {
     const payload: PatientDashboardPayload = {
       patient,
       doctor,
+      pendingDoctor,
       sessions: sortedSessions,
       intake: latestIntake,
       stats,

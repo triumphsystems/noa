@@ -7,6 +7,7 @@ import { PatientStatsGrid } from '@/components/patient/patient-stats-grid'
 import { ConsultationsList } from '@/components/patient/consultations-list'
 import { HealthInfoCard } from '@/components/patient/health-info-card'
 import { PrivacyNoticeCard } from '@/components/patient/privacy-notice-card'
+import { DoctorConnectCard } from '@/components/patient/doctor-connect-card'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ErrorAlert } from '@/components/ui/error-alert'
@@ -16,6 +17,7 @@ export default function PatientDashboardPage() {
     patientId,
     patient,
     doctor,
+    pendingDoctor,
     sessions,
     intake,
     stats,
@@ -77,6 +79,8 @@ export default function PatientDashboardPage() {
     )
   }
 
+  const showDoctorConnect = !patient?.doctorId || patient?.linkStatus === 'pending_patient_approval'
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 max-w-5xl mx-auto">
       <WelcomeBanner
@@ -84,6 +88,17 @@ export default function PatientDashboardPage() {
         hasDoctor={Boolean(patient?.doctorId)}
         doctorName={doctor?.name}
       />
+
+      {showDoctorConnect && (
+        <DoctorConnectCard
+          pendingDoctor={pendingDoctor}
+          linkStatus={patient?.linkStatus}
+          onRefresh={async () => {
+            if (patientId) await loadDashboard(patientId)
+          }}
+        />
+      )}
+
       <PatientStatsGrid stats={stats} />
       <ConsultationsList sessions={sessions} doctor={doctor} />
       <HealthInfoCard patient={patient} intake={intake} />

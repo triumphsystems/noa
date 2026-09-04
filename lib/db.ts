@@ -29,6 +29,7 @@ export interface Doctor {
   specialty: string
   license: string
   clinic: string
+  careCode?: string
   phone?: string
   avatar?: string
   createdAt: number
@@ -39,6 +40,10 @@ export interface Patient {
   id: string
   type: 'patient'
   doctorId?: string
+  pendingDoctorId?: string
+  linkStatus?: 'linked' | 'pending_patient_approval' | 'pending_doctor_approval' | 'unlinked'
+  linkRequestedBy?: 'doctor' | 'patient'
+  linkRequestedAt?: number
   email: string
   firstName: string
   lastName: string
@@ -178,6 +183,79 @@ export async function updateDoctor(id: string, updates: Partial<Doctor>): Promis
   return (result.Attributes as Doctor) || null
 }
 
+export function computeDoctorCareCode(doctor: Doctor): string {
+  if (doctor.careCode) return doctor.careCode
+  const suffix = doctor.id.replace('doctor-', '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase()
+  return `NOA-${suffix || 'DOC'}`
+}
+
+export async function getAllDoctors(): Promise<Doctor[]> {
+  try {
+    const result = await docClient.send(
+      new ScanCommand({
+        TableName: TABLE_NAME,
+        FilterExpression: '#type = :type',
+        ExpressionAttributeNames: {
+          '#type': 'type',
+        },
+        ExpressionAttributeValues: {
+          ':type': 'doctor',
+        },
+        Limit: 100,
+      })
+    )
+    const doctors = (result.Items || []) as Doctor[]
+    return doctors.map(doc => ({
+      ...doc,
+      careCode: doc.careCode || computeDoctorCareCode(doc),
+    }))
+  } catch (err) {
+    console.error('[DB] Error fetching all doctors:', err)
+    return []
+  }
+}
+
+export async function searchDoctors(queryStr: string): Promise<Doctor[]> {
+  const query = (queryStr || '').trim().toLowerCase()
+  if (!query) return []
+
+  const doctors = await getAllDoctors()
+  return doctors.filter(doc => {
+    const nameMatch = (doc.name || '').toLowerCase().includes(query)
+    const specialtyMatch = (doc.specialty || '').toLowerCase().includes(query)
+    const clinicMatch = (doc.clinic || '').toLowerCase().includes(query)
+    const emailMatch = (doc.email || '').toLowerCase().includes(query)
+    const codeMatch =
+      (doc.careCode || '').toLowerCase().includes(query.replace(/[^a-zA-Z0-9]/g, '')) ||
+      (doc.careCode || '').toLowerCase() === query
+
+    return nameMatch || specialtyMatch || clinicMatch || emailMatch || codeMatch
+  })
+}
+
+export async function getDoctorByCareCode(codeStr: string): Promise<Doctor | null> {
+  const code = (codeStr || '').trim().toLowerCase()
+  if (!code) return null
+
+  // Direct lookup if query is an email
+  if (code.includes('@')) {
+    return await getDoctorByEmail(code)
+  }
+
+  // Direct lookup if query is an exact doctor ID
+  if (code.startsWith('doctor-')) {
+    return await getDoctorById(code)
+  }
+
+  const doctors = await getAllDoctors()
+  return (
+    doctors.find(doc => {
+      const computed = (doc.careCode || computeDoctorCareCode(doc)).toLowerCase()
+      return computed === code || computed.replace('noa-', '') === code.replace('noa-', '')
+    }) || null
+  )
+}
+
 // ============ PATIENT OPERATIONS ============
 export async function createPatient(
   data: Omit<Patient, 'id' | 'type' | 'createdAt' | 'updatedAt'> & { id?: string }
@@ -247,6 +325,28 @@ export async function getPatientsByDoctor(doctorId: string): Promise<Patient[]> 
   )
 
   return (result.Items || []) as Patient[]
+}
+
+export async function getPendingPatientsByDoctor(doctorId: string): Promise<Patient[]> {
+  try {
+    const result = await docClient.send(
+      new ScanCommand({
+        TableName: TABLE_NAME,
+        FilterExpression: '#type = :type AND pendingDoctorId = :doctorId',
+        ExpressionAttributeNames: {
+          '#type': 'type',
+        },
+        ExpressionAttributeValues: {
+          ':type': 'patient',
+          ':doctorId': doctorId,
+        },
+      })
+    )
+    return (result.Items || []) as Patient[]
+  } catch (err) {
+    console.error('[DB] Error getting pending patients by doctor:', err)
+    return []
+  }
 }
 
 export async function updatePatient(id: string, updates: Partial<Patient>): Promise<Patient | null> {

@@ -104,7 +104,11 @@ export function useIntakeVoice() {
   }, [isVoiceOutputEnabled])
 
   useEffect(() => {
-    const resolvedDoctorId = searchParams?.get('doctorId') || window.localStorage?.getItem('doctorId') || ''
+    const resolvedDoctorId =
+      searchParams?.get('doctorId') ||
+      searchParams?.get('doctorCode') ||
+      window.localStorage?.getItem('doctorId') ||
+      ''
     const resolvedPatientId = searchParams?.get('patientId') || window.localStorage?.getItem('patientId') || ''
     setDoctorId(resolvedDoctorId)
     setPatientId(resolvedPatientId)

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
-import { createIntake } from '@/lib/db'
+import { createIntake, getDoctorByCareCode, getDoctorById } from '@/lib/db'
 import {
   generateIntakeConversationTurn,
   type IntakeConversationDraft,
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const language = typeof body.language === 'string' && body.language ? body.language : 'English'
     const history = Array.isArray(body.history) ? (body.history as IntakeConversationMessage[]) : []
     const draft = (body.draft || {}) as IntakeConversationDraft
-    const doctorId = typeof body.doctorId === 'string' ? body.doctorId.trim() : ''
+    const doctorInput = typeof body.doctorId === 'string' ? body.doctorId.trim() : ''
     const patientId = typeof body.patientId === 'string' ? body.patientId.trim() : ''
 
     if (!transcript) {
@@ -40,10 +40,17 @@ export async function POST(request: NextRequest) {
 
     let savedIntake = null
 
-    if (result.isComplete && doctorId && patientId) {
+    if (result.isComplete && doctorInput && patientId) {
+      // Resolve doctor whether doctorInput was an ID or Care Code
+      let resolvedDoctorId = doctorInput
+      if (!doctorInput.startsWith('doctor-')) {
+        const doc = await getDoctorByCareCode(doctorInput)
+        if (doc) resolvedDoctorId = doc.id
+      }
+
       savedIntake = await createIntake({
         patientId,
-        doctorId,
+        doctorId: resolvedDoctorId,
         completed: Boolean(result.isComplete),
         completedAt: result.isComplete ? Date.now() : undefined,
         medicalHistory: [

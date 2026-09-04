@@ -6,6 +6,7 @@ export interface PatientState {
   patientId: string | null
   patient: PatientProfile | null
   doctor: Doctor | null
+  pendingDoctor: Doctor | null
   sessions: Session[]
   intake: PatientIntake | null
   stats: PatientDashboardPayload['stats'] | null
@@ -20,6 +21,7 @@ const initialState = {
   patientId: null,
   patient: null,
   doctor: null,
+  pendingDoctor: null,
   sessions: [],
   intake: null,
   stats: null,
@@ -57,6 +59,7 @@ export const usePatientStore = create<PatientState>((set, get) => ({
       set({
         patient: payload.patient,
         doctor: payload.doctor,
+        pendingDoctor: payload.pendingDoctor || null,
         sessions: payload.sessions,
         intake: payload.intake,
         stats: payload.stats,

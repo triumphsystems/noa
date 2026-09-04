@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import type { ApiSuccess } from '@/lib/types/api.types'
 import type { DoctorDashboardPayload } from '@/lib/types/doctor.types'
-import { getDoctorById, getPatientsByDoctor, getSessionsByDoctor } from '@/lib/db'
+import { getDoctorById, getPatientsByDoctor, getPendingPatientsByDoctor, getSessionsByDoctor } from '@/lib/db'
 import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function GET(request: NextRequest) {
@@ -23,15 +23,24 @@ export async function GET(request: NextRequest) {
     }
 
     const callerId = auth.dbId || auth.sub
-    if (!auth.isDev && callerId && callerId !== doctorId) {
+    if (callerId && callerId !== doctorId) {
       return NextResponse.json({ message: 'Forbidden: Cannot access another doctor dashboard' }, { status: 403 })
     }
 
-    const [doctor, patients, sessions] = await Promise.all([
+    const [doctor, linkedPatients, pendingPatients, sessions] = await Promise.all([
       getDoctorById(doctorId),
       getPatientsByDoctor(doctorId),
+      getPendingPatientsByDoctor(doctorId),
       getSessionsByDoctor(doctorId),
     ])
+
+    // Combine linked and pending patients, avoiding duplicates
+    const patientMap = new Map()
+    linkedPatients.forEach(p => patientMap.set(p.id, p))
+    pendingPatients.forEach(p => {
+      if (!patientMap.has(p.id)) patientMap.set(p.id, p)
+    })
+    const patients = Array.from(patientMap.values())
 
     if (!doctor) {
       return NextResponse.json({ message: 'Doctor not found' }, { status: 404 })
@@ -47,8 +56,13 @@ export async function GET(request: NextRequest) {
       todaySessions: sessions.filter(session => new Date(session.startedAt).toDateString() === today.toDateString()).length,
     }
 
+    const doctorWithCareCode = {
+      ...doctor,
+      careCode: doctor.careCode || (doctor.id ? `NOA-${doctor.id.replace('doctor-', '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase()}` : 'NOA-DOC'),
+    }
+
     const dashboard: DoctorDashboardPayload = {
-      doctor,
+      doctor: doctorWithCareCode,
       patients,
       sessions: [...sessions].sort((a, b) => b.startedAt - a.startedAt),
       stats,

@@ -12,6 +12,7 @@ export interface PatientStats {
 export interface PatientDashboardPayload {
   patient: PatientProfile
   doctor: Doctor | null
+  pendingDoctor?: Doctor | null
   sessions: Session[]
   intake: PatientIntake | null
   stats: PatientStats
