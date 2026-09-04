@@ -80,6 +80,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = () => {
+    fetch('/api/auth/logout', { method: 'POST' }).catch(err => {
+      console.error('[AuthContext] Logout error:', err)
+    })
+
     if (typeof window !== 'undefined') {
       ;['doctorId', 'patientId', 'userType', 'accessToken', 'idToken', 'refreshToken'].forEach(key => {
         window.localStorage.removeItem(key)

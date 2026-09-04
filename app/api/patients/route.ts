@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPatientsByDoctor } from '@/lib/db'
+import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = getAuthenticatedUser(request)
+    if (!auth.isValid) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const doctorId = request.nextUrl.searchParams.get('doctorId')
 
     if (!doctorId) {

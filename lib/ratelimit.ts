@@ -47,6 +47,12 @@ export function getClientIdentifier(req: NextRequest, customId?: string): string
   if (sessionCookie) {
     try {
       const parsed = JSON.parse(sessionCookie)
+      if (parsed.userType === 'doctor' && (parsed.doctorId || parsed.id)) {
+        return `doctor:${parsed.doctorId || parsed.id}`
+      }
+      if (parsed.userType === 'patient' && (parsed.patientId || parsed.id)) {
+        return `patient:${parsed.patientId || parsed.id}`
+      }
       if (parsed.doctorId) return `doctor:${parsed.doctorId}`
       if (parsed.patientId) return `patient:${parsed.patientId}`
       if (parsed.email) return `user:${parsed.email}`

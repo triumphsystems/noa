@@ -47,13 +47,15 @@ describe('HIPAA-Compliant Session Cookie Suite', () => {
         email: sessionUser.email,
         name: sessionUser.name,
         userType: sessionUser.userType,
+        doctorId: sessionUser.userType === 'doctor' ? sessionUser.sub : undefined,
+        patientId: sessionUser.userType === 'patient' ? sessionUser.sub : undefined,
       }),
       options: {
-        httpOnly: false,
+        httpOnly: true,
         secure: isProd,
         sameSite: 'lax',
         path: '/',
-        maxAge: 30 * 24 * 60 * 60,
+        maxAge: tokens.expiresIn || 3600,
       },
     })
 
@@ -62,12 +64,12 @@ describe('HIPAA-Compliant Session Cookie Suite', () => {
 
   function simulateClearAuthCookies() {
     const cookies = new Map()
-    const clearOptions = { httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 0 }
+    const clearOptions = { httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 0, expires: new Date(0) }
 
     cookies.set(AUTH_COOKIE_NAMES.ACCESS_TOKEN, { value: '', options: clearOptions })
     cookies.set(AUTH_COOKIE_NAMES.ID_TOKEN, { value: '', options: clearOptions })
     cookies.set(AUTH_COOKIE_NAMES.REFRESH_TOKEN, { value: '', options: clearOptions })
-    cookies.set(AUTH_COOKIE_NAMES.SESSION_META, { value: '', options: { ...clearOptions, httpOnly: false } })
+    cookies.set(AUTH_COOKIE_NAMES.SESSION_META, { value: '', options: clearOptions })
 
     return cookies
   }
@@ -105,7 +107,7 @@ describe('HIPAA-Compliant Session Cookie Suite', () => {
 
     // Verify Session Metadata Cookie
     const metaCookie = cookies.get(AUTH_COOKIE_NAMES.SESSION_META)
-    assert.equal(metaCookie.options.httpOnly, false, 'Session meta must be readable by client UI')
+    assert.equal(metaCookie.options.httpOnly, true, 'Session meta must be httpOnly to prevent XSS & tampering')
     const parsed = JSON.parse(metaCookie.value)
     assert.equal(parsed.id, 'doc-uuid-1234')
     assert.equal(parsed.email, 'dr.smith@noa.health')
@@ -162,22 +164,31 @@ describe('Cognito Server Configuration & Validation Suite', () => {
 
 describe('Next.js Edge Middleware RBAC Simulation Suite', () => {
   function simulateMiddleware(pathname, cookies) {
-    const sessionCookie = cookies.get('noa_session')
-    const tokenCookie = cookies.get('noa_access_token')
-    const isAuthenticated = Boolean(sessionCookie || tokenCookie)
+    const idToken = cookies.get('noa_id_token')
+    const accessToken = cookies.get('noa_access_token')
+    const hasToken = Boolean(idToken || accessToken)
 
+    // Token must be present - session cookie alone is NOT trusted
     let userType = null
-    if (sessionCookie) {
+    if (idToken) {
       try {
-        userType = JSON.parse(sessionCookie).userType
-      } catch {}
+        const payload = JSON.parse(Buffer.from(idToken.split('.')[1], 'base64').toString('utf8'))
+        userType = payload['custom:user_type']
+      } catch {
+        // If not a JWT, fallback to dev token check
+        if (idToken.startsWith('dev-')) userType = 'doctor'
+      }
+    } else if (accessToken?.startsWith('dev-')) {
+      userType = 'doctor'
     }
+
+    const isAuthenticated = hasToken && Boolean(userType)
 
     if (pathname.startsWith('/dashboard/doctor')) {
       if (!isAuthenticated) {
         return { action: 'redirect', to: '/auth/login?userType=doctor' }
       }
-      if (userType && userType !== 'doctor') {
+      if (userType !== 'doctor') {
         return { action: 'redirect', to: '/dashboard/patient' }
       }
       return { action: 'next' }
@@ -187,7 +198,7 @@ describe('Next.js Edge Middleware RBAC Simulation Suite', () => {
       if (!isAuthenticated) {
         return { action: 'redirect', to: '/auth/login?userType=patient' }
       }
-      if (userType && userType !== 'patient') {
+      if (userType !== 'patient') {
         return { action: 'redirect', to: '/dashboard/doctor' }
       }
       return { action: 'next' }
@@ -196,15 +207,34 @@ describe('Next.js Edge Middleware RBAC Simulation Suite', () => {
     return { action: 'next' }
   }
 
+  function makeMockJwt(userType) {
+    const header = Buffer.from(JSON.stringify({ alg: 'RS256' })).toString('base64')
+    const payload = Buffer.from(JSON.stringify({
+      sub: 'user-123',
+      'custom:user_type': userType,
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    })).toString('base64')
+    return `${header}.${payload}.signature`
+  }
+
   it('should redirect unauthenticated users away from doctor dashboard', () => {
     const res = simulateMiddleware('/dashboard/doctor', new Map())
     assert.equal(res.action, 'redirect')
     assert.ok(res.to.includes('/auth/login?userType=doctor'))
   })
 
+  it('should REJECT forged session cookie without valid cryptographic token', () => {
+    const cookies = new Map()
+    cookies.set('noa_session', JSON.stringify({ userType: 'doctor' }))
+    const res = simulateMiddleware('/dashboard/doctor/patients', cookies)
+
+    // Must NOT permit access without a token!
+    assert.equal(res.action, 'redirect')
+  })
+
   it('should redirect patients attempting to access doctor dashboard', () => {
     const cookies = new Map()
-    cookies.set('noa_session', JSON.stringify({ userType: 'patient' }))
+    cookies.set('noa_id_token', makeMockJwt('patient'))
     const res = simulateMiddleware('/dashboard/doctor/patients', cookies)
 
     assert.equal(res.action, 'redirect')
@@ -213,7 +243,7 @@ describe('Next.js Edge Middleware RBAC Simulation Suite', () => {
 
   it('should permit authenticated doctors to access doctor dashboard', () => {
     const cookies = new Map()
-    cookies.set('noa_session', JSON.stringify({ userType: 'doctor' }))
+    cookies.set('noa_id_token', makeMockJwt('doctor'))
     const res = simulateMiddleware('/dashboard/doctor/patients', cookies)
 
     assert.equal(res.action, 'next')

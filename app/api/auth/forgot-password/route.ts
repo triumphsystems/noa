@@ -25,8 +25,15 @@ export async function POST(request: NextRequest) {
           destination: result.destination,
         })
       } catch (err: any) {
-        // For security reasons, if user is not found, we can still return standard response or message
         console.error('[API] Forgot password error:', err?.message)
+        // Prevent user enumeration: if user is not found, respond with generic success
+        if (err?.message?.includes('No account found') || err?.name === 'UserNotFoundException') {
+          return NextResponse.json({
+            success: true,
+            message: 'If an account exists with this email, a verification code has been sent.',
+            destination: trimmedEmail,
+          })
+        }
         return NextResponse.json(
           { message: err?.message || 'Failed to send reset code' },
           { status: 400 }

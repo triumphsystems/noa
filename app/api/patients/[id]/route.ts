@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPatientById } from '@/lib/db'
+import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const auth = getAuthenticatedUser(request)
+    if (!auth.isValid) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { id } = await params
 
     if (!id) {

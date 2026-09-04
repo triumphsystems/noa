@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 /**
  * Next.js Edge Middleware for Role-Based Access Control (RBAC)
@@ -8,20 +9,10 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  const sessionCookie = request.cookies.get('noa_session')?.value
-  const tokenCookie = request.cookies.get('noa_access_token')?.value
+  const auth = getAuthenticatedUser(request)
+  const isAuthenticated = auth.isValid
+  const userType = auth.userType || null
 
-  const isAuthenticated = Boolean(sessionCookie || tokenCookie)
-  let userType: string | null = null
-
-  if (sessionCookie) {
-    try {
-      const parsed = JSON.parse(sessionCookie)
-      userType = parsed.userType
-    } catch {
-      // Malformed cookie ignored
-    }
-  }
 
   // 1. Protect Doctor Dashboard
   if (pathname.startsWith('/dashboard/doctor')) {

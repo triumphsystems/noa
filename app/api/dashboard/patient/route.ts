@@ -8,9 +8,15 @@ import {
   getIntakeById,
   getIntakesByPatient,
 } from '@/lib/db'
+import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = getAuthenticatedUser(request)
+    if (!auth.isValid) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    }
+
     const patientId = request.nextUrl.searchParams.get('patientId')
 
     if (!patientId) {

@@ -3,9 +3,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { ApiSuccess } from '@/lib/types/api.types'
 import type { DoctorDashboardPayload } from '@/lib/types/doctor.types'
 import { getDoctorById, getPatientsByDoctor, getSessionsByDoctor } from '@/lib/db'
+import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = getAuthenticatedUser(request)
+    if (!auth.isValid) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    }
+
+    if (auth.userType && auth.userType !== 'doctor') {
+      return NextResponse.json({ message: 'Forbidden: Doctor role required' }, { status: 403 })
+    }
+
     const doctorId = request.nextUrl.searchParams.get('doctorId')
 
     if (!doctorId) {

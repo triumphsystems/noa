@@ -10,21 +10,31 @@ export default function LogoutPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const keysToRemove = [
-      'doctorId',
-      'patientId',
-      'userType',
-      'accessToken',
-      'idToken',
-      'refreshToken',
-    ]
+    async function performLogout() {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' })
+      } catch (err) {
+        console.error('Failed to clear remote auth session:', err)
+      } finally {
+        const keysToRemove = [
+          'doctorId',
+          'patientId',
+          'userType',
+          'accessToken',
+          'idToken',
+          'refreshToken',
+        ]
 
-    keysToRemove.forEach(key => window.localStorage.removeItem(key))
+        keysToRemove.forEach(key => window.localStorage.removeItem(key))
 
-    useDoctorStore.getState().clearDashboard()
-    useSessionStore.getState().resetSession()
+        useDoctorStore.getState().clearDashboard()
+        useSessionStore.getState().resetSession()
 
-    router.replace('/auth/login?type=doctor')
+        router.replace('/auth/login?type=doctor')
+      }
+    }
+
+    performLogout()
   }, [router])
 
   return (

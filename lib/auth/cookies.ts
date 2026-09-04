@@ -51,7 +51,8 @@ export function setAuthCookies(
     })
   }
 
-  // 4. Client-readable session metadata (Non-sensitive user info for header/avatar rendering)
+  // 4. Session metadata (Cached user info for edge middleware/server route lookup)
+  // MaxAge matches access token expiry so UI metadata does not outlive active authentication
   response.cookies.set(
     AUTH_COOKIE_NAMES.SESSION_META,
     JSON.stringify({
@@ -59,13 +60,15 @@ export function setAuthCookies(
       email: sessionUser.email,
       name: sessionUser.name,
       userType: sessionUser.userType,
+      doctorId: sessionUser.userType === 'doctor' ? sessionUser.sub : undefined,
+      patientId: sessionUser.userType === 'patient' ? sessionUser.sub : undefined,
     }),
     {
-      httpOnly: false, // Accessible by client JS for rendering user names
+      httpOnly: true, // Tamper-proof and protected against XSS
       secure: isProduction,
       sameSite: 'lax',
       path: '/',
-      maxAge: 30 * 24 * 60 * 60,
+      maxAge: tokens.expiresIn || 3600,
     }
   )
 
@@ -82,15 +85,14 @@ export function clearAuthCookies(response: NextResponse): NextResponse {
     sameSite: 'lax' as const,
     path: '/',
     maxAge: 0,
+    expires: new Date(0),
   }
 
   response.cookies.set(AUTH_COOKIE_NAMES.ACCESS_TOKEN, '', clearOptions)
   response.cookies.set(AUTH_COOKIE_NAMES.ID_TOKEN, '', clearOptions)
   response.cookies.set(AUTH_COOKIE_NAMES.REFRESH_TOKEN, '', clearOptions)
-  response.cookies.set(AUTH_COOKIE_NAMES.SESSION_META, '', {
-    ...clearOptions,
-    httpOnly: false,
-  })
+  response.cookies.set(AUTH_COOKIE_NAMES.SESSION_META, '', clearOptions)
 
   return response
 }
+

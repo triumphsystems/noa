@@ -1,0 +1,110 @@
+/**
+ * Lightweight JWT & Token Verification for Next.js Edge Middleware & Server Routes
+ * Operates in Edge Runtime without external heavy dependencies.
+ */
+
+import { NextRequest } from 'next/server'
+import { AUTH_COOKIE_NAMES } from './cookies'
+
+export interface VerifiedAuthPayload {
+  isValid: boolean
+  sub?: string
+  email?: string
+  userType?: 'doctor' | 'patient'
+  isDev?: boolean
+}
+
+/**
+ * Base64URL decoder compatible with both Edge Runtime and Node.js
+ */
+function parseJwtPayload(token: string): any | null {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+
+    // Base64URL to Base64
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const decoded = typeof atob === 'function'
+      ? atob(base64)
+      : Buffer.from(base64, 'base64').toString('utf8')
+
+    return JSON.parse(decoded)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Validates Cognito JWT payload (exp, iss, user_type)
+ */
+export function verifyToken(idToken?: string, accessToken?: string): VerifiedAuthPayload {
+  const isDevAuthAllowed =
+    process.env.ALLOW_DEV_AUTH === 'true' && process.env.NODE_ENV !== 'production'
+
+  // 1. Check Dev tokens if allowed
+  if (isDevAuthAllowed) {
+    if (accessToken?.startsWith('dev-token-') || idToken?.startsWith('dev-id-')) {
+      const sub = (accessToken || idToken)?.replace(/^(dev-token-|dev-id-)/, '') || 'dev-user'
+      return {
+        isValid: true,
+        sub,
+        email: `${sub}@example.com`,
+        userType: 'doctor',
+        isDev: true,
+      }
+    }
+  }
+
+  // 2. Validate ID Token first (contains user attributes like custom:user_type)
+  const tokenToVerify = idToken || accessToken
+  if (!tokenToVerify) {
+    return { isValid: false }
+  }
+
+  const payload = parseJwtPayload(tokenToVerify)
+  if (!payload) {
+    return { isValid: false }
+  }
+
+  // Verify expiration
+  const now = Math.floor(Date.now() / 1000)
+  if (typeof payload.exp === 'number' && payload.exp < now) {
+    return { isValid: false }
+  }
+
+  // Verify Cognito Issuer if configured
+  const userPoolId = process.env.COGNITO_USER_POOL_ID
+  const region = process.env.AWS_REGION || 'us-east-1'
+  if (userPoolId && payload.iss) {
+    const expectedIss = `https://cognito-idp.${region}.amazonaws.com/${userPoolId}`
+    if (payload.iss !== expectedIss) {
+      return { isValid: false }
+    }
+  }
+
+  // Determine user role
+  let userType: 'doctor' | 'patient' | undefined = undefined
+  if (payload['custom:user_type'] === 'doctor' || payload['custom:user_type'] === 'patient') {
+    userType = payload['custom:user_type']
+  } else if (Array.isArray(payload['cognito:groups'])) {
+    if (payload['cognito:groups'].includes('Doctors')) userType = 'doctor'
+    else if (payload['cognito:groups'].includes('Patients')) userType = 'patient'
+  }
+
+  return {
+    isValid: true,
+    sub: payload.sub,
+    email: payload.email,
+    userType,
+  }
+}
+
+/**
+ * Extract authenticated user session securely from incoming NextRequest
+ */
+export function getAuthenticatedUser(request: NextRequest): VerifiedAuthPayload {
+  const idToken = request.cookies.get(AUTH_COOKIE_NAMES.ID_TOKEN)?.value
+  const accessToken = request.cookies.get(AUTH_COOKIE_NAMES.ACCESS_TOKEN)?.value
+
+  return verifyToken(idToken, accessToken)
+}

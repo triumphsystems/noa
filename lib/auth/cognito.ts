@@ -1,7 +1,7 @@
 /**
  * Modern Server-Side AWS Cognito Authentication Engine
  * Powered by AWS SDK v3 (@aws-sdk/client-cognito-identity-provider)
- * 
+ *
  * Replaces legacy amazon-cognito-identity-js with server-side SDK commands
  * and strict password verification.
  */
@@ -29,8 +29,8 @@ export const cognitoClient = new CognitoIdentityProviderClient({
 })
 
 export function getCognitoConfig() {
-  const userPoolId = process.env.COGNITO_USER_POOL_ID || process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID || ''
-  const clientId = process.env.COGNITO_CLIENT_ID || process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID || ''
+  const userPoolId = process.env.COGNITO_USER_POOL_ID || ''
+  const clientId = process.env.COGNITO_CLIENT_ID || ''
 
   return {
     userPoolId,
@@ -90,11 +90,8 @@ export async function signInWithCognito(
     }
   } catch (error: any) {
     console.error('[Cognito] Sign-in error:', error?.name, error?.message)
-    if (error?.name === 'NotAuthorizedException') {
+    if (error?.name === 'NotAuthorizedException' || error?.name === 'UserNotFoundException') {
       throw new Error('Incorrect email or password.')
-    }
-    if (error?.name === 'UserNotFoundException') {
-      throw new Error('No account found with this email address.')
     }
     if (error?.name === 'UserNotConfirmedException') {
       throw new Error('Account email is not verified yet. Please check your verification code.')
@@ -315,4 +312,3 @@ export async function confirmForgotPasswordWithCognito({
     throw new Error(error?.message || 'Failed to reset password.')
   }
 }
-
