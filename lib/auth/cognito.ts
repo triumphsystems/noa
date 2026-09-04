@@ -11,6 +11,7 @@ import {
   InitiateAuthCommand,
   SignUpCommand,
   ConfirmSignUpCommand,
+  AdminConfirmSignUpCommand,
   GlobalSignOutCommand,
   GetUserCommand,
   AuthFlowType,
@@ -94,6 +95,38 @@ export async function signInWithCognito(
       throw new Error('No account found with this email address.')
     }
     if (error?.name === 'UserNotConfirmedException') {
+      // Allow unverified accounts to log in: auto-confirm via admin privileges and retry authentication
+      const { userPoolId } = getCognitoConfig()
+      if (userPoolId) {
+        try {
+          const confirmCmd = new AdminConfirmSignUpCommand({
+            UserPoolId: userPoolId,
+            Username: email.trim().toLowerCase(),
+          })
+          await cognitoClient.send(confirmCmd)
+
+          // Retry authentication now that account is confirmed
+          const retryCommand = new InitiateAuthCommand({
+            AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
+            ClientId: clientId,
+            AuthParameters: {
+              USERNAME: email.trim().toLowerCase(),
+              PASSWORD: password,
+            },
+          })
+          const retryResponse = await cognitoClient.send(retryCommand)
+          if (retryResponse.AuthenticationResult?.AccessToken && retryResponse.AuthenticationResult?.IdToken) {
+            return {
+              accessToken: retryResponse.AuthenticationResult.AccessToken,
+              idToken: retryResponse.AuthenticationResult.IdToken,
+              refreshToken: retryResponse.AuthenticationResult.RefreshToken,
+              expiresIn: retryResponse.AuthenticationResult.ExpiresIn || 3600,
+            }
+          }
+        } catch (confirmError) {
+          console.error('[Cognito] Auto-confirm on unverified sign-in error:', confirmError)
+        }
+      }
       throw new Error('Account email is not verified yet. Please check your verification code.')
     }
     throw new Error(error?.message || 'Authentication failed')
@@ -137,9 +170,26 @@ export async function signUpWithCognito({
 
     const response = await cognitoClient.send(command)
 
+    let isConfirmed = Boolean(response.UserConfirmed)
+
+    // Auto-confirm newly registered user so they can immediately sign in without verification
+    const { userPoolId } = getCognitoConfig()
+    if (!isConfirmed && userPoolId) {
+      try {
+        const confirmCmd = new AdminConfirmSignUpCommand({
+          UserPoolId: userPoolId,
+          Username: email.trim().toLowerCase(),
+        })
+        await cognitoClient.send(confirmCmd)
+        isConfirmed = true
+      } catch (confirmError) {
+        console.warn('[Cognito] Auto-confirm at signup skipped or failed:', confirmError)
+      }
+    }
+
     return {
       userSub: response.UserSub || '',
-      isConfirmed: Boolean(response.UserConfirmed),
+      isConfirmed,
     }
   } catch (error: any) {
     console.error('[Cognito] Sign-up error:', error?.name, error?.message)

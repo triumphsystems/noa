@@ -38,7 +38,7 @@ export interface Doctor {
 export interface Patient {
   id: string
   type: 'patient'
-  doctorId: string
+  doctorId?: string
   email: string
   firstName: string
   lastName: string
@@ -205,6 +205,25 @@ export async function getPatientById(id: string): Promise<Patient | null> {
   )
 
   return (result.Item as Patient) || null
+}
+
+export async function getPatientByEmail(email: string): Promise<Patient | null> {
+  const result = await docClient.send(
+    new QueryCommand({
+      TableName: TABLE_NAME,
+      IndexName: 'email-index',
+      KeyConditionExpression: 'email = :email AND #type = :type',
+      ExpressionAttributeNames: {
+        '#type': 'type',
+      },
+      ExpressionAttributeValues: {
+        ':email': email.trim().toLowerCase(),
+        ':type': 'patient',
+      },
+    }),
+  )
+
+  return (result.Items?.[0] as Patient) || null
 }
 
 export async function getPatientsByDoctor(doctorId: string): Promise<Patient[]> {

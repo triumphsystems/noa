@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createDoctor, createPatient, getDoctorByEmail } from '@/lib/db'
+import { createDoctor, createPatient, getDoctorByEmail, getPatientByEmail } from '@/lib/db'
 import { signUpWithCognito, getCognitoConfig } from '@/lib/auth/cognito'
 
 export async function POST(request: NextRequest) {
@@ -84,15 +84,16 @@ export async function POST(request: NextRequest) {
         },
       })
     } else {
-      if (!doctorId) {
+      const existing = await getPatientByEmail(email)
+      if (existing) {
         return NextResponse.json(
-          { message: 'Doctor ID is required for patient registration' },
-          { status: 400 }
+          { message: 'Patient with this email already exists' },
+          { status: 409 }
         )
       }
 
       const patient = await createPatient({
-        doctorId,
+        ...(doctorId ? { doctorId } : {}),
         email: email.trim().toLowerCase(),
         firstName: firstName.trim(),
         lastName: lastName.trim(),
@@ -110,6 +111,7 @@ export async function POST(request: NextRequest) {
           email: patient.email,
           firstName: patient.firstName,
           lastName: patient.lastName,
+          ...(patient.doctorId ? { doctorId: patient.doctorId } : {}),
         },
       })
     }

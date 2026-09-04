@@ -332,6 +332,27 @@ resource "aws_iam_role_policy" "s3_policy" {
   })
 }
 
+resource "aws_iam_role_policy" "cognito_policy" {
+  name = "${var.project_name}-cognito-policy"
+  role = aws_iam_role.app_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "cognito-idp:AdminConfirmSignUp",
+          "cognito-idp:AdminGetUser",
+          "cognito-idp:AdminUpdateUserAttributes",
+          "cognito-idp:AdminSetUserPassword"
+        ]
+        Resource = aws_cognito_user_pool.noa_user_pool.arn
+      }
+    ]
+  })
+}
+
 # ============================================
 # CloudWatch Logs (disabled by default)
 # ============================================

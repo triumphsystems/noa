@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
@@ -11,6 +11,7 @@ type SignupFormProps = {
 
 export default function SignupForm({ userType }: SignupFormProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -19,7 +20,15 @@ export default function SignupForm({ userType }: SignupFormProps) {
     specialty: '',
     clinic: '',
     dateOfBirth: '',
+    doctorId: '',
   })
+
+  useEffect(() => {
+    const urlDoctorId = searchParams.get('doctorId')
+    if (urlDoctorId) {
+      setFormData(prev => ({ ...prev, doctorId: urlDoctorId }))
+    }
+  }, [searchParams])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -59,7 +68,11 @@ export default function SignupForm({ userType }: SignupFormProps) {
         window.localStorage.setItem('userType', userType)
       }
 
-      router.push(`/auth/verify?email=${encodeURIComponent(formData.email)}`)
+      if (data.isConfirmed) {
+        router.push(`/auth/login?verified=true&email=${encodeURIComponent(formData.email)}`)
+      } else {
+        router.push(`/auth/login?registered=true&email=${encodeURIComponent(formData.email)}`)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
@@ -157,16 +170,31 @@ export default function SignupForm({ userType }: SignupFormProps) {
             </div>
           </div>
         ) : (
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-deep-ink">Date of Birth</label>
-            <input
-              type="date"
-              name="dateOfBirth"
-              value={formData.dateOfBirth}
-              onChange={handleChange}
-              required
-              className="w-full px-3.5 py-2 border border-deep-ink/15 rounded-lg text-deep-ink focus:outline-none focus:border-deep-ink focus:ring-1 focus:ring-deep-ink/20 text-sm bg-white shadow-2xs transition-colors"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-deep-ink">Date of Birth</label>
+              <input
+                type="date"
+                name="dateOfBirth"
+                value={formData.dateOfBirth}
+                onChange={handleChange}
+                required
+                className="w-full px-3.5 py-2 border border-deep-ink/15 rounded-lg text-deep-ink focus:outline-none focus:border-deep-ink focus:ring-1 focus:ring-deep-ink/20 text-sm bg-white shadow-2xs transition-colors"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-deep-ink">
+                Doctor ID <span className="text-slate font-normal">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                name="doctorId"
+                value={formData.doctorId}
+                onChange={handleChange}
+                className="w-full px-3.5 py-2 border border-deep-ink/15 rounded-lg text-deep-ink placeholder:text-slate/60 focus:outline-none focus:border-deep-ink focus:ring-1 focus:ring-deep-ink/20 text-sm bg-white shadow-2xs transition-colors"
+                placeholder="e.g. doctor-xyz"
+              />
+            </div>
           </div>
         )}
 
