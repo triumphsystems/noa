@@ -21,6 +21,8 @@ const docClient = DynamoDBDocumentClient.from(dynamodbClient, {
 })
 
 // ============ TYPES ============
+export type DoctorVerificationStatus = 'pending' | 'verified' | 'rejected'
+
 export interface Doctor {
   id: string
   type: 'doctor'
@@ -28,8 +30,14 @@ export interface Doctor {
   name: string
   specialty: string
   license: string
+  issuingAuthority?: string
+  licenseDocumentUrl?: string
   clinic: string
   careCode?: string
+  verificationStatus: DoctorVerificationStatus
+  verifiedAt?: number
+  verifiedBy?: string
+  rejectionReason?: string
   phone?: string
   avatar?: string
   createdAt: number
@@ -107,6 +115,7 @@ export async function createDoctor(
   const doctor: Doctor = {
     id: data.id || `doctor-${nanoid()}`,
     type: 'doctor',
+    verificationStatus: data.verificationStatus || 'pending',
     ...data,
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -254,6 +263,48 @@ export async function getDoctorByCareCode(codeStr: string): Promise<Doctor | nul
       return computed === code || computed.replace('noa-', '') === code.replace('noa-', '')
     }) || null
   )
+}
+
+export async function getDoctorsByVerificationStatus(status: DoctorVerificationStatus): Promise<Doctor[]> {
+  try {
+    const result = await docClient.send(
+      new ScanCommand({
+        TableName: TABLE_NAME,
+        FilterExpression: '#type = :type AND verificationStatus = :status',
+        ExpressionAttributeNames: {
+          '#type': 'type',
+        },
+        ExpressionAttributeValues: {
+          ':type': 'doctor',
+          ':status': status,
+        },
+        Limit: 100,
+      })
+    )
+    const doctors = (result.Items || []) as Doctor[]
+    return doctors.map(doc => ({
+      ...doc,
+      careCode: doc.careCode || computeDoctorCareCode(doc),
+    }))
+  } catch (err) {
+    console.error('[DB] Error fetching doctors by verification status:', err)
+    return []
+  }
+}
+
+export async function updateDoctorVerification(
+  id: string,
+  status: DoctorVerificationStatus,
+  adminId: string,
+  rejectionReason?: string
+): Promise<Doctor | null> {
+  const updates: Partial<Doctor> = {
+    verificationStatus: status,
+    verifiedBy: adminId,
+    verifiedAt: status === 'verified' ? Date.now() : undefined,
+    rejectionReason: status === 'rejected' ? rejectionReason : undefined,
+  }
+  return updateDoctor(id, updates)
 }
 
 // ============ PATIENT OPERATIONS ============
@@ -600,5 +651,66 @@ export async function savePatientIntake(
   data: Omit<PatientIntake, 'id' | 'type' | 'createdAt' | 'updatedAt'>
 ): Promise<PatientIntake> {
   return createIntake(data)
+}
+
+// ============ ADMIN OPERATIONS ============
+export interface AdminUser {
+  id: string
+  type: 'admin'
+  email: string
+  name: string
+  role: 'superadmin' | 'clinical_admin'
+  createdAt: number
+  updatedAt: number
+}
+
+export async function createAdminUser(
+  data: Omit<AdminUser, 'type' | 'createdAt' | 'updatedAt'>
+): Promise<AdminUser> {
+  const admin: AdminUser = {
+    ...data,
+    type: 'admin',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  }
+
+  await docClient.send(
+    new PutCommand({
+      TableName: TABLE_NAME,
+      Item: admin,
+    })
+  )
+
+  return admin
+}
+
+export async function getAdminByEmail(email: string): Promise<AdminUser | null> {
+  const result = await docClient.send(
+    new QueryCommand({
+      TableName: TABLE_NAME,
+      IndexName: 'email-index',
+      KeyConditionExpression: 'email = :email AND #type = :type',
+      ExpressionAttributeNames: {
+        '#type': 'type',
+      },
+      ExpressionAttributeValues: {
+        ':email': email.trim().toLowerCase(),
+        ':type': 'admin',
+      },
+    })
+  )
+
+  return (result.Items?.[0] as AdminUser) || null
+}
+
+export async function getAdminById(id: string): Promise<AdminUser | null> {
+  const result = await docClient.send(
+    new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { [PK]: id, [SK]: 'admin' },
+    })
+  )
+
+  return (result.Item as AdminUser) || null
 }
 

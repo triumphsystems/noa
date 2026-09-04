@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "seed:admin": "node scripts/seed-admin.mjs",
     "test": "node --test tests/webmcp.test.mjs tests/auth.test.mjs tests/ratelimit.test.mjs"
   },
   "dependencies": {

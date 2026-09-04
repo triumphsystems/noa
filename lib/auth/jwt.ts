@@ -11,7 +11,8 @@ export interface VerifiedAuthPayload {
   sub?: string
   dbId?: string
   email?: string
-  userType?: 'doctor' | 'patient'
+  userType?: 'doctor' | 'patient' | 'admin'
+  groups?: string[]
 }
 
 /**
@@ -65,13 +66,18 @@ export function verifyToken(idToken?: string, accessToken?: string): VerifiedAut
     }
   }
 
-  // Determine user role
-  let userType: 'doctor' | 'patient' | undefined = undefined
-  if (payload['custom:user_type'] === 'doctor' || payload['custom:user_type'] === 'patient') {
+  // Determine user role and groups
+  const groups: string[] = Array.isArray(payload['cognito:groups']) ? payload['cognito:groups'] : []
+  let userType: 'doctor' | 'patient' | 'admin' | undefined = undefined
+  
+  if (payload['custom:user_type'] === 'doctor' || payload['custom:user_type'] === 'patient' || payload['custom:user_type'] === 'admin') {
     userType = payload['custom:user_type']
-  } else if (Array.isArray(payload['cognito:groups'])) {
-    if (payload['cognito:groups'].includes('Doctors')) userType = 'doctor'
-    else if (payload['cognito:groups'].includes('Patients')) userType = 'patient'
+  } else if (groups.some(g => ['Admins', 'Superadmins', 'admins', 'superadmins'].includes(g))) {
+    userType = 'admin'
+  } else if (groups.includes('Doctors')) {
+    userType = 'doctor'
+  } else if (groups.includes('Patients')) {
+    userType = 'patient'
   }
 
   return {
@@ -79,6 +85,7 @@ export function verifyToken(idToken?: string, accessToken?: string): VerifiedAut
     sub: payload.sub,
     email: payload.email,
     userType,
+    groups,
   }
 }
 

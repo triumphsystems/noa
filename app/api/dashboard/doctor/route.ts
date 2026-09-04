@@ -46,6 +46,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Doctor not found' }, { status: 404 })
     }
 
+    // Enforce credential verification: pending or rejected accounts cannot access clinical dashboard
+    if (doctor.verificationStatus === 'pending') {
+      return NextResponse.json(
+        {
+          message: 'Your medical credentials are currently under review by clinical administration.',
+          verificationStatus: 'pending',
+        },
+        { status: 403 }
+      )
+    }
+
+    if (doctor.verificationStatus === 'rejected') {
+      return NextResponse.json(
+        {
+          message: 'Your medical verification request was rejected.',
+          verificationStatus: 'rejected',
+          rejectionReason: doctor.rejectionReason,
+        },
+        { status: 403 }
+      )
+    }
+
     const today = new Date()
     const stats = {
       totalPatients: patients.length,

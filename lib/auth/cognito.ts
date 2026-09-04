@@ -14,6 +14,8 @@ import {
   AdminConfirmSignUpCommand,
   GlobalSignOutCommand,
   AdminUserGlobalSignOutCommand,
+  AdminAddUserToGroupCommand,
+  AdminRemoveUserFromGroupCommand,
   GetUserCommand,
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
@@ -51,7 +53,7 @@ export interface CognitoUserSession {
   sub: string
   email: string
   name: string
-  userType: 'doctor' | 'patient'
+  userType: 'doctor' | 'patient' | 'admin'
 }
 
 /**
@@ -258,7 +260,8 @@ export async function getCognitoUser(accessToken: string): Promise<CognitoUserSe
     const email = attrs.find(a => a.Name === 'email')?.Value || response.Username || ''
     const firstName = attrs.find(a => a.Name === 'given_name')?.Value || ''
     const lastName = attrs.find(a => a.Name === 'family_name')?.Value || ''
-    const userType = (attrs.find(a => a.Name === 'custom:user_type')?.Value as 'doctor' | 'patient') || 'patient'
+    const rawType = attrs.find(a => a.Name === 'custom:user_type')?.Value
+    const userType = (rawType === 'admin' || rawType === 'doctor' || rawType === 'patient') ? rawType : 'patient'
 
     return {
       sub,
@@ -368,6 +371,46 @@ export async function revokeAllUserSessions(email: string): Promise<void> {
     await cognitoClient.send(command)
   } catch (error) {
     console.warn('[Cognito] Failed to perform admin global sign-out:', error)
+  }
+}
+
+/**
+ * Add a Cognito user to a specific group (e.g. Doctors, Admins)
+ */
+export async function addUserToCognitoGroup(username: string, groupName: string): Promise<void> {
+  const { userPoolId, isConfigured } = getCognitoConfig()
+  if (!isConfigured || !userPoolId) return
+
+  try {
+    const command = new AdminAddUserToGroupCommand({
+      UserPoolId: userPoolId,
+      Username: username.trim().toLowerCase(),
+      GroupName: groupName,
+    })
+    await cognitoClient.send(command)
+  } catch (error: any) {
+    console.error(`[Cognito] Failed to add user ${username} to group ${groupName}:`, error?.message)
+    throw error
+  }
+}
+
+/**
+ * Remove a Cognito user from a specific group
+ */
+export async function removeUserFromCognitoGroup(username: string, groupName: string): Promise<void> {
+  const { userPoolId, isConfigured } = getCognitoConfig()
+  if (!isConfigured || !userPoolId) return
+
+  try {
+    const command = new AdminRemoveUserFromGroupCommand({
+      UserPoolId: userPoolId,
+      Username: username.trim().toLowerCase(),
+      GroupName: groupName,
+    })
+    await cognitoClient.send(command)
+  } catch (error: any) {
+    console.error(`[Cognito] Failed to remove user ${username} from group ${groupName}:`, error?.message)
+    throw error
   }
 }
 

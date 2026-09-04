@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDoctorByEmail, getPatientByEmail } from '@/lib/db'
+import { getDoctorByEmail, getPatientByEmail, getAdminByEmail } from '@/lib/db'
 import { signInWithCognito, getCognitoConfig, getCognitoUser } from '@/lib/auth/cognito'
 import { setAuthCookies } from '@/lib/auth/cookies'
 import { checkRateLimit, getClientIdentifier, rateLimitResponse } from '@/lib/ratelimit'
@@ -35,15 +35,21 @@ export async function POST(request: NextRequest) {
         id: cognitoUser?.sub || `user-${Date.now()}`,
         email: email.trim().toLowerCase(),
         name: cognitoUser?.name || email,
-        userType: (cognitoUser?.userType || userType || 'doctor') as 'doctor' | 'patient',
+        userType: (cognitoUser?.userType || userType || 'doctor') as 'doctor' | 'patient' | 'admin',
       }
 
-      // Cross-reference DynamoDB profile to resolve exact medical record ID
+      // Cross-reference DynamoDB profile to resolve exact medical or admin record ID
       if (resolvedUser.userType === 'doctor') {
         const doctor = await getDoctorByEmail(email)
         if (doctor) {
           resolvedUser.id = doctor.id
           resolvedUser.name = doctor.name
+        }
+      } else if (resolvedUser.userType === 'admin') {
+        const admin = await getAdminByEmail(email)
+        if (admin) {
+          resolvedUser.id = admin.id
+          resolvedUser.name = admin.name
         }
       } else {
         const patient = await getPatientByEmail(email)

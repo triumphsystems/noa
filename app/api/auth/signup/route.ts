@@ -6,7 +6,7 @@ import { checkRateLimit, getClientIdentifier, rateLimitResponse } from '@/lib/ra
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, password, firstName, lastName, userType, specialty, clinic, doctorId } = body
+    const { email, password, firstName, lastName, userType, specialty, clinic, doctorId, license, issuingAuthority, licenseDocumentUrl } = body
 
     // 1. Rate limiting: max 5 signups per minute per client
     const clientId = getClientIdentifier(request, email)
@@ -76,20 +76,24 @@ export async function POST(request: NextRequest) {
         name: `${firstName} ${lastName}`.trim(),
         specialty: specialty || 'General Practice',
         clinic: clinic || 'Clinic',
-        license: 'LICENSE-PENDING',
+        license: license ? license.trim() : 'LICENSE-PENDING',
+        issuingAuthority: issuingAuthority?.trim(),
+        licenseDocumentUrl: licenseDocumentUrl?.trim(),
+        verificationStatus: 'pending',
       })
 
       return NextResponse.json({
         success: true,
         message: isConfirmed
-          ? 'Doctor account created successfully'
-          : 'Doctor account created. Please verify your email with the confirmation code sent to you.',
+          ? 'Doctor account created and submitted for clinical administration review.'
+          : 'Doctor account created. Please verify your email with the confirmation code sent to you. Your medical credentials are pending administrator review.',
         userSub,
         isConfirmed,
         doctor: {
           id: doctor.id,
           email: doctor.email,
           name: doctor.name,
+          verificationStatus: doctor.verificationStatus,
         },
       })
     } else {
