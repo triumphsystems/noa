@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 
 import { useDoctorStore } from '@/lib/stores/doctor.store'
+import { cn } from '@/lib/utils'
 import type { Patient } from '@/lib/db'
 
 export default function PatientsPage() {
@@ -112,6 +113,42 @@ export default function PatientsPage() {
     }
   }
 
+  const [linkActionLoadingId, setLinkActionLoadingId] = useState<string | null>(null)
+  const [actionNotification, setActionNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  const handleRespondLink = async (patientId: string, action: 'accept' | 'decline') => {
+    if (linkActionLoadingId) return
+    setLinkActionLoadingId(patientId)
+    setActionNotification(null)
+
+    try {
+      const res = await fetch('/api/doctors/respond-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patientId, action }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || `Failed to ${action} patient request`)
+
+      setActionNotification({
+        type: 'success',
+        message: data.message || (action === 'accept' ? 'Patient connection approved.' : 'Patient connection declined.'),
+      })
+
+      if (doctorId) {
+        await loadDashboard(doctorId)
+      }
+    } catch (err: any) {
+      setActionNotification({
+        type: 'error',
+        message: err?.message || `Failed to ${action} patient request`,
+      })
+    } finally {
+      setLinkActionLoadingId(null)
+    }
+  }
+
   const allPatients: Patient[] = patients
 
   const filteredPatients = allPatients.filter(
@@ -142,6 +179,26 @@ export default function PatientsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Action Notification Banner */}
+      {actionNotification && (
+        <div
+          className={cn(
+            'p-4 rounded-xl text-sm flex items-center justify-between transition-all font-sans',
+            actionNotification.type === 'success'
+              ? 'bg-emerald-50 text-emerald-900 border border-emerald-200'
+              : 'bg-rose-50 text-rose-900 border border-rose-200'
+          )}
+        >
+          <span>{actionNotification.message}</span>
+          <button
+            onClick={() => setActionNotification(null)}
+            className="font-bold ml-4 hover:opacity-75 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Doctor Care Code & Share Card */}
       <Card className="p-4 sm:p-5 border border-deep-ink/10 bg-canvas/40 backdrop-blur-sm rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -238,15 +295,42 @@ export default function PatientsPage() {
                             Pending Invite
                           </Badge>
                         )}
+                        {patient.linkStatus === 'pending_doctor_approval' && (
+                          <Badge variant="secondary" className="text-[10px] bg-blue-50 text-blue-800 border-blue-200">
+                            Connection Request
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-xs text-slate truncate mt-0.5">{patient.email}</p>
                     </div>
-                    <Link
-                      href={`/dashboard/doctor/patients/${patient.id}`}
-                      className="shrink-0 inline-flex items-center text-xs font-semibold text-deep-ink hover:text-deep-ink/70 px-3 py-1.5 rounded-full border border-deep-ink/15 hover:border-deep-ink/30 bg-white shadow-2xs"
-                    >
-                      View Record
-                    </Link>
+                    {patient.linkStatus === 'pending_doctor_approval' ? (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Button
+                          size="sm"
+                          onClick={() => handleRespondLink(patient.id, 'accept')}
+                          disabled={linkActionLoadingId === patient.id}
+                          className="h-7 px-2.5 rounded-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
+                        >
+                          Accept
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRespondLink(patient.id, 'decline')}
+                          disabled={linkActionLoadingId === patient.id}
+                          className="h-7 px-2.5 rounded-full text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50"
+                        >
+                          Decline
+                        </Button>
+                      </div>
+                    ) : (
+                      <Link
+                        href={`/dashboard/doctor/patients/${patient.id}`}
+                        className="shrink-0 inline-flex items-center text-xs font-semibold text-deep-ink hover:text-deep-ink/70 px-3 py-1.5 rounded-full border border-deep-ink/15 hover:border-deep-ink/30 bg-white shadow-2xs"
+                      >
+                        View Record
+                      </Link>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-xs text-slate pt-1 border-t border-deep-ink/5">
@@ -297,12 +381,19 @@ export default function PatientsPage() {
                       <td className="px-6 py-4 text-sm text-slate whitespace-nowrap">{patient.phone || '—'}</td>
                       <td className="px-6 py-4 text-sm text-slate whitespace-nowrap">{patient.dateOfBirth || '—'}</td>
                       <td className="px-6 py-4 text-sm whitespace-nowrap">
-                        {patient.linkStatus === 'pending_patient_approval' ? (
+                        {patient.linkStatus === 'pending_patient_approval' && (
                           <Badge variant="secondary" className="text-[10px] bg-amber-50 text-amber-800 border-amber-200">
                             <Clock className="w-3 h-3 mr-1 inline" />
                             Pending Invite
                           </Badge>
-                        ) : (
+                        )}
+                        {patient.linkStatus === 'pending_doctor_approval' && (
+                          <Badge variant="secondary" className="text-[10px] bg-blue-50 text-blue-800 border-blue-200">
+                            <Clock className="w-3 h-3 mr-1 inline" />
+                            Connection Request
+                          </Badge>
+                        )}
+                        {patient.linkStatus !== 'pending_patient_approval' && patient.linkStatus !== 'pending_doctor_approval' && (
                           <Badge variant="secondary" className="text-[10px] bg-emerald-50 text-emerald-800 border-emerald-200">
                             <CheckCircle2 className="w-3 h-3 mr-1 inline" />
                             Active
@@ -328,12 +419,34 @@ export default function PatientsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right whitespace-nowrap">
-                        <Link
-                          href={`/dashboard/doctor/patients/${patient.id}`}
-                          className="inline-flex items-center text-xs font-semibold text-deep-ink hover:text-deep-ink/70 px-3 py-1.5 rounded-full border border-deep-ink/15 hover:border-deep-ink/30 transition-colors"
-                        >
-                          View Record
-                        </Link>
+                        {patient.linkStatus === 'pending_doctor_approval' ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              size="sm"
+                              onClick={() => handleRespondLink(patient.id, 'accept')}
+                              disabled={linkActionLoadingId === patient.id}
+                              className="h-8 px-3 rounded-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs cursor-pointer"
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleRespondLink(patient.id, 'decline')}
+                              disabled={linkActionLoadingId === patient.id}
+                              className="h-8 px-3 rounded-full text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 cursor-pointer"
+                            >
+                              Decline
+                            </Button>
+                          </div>
+                        ) : (
+                          <Link
+                            href={`/dashboard/doctor/patients/${patient.id}`}
+                            className="inline-flex items-center text-xs font-semibold text-deep-ink hover:text-deep-ink/70 px-3 py-1.5 rounded-full border border-deep-ink/15 hover:border-deep-ink/30 transition-colors"
+                          >
+                            View Record
+                          </Link>
+                        )}
                       </td>
                     </tr>
                   ))}

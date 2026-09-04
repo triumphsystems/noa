@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
         {
           message: 'Your medical credentials are currently under review by clinical administration.',
           verificationStatus: 'pending',
+          doctor,
         },
         { status: 403 }
       )
@@ -63,6 +64,7 @@ export async function GET(request: NextRequest) {
           message: 'Your medical verification request was rejected.',
           verificationStatus: 'rejected',
           rejectionReason: doctor.rejectionReason,
+          doctor,
         },
         { status: 403 }
       )

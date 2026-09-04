@@ -413,6 +413,20 @@ export default function AdminDashboardPage() {
                           })}
                         </span>
                       </div>
+                      {doctor.licenseDocumentUrl && (
+                        <div>
+                          <span className="font-medium text-slate-400">License Document: </span>
+                          <a
+                            href={doctor.licenseDocumentUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-deep-ink font-semibold underline underline-offset-2 hover:text-slate-800 inline-flex items-center gap-1"
+                          >
+                            <span>View Certificate</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      )}
                     </div>
 
                     {doctor.rejectionReason && (

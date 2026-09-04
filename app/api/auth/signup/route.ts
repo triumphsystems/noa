@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createDoctor, createPatient, getDoctorByEmail, getPatientByEmail } from '@/lib/db'
+import { createDoctor, createPatient, updatePatient, getDoctorByEmail, getPatientByEmail } from '@/lib/db'
 import { signUpWithCognito, getCognitoConfig } from '@/lib/auth/cognito'
 import { checkRateLimit, getClientIdentifier, rateLimitResponse } from '@/lib/ratelimit'
 

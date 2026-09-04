@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Bell, FileText, LayoutDashboard, LogOut, Menu, Mic, Settings, Users, X } from 'lucide-react'
+import { Bell, FileText, LayoutDashboard, LogOut, Menu, Mic, Settings, ShieldCheck, Users, X } from 'lucide-react'
 
 import { useDoctorStore } from '@/lib/stores/doctor.store'
 import { cn } from '@/lib/utils'
@@ -20,6 +20,7 @@ const NAV_ITEMS: NavItemConfig[] = [
   { href: '/dashboard/doctor/sessions/new', icon: Mic, label: 'Sessions' },
   { href: '/dashboard/doctor/patients', icon: Users, label: 'Patients' },
   { href: '/dashboard/doctor/summaries', icon: FileText, label: 'Summaries' },
+  { href: '/dashboard/doctor/onboarding', icon: ShieldCheck, label: 'Licensure' },
   { href: '/dashboard/doctor/settings', icon: Settings, label: 'Settings' },
 ]
 
@@ -161,13 +162,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
 
             <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-              <button
-                className="p-2 hover:bg-soft-meadow rounded-full text-deep-ink transition-colors"
-                aria-label="Notifications"
-              >
-                <Bell className="w-5 h-5" />
-              </button>
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-hi-yellow border border-deep-ink/10 flex items-center justify-center font-serif font-bold text-deep-ink shadow-xs text-sm sm:text-base">
+              {doctor?.verificationStatus && doctor.verificationStatus !== 'verified' && (
+                <Link href="/dashboard/doctor/onboarding">
+                  <span
+                    className={cn(
+                      'text-xs px-2.5 py-1 rounded-full font-semibold border flex items-center gap-1.5 transition-colors cursor-pointer',
+                      doctor.verificationStatus === 'pending'
+                        ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+                        : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'w-2 h-2 rounded-full',
+                        doctor.verificationStatus === 'pending' ? 'bg-amber-500 animate-pulse' : 'bg-rose-500'
+                      )}
+                    />
+                    <span>
+                      {doctor.verificationStatus === 'pending' ? 'Verification Pending' : 'Action Required'}
+                    </span>
+                  </span>
+                </Link>
+              )}
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-soft-meadow border border-deep-ink/15 flex items-center justify-center font-serif font-bold text-deep-ink shadow-2xs text-sm sm:text-base">
                 {doctorInitial}
               </div>
             </div>

@@ -7,9 +7,21 @@ import { Badge } from '@/components/ui/badge'
 import { StatCard } from '@/components/ui/stat-card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorAlert } from '@/components/ui/error-alert'
-import { Calendar, CheckCircle2, Clock, FileEdit, Plus, RefreshCw, Search, Users } from 'lucide-react'
+import {
+  AlertCircle,
+  ArrowRight,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  FileEdit,
+  Plus,
+  RefreshCw,
+  Search,
+  Users,
+} from 'lucide-react'
 
 import { useDoctorStore } from '@/lib/stores/doctor.store'
+import { cn } from '@/lib/utils'
 
 export default function DashboardPage() {
   const doctor = useDoctorStore(state => state.doctor)
@@ -68,7 +80,79 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {error && <ErrorAlert message={error} />}
+      {/* Credential Verification Status Card for Pending or Rejected Doctors */}
+      {doctor?.verificationStatus && doctor.verificationStatus !== 'verified' && (
+        <Card
+          className={cn(
+            'p-5 sm:p-6 border shadow-xs',
+            doctor.verificationStatus === 'pending'
+              ? 'bg-amber-50/70 border-amber-200/80 text-amber-950'
+              : 'bg-rose-50/70 border-rose-200 text-rose-950'
+          )}
+        >
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div
+                className={cn(
+                  'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 border',
+                  doctor.verificationStatus === 'pending'
+                    ? 'bg-amber-100 border-amber-300/80 text-amber-800'
+                    : 'bg-rose-100 border-rose-300 text-rose-800'
+                )}
+              >
+                {doctor.verificationStatus === 'pending' ? (
+                  <Clock className="w-5 h-5 animate-pulse" />
+                ) : (
+                  <AlertCircle className="w-5 h-5" />
+                )}
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      'text-[10px] font-bold uppercase tracking-wider',
+                      doctor.verificationStatus === 'pending'
+                        ? 'border-amber-300 bg-amber-100 text-amber-900'
+                        : 'border-rose-300 bg-rose-100 text-rose-900'
+                    )}
+                  >
+                    {doctor.verificationStatus === 'pending' ? 'Verification In Progress' : 'Action Required'}
+                  </Badge>
+                  <span className="text-xs text-slate/80 font-mono">
+                    License: {doctor.license && doctor.license !== 'LICENSE-PENDING' ? doctor.license : 'Pending submission'}
+                  </span>
+                </div>
+                <h3 className="text-base font-bold font-serif text-deep-ink">
+                  {doctor.verificationStatus === 'pending'
+                    ? 'Clinical Credential Review Pending'
+                    : 'Credential Verification Requires Revision'}
+                </h3>
+                <p className="text-slate text-xs sm:text-sm max-w-2xl leading-relaxed">
+                  {doctor.verificationStatus === 'pending'
+                    ? 'Your medical license and practice credentials are currently being reviewed by clinical administration. Patient consultations and SOAP note synthesis will unlock once approved.'
+                    : `Your credentials were not approved: "${doctor.rejectionReason || 'Details incomplete'}". Please update your license information to resubmit for verification.`}
+                </p>
+              </div>
+            </div>
+
+            <Link href="/dashboard/doctor/onboarding" className="shrink-0 w-full sm:w-auto">
+              <Button
+                variant="dark"
+                size="sm"
+                className="w-full sm:w-auto rounded-lg text-xs font-semibold gap-2"
+              >
+                <span>{doctor.verificationStatus === 'pending' ? 'View Credential Details' : 'Update & Resubmit'}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </Link>
+          </div>
+        </Card>
+      )}
+
+      {error && (!doctor?.verificationStatus || doctor.verificationStatus === 'verified') && (
+        <ErrorAlert message={error} />
+      )}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

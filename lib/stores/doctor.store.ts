@@ -61,6 +61,24 @@ export const useDoctorStore = create<DoctorState>((set, get) => ({
         lastLoadedDoctorId: activeDoctorId,
       })
     } catch (error) {
+      // If 403 or dashboard fetch fails (e.g. pending/rejected credentials), load doctor profile directly
+      try {
+        const res = await http<{ success: boolean; data: DoctorProfile }>(
+          `/api/doctors/${encodeURIComponent(activeDoctorId)}`
+        )
+        if (res.data) {
+          set({
+            doctor: res.data,
+            isLoading: false,
+            error: error instanceof Error ? error.message : null,
+            lastLoadedDoctorId: activeDoctorId,
+          })
+          return
+        }
+      } catch {
+        // Fall through to error
+      }
+
       set({
         isLoading: false,
         error: error instanceof Error ? error.message : 'Failed to load doctor data',
@@ -79,10 +97,12 @@ export const useDoctorStore = create<DoctorState>((set, get) => ({
     set({ isSaving: true, error: null })
 
     try {
-      const updatedDoctor = await http.put<DoctorProfile>(
+      const res = await http.put<{ success: boolean; data: DoctorProfile }>(
         `/api/doctors/${encodeURIComponent(doctorId)}`,
         updates,
       )
+
+      const updatedDoctor = (res as any)?.data || (res as any)
 
       set({
         doctor: updatedDoctor,
