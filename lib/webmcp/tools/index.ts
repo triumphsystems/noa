@@ -6,10 +6,8 @@
 import { WebMCPRegistry } from '../core/registry'
 import { registerClinicalTools } from './clinical-tools'
 import { registerIntakeTools } from './intake-tools'
-import { registerDatabaseTools } from './database-tools'
 
 export function registerAllTools(registry: WebMCPRegistry): void {
   registerClinicalTools(registry)
   registerIntakeTools(registry)
-  registerDatabaseTools(registry)
 }

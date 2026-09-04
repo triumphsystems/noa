@@ -13,7 +13,6 @@ export { WebMCPDispatcher, dispatcher } from './core/dispatcher'
 export { registerAllTools } from './tools'
 export { registerClinicalTools } from './tools/clinical-tools'
 export { registerIntakeTools } from './tools/intake-tools'
-export { registerDatabaseTools } from './tools/database-tools'
 
 // Resources
 export { registerAllResources } from './resources'
