@@ -52,11 +52,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Connect patient to doctor:
-    // When patient initiates with a valid careCode or selecting doctor, link directly
-    // and record link status as 'linked'.
+    // When patient initiates via careCode or doctor selection, stage as pending doctor approval
+    // to prevent unauthorized patient list injection and ensure clinician oversight.
     const updatedPatient = await updatePatient(patient.id, {
-      doctorId: targetDoctor.id,
-      linkStatus: 'linked',
+      pendingDoctorId: targetDoctor.id,
+      linkStatus: 'pending_doctor_approval',
       linkRequestedBy: 'patient',
       linkRequestedAt: Date.now(),
     })
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
           email: targetDoctor.email,
         },
       },
-      message: `Successfully connected to Dr. ${targetDoctor.name}`,
+      message: `Connection request submitted to Dr. ${targetDoctor.name}. Your care relationship will be active once reviewed by the clinician.`,
     })
   } catch (error) {
     console.error('[API /doctors/connect] Error connecting to doctor:', error)

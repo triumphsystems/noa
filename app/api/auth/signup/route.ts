@@ -98,20 +98,35 @@ export async function POST(request: NextRequest) {
       })
     } else {
       const existing = await getPatientByEmail(email)
-      if (existing) {
-        return NextResponse.json(
-          { message: 'An account with this email address already exists. Please sign in or reset your password.' },
-          { status: 409 }
-        )
-      }
+      let patient: any = null
 
-      const patient = await createPatient({
-        ...(userSub ? { id: userSub } : {}),
-        ...(doctorId ? { doctorId } : {}),
-        email: email.trim().toLowerCase(),
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-      })
+      if (existing) {
+        // Check if existing record was a pre-created invitation (i.e. starts with patient- and no registered user)
+        // or an already-registered patient account with a Cognito sub ID
+        const isPreCreatedInvite = existing.id.startsWith('patient-') && (!existing.firstName || existing.firstName === 'Pending' || existing.linkStatus === 'linked')
+        
+        if (!isPreCreatedInvite && existing.id === userSub) {
+          return NextResponse.json(
+            { message: 'An account with this email address already exists. Please sign in or reset your password.' },
+            { status: 409 }
+          )
+        }
+
+        // If it was a pre-created invitation from a clinician, bind it to this registering user
+        patient = await updatePatient(existing.id, {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          ...(doctorId && !existing.doctorId ? { doctorId } : {}),
+        })
+      } else {
+        patient = await createPatient({
+          ...(userSub ? { id: userSub } : {}),
+          ...(doctorId ? { doctorId } : {}),
+          email: email.trim().toLowerCase(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+        })
+      }
 
       return NextResponse.json({
         success: true,
@@ -121,11 +136,11 @@ export async function POST(request: NextRequest) {
         userSub,
         isConfirmed,
         patient: {
-          id: patient.id,
-          email: patient.email,
-          firstName: patient.firstName,
-          lastName: patient.lastName,
-          ...(patient.doctorId ? { doctorId: patient.doctorId } : {}),
+          id: patient?.id || userSub,
+          email: patient?.email || email,
+          firstName: patient?.firstName || firstName,
+          lastName: patient?.lastName || lastName,
+          ...(patient?.doctorId ? { doctorId: patient.doctorId } : {}),
         },
       })
     }

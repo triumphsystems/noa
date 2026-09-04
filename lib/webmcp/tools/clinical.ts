@@ -17,6 +17,17 @@ import {
 } from '@/lib/voice-service'
 
 export function registerClinicalTools(registry: WebMCPRegistry): void {
+  // Helper to ensure expensive clinical AI models can only be invoked by clinicians or authenticated system API keys
+  const assertClinician = (context?: any) => {
+    if (context?.apiKey) return // Server-to-server API key allowed
+    if (!context?.userId) {
+      throw new Error('Unauthorized: Authentication required to invoke clinical intelligence tools.')
+    }
+    if (context?.userType !== 'doctor' && context?.userType !== 'admin') {
+      throw new Error('Forbidden: Clinical decision-support tools are strictly restricted to licensed clinicians.')
+    }
+  }
+
   // 1. generate_soap_note
   registry.registerTool(
     {
@@ -38,7 +49,8 @@ export function registerClinicalTools(registry: WebMCPRegistry): void {
         required: ['transcript'],
       },
     },
-    async (input) => {
+    async (input, context) => {
+      assertClinician(context)
       const { transcript, patientContext } = input
       if (!transcript) throw new Error('Missing required argument: transcript')
       return await generateSOAPWithNova(transcript, patientContext)
@@ -70,7 +82,8 @@ export function registerClinicalTools(registry: WebMCPRegistry): void {
         required: ['patientHistory', 'currentPresentation'],
       },
     },
-    async (input) => {
+    async (input, context) => {
+      assertClinician(context)
       const { patientHistory, currentPresentation, previousFindings } = input
       if (!patientHistory) throw new Error('Missing required argument: patientHistory')
       if (!currentPresentation) throw new Error('Missing required argument: currentPresentation')
@@ -134,7 +147,8 @@ export function registerClinicalTools(registry: WebMCPRegistry): void {
         required: ['chiefComplaint', 'symptoms'],
       },
     },
-    async (input) => {
+    async (input, context) => {
+      assertClinician(context)
       const { chiefComplaint, symptoms, vitalSigns } = input
       if (!chiefComplaint) throw new Error('Missing required argument: chiefComplaint')
       if (!symptoms) throw new Error('Missing required argument: symptoms')
@@ -147,29 +161,30 @@ export function registerClinicalTools(registry: WebMCPRegistry): void {
     {
       name: 'generate_follow_up_plan',
       description:
-        'Generates an actionable post-consultation follow-up care plan including timing, monitoring parameters, medication management, and warning signs.',
+        'Builds a comprehensive clinical follow-up care plan, patient instructions, red flag warnings, and scheduled check-ins.',
       inputSchema: {
         type: 'object',
         properties: {
           assessment: {
             type: 'string',
-            description: 'The clinical assessment and diagnostic impression.',
+            description: 'Clinical assessment or diagnosis.',
           },
           medications: {
             type: 'array',
             items: { type: 'string' },
-            description: 'List of prescribed or continuing medications.',
+            description: 'Prescribed or active medications.',
           },
           procedures: {
             type: 'array',
             items: { type: 'string' },
-            description: 'Optional procedures performed or planned.',
+            description: 'Procedures, labs, or diagnostic tests ordered.',
           },
         },
         required: ['assessment', 'medications'],
       },
     },
-    async (input) => {
+    async (input, context) => {
+      assertClinician(context)
       const { assessment, medications, procedures } = input
       if (!assessment) throw new Error('Missing required argument: assessment')
       if (!Array.isArray(medications)) throw new Error('Missing required argument: medications array')
@@ -203,7 +218,8 @@ export function registerClinicalTools(registry: WebMCPRegistry): void {
         required: ['transcript', 'patientHistory', 'currentSymptoms'],
       },
     },
-    async (input) => {
+    async (input, context) => {
+      assertClinician(context)
       const { transcript, patientHistory, currentSymptoms } = input
       const suggestions = await getClinicaSuggestions(transcript, patientHistory, currentSymptoms)
       return { suggestions }
@@ -227,7 +243,8 @@ export function registerClinicalTools(registry: WebMCPRegistry): void {
         required: ['transcript'],
       },
     },
-    async (input) => {
+    async (input, context) => {
+      assertClinician(context)
       const { transcript } = input
       if (!transcript) throw new Error('Missing required argument: transcript')
       return await analyzeSessionSentiment(transcript)
