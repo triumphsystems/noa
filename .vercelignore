@@ -1,0 +1,20 @@
+# Ignore Terraform infrastructure and heavy provider binaries
+terraform/
+.terraform/
+**/.terraform/
+*.tf
+*.tfvars
+*.tfstate*
+
+# Tests and examples
+tests/
+webmcp-examples/
+docs/
+
+# Local build artifacts and logs
+.next/
+node_modules/
+*.tsbuildinfo
+*.log
+.env*.local
+.env
