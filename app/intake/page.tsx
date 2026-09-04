@@ -3,18 +3,15 @@
 import { Suspense } from 'react'
 import { IntakeHeader } from '@/components/intake/intake-header'
 import { AssistantPromptBox } from '@/components/intake/assistant-prompt-box'
-import { StatusLanguageGrid } from '@/components/intake/status-language-grid'
-import { AudioWaveform } from '@/components/intake/audio-waveform'
-import { IntakeControls } from '@/components/intake/intake-controls'
-import { CapturedFieldsSummary } from '@/components/intake/captured-fields-summary'
-import { ConversationLog } from '@/components/intake/conversation-log'
+import { VoiceStudio } from '@/components/intake/voice-studio'
+import { ClinicalIntakeCard } from '@/components/intake/clinical-intake-card'
 import { useIntakeVoice } from '@/lib/hooks/use-intake-voice'
 
-const defaultPrompt = 'Tap the microphone and answer in your own words.'
+const defaultPrompt = 'Tap the microphone or start speaking in your preferred language.'
 
 export default function PatientIntakePage() {
   return (
-    <Suspense fallback={<div className="space-y-6 min-h-screen bg-canvas" />}>
+    <Suspense fallback={<div className="h-screen bg-canvas" />}>
       <PatientIntakeContent />
     </Suspense>
   )
@@ -42,67 +39,62 @@ function PatientIntakeContent() {
   } = useIntakeVoice()
 
   return (
-    <div className="min-h-screen bg-canvas text-deep-ink">
-      <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
-        <IntakeHeader />
+    <div className="h-screen max-h-screen overflow-hidden bg-canvas text-deep-ink flex flex-col justify-between p-3 sm:p-5">
+      <div className="mx-auto w-full max-w-6xl h-full flex flex-col gap-3">
+        {/* Sleek Top Header with embedded Telemetry */}
+        <IntakeHeader
+          detectedLanguage={detectedLanguage}
+          isSubmitting={isSubmitting}
+          isRecording={isRecording}
+          isComplete={isComplete}
+        />
 
-        <main className="grid flex-1 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <section className="rounded-3xl border border-deep-ink/10 bg-white p-4 sm:p-6 shadow-sm">
-            <div className="flex h-full flex-col justify-between gap-6">
-              <div className="space-y-4">
-                <AssistantPromptBox
-                  assistantMessage={assistantMessage}
-                  isSpeaking={isSpeaking}
-                  isVoiceOutputEnabled={isVoiceOutputEnabled}
-                  onToggleVoiceOutput={() => setIsVoiceOutputEnabled((prev) => !prev)}
-                />
+        {/* Global Warnings / Messages */}
+        {supportMessage && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-900 shrink-0">
+            {supportMessage}
+          </div>
+        )}
 
-                <StatusLanguageGrid
-                  detectedLanguage={detectedLanguage}
-                  isSubmitting={isSubmitting}
-                  isRecording={isRecording}
-                  isComplete={isComplete}
-                />
+        {error && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700 shrink-0">
+            {error}
+          </div>
+        )}
 
-                {supportMessage && (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-900">
-                    {supportMessage}
-                  </div>
-                )}
+        {/* Two-Column Studio Layout (100% Fit, Zero-Scroll) */}
+        <main className="grid flex-1 gap-3.5 sm:gap-5 lg:grid-cols-[1.3fr_0.9fr] min-h-0 overflow-hidden">
+          {/* Left Column: Interactive Voice Canvas */}
+          <section className="h-full flex flex-col gap-3 rounded-3xl border border-deep-ink/10 bg-white p-3.5 sm:p-4 shadow-sm min-h-0 overflow-hidden">
+            <AssistantPromptBox
+              assistantMessage={assistantMessage}
+              isSpeaking={isSpeaking}
+              isVoiceOutputEnabled={isVoiceOutputEnabled}
+              onToggleVoiceOutput={() => setIsVoiceOutputEnabled((prev) => !prev)}
+            />
 
-                {error && (
-                  <div className="rounded-2xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-700">
-                    {error}
-                  </div>
-                )}
-
-                <AudioWaveform
-                  isRecording={isRecording}
-                  isListening={isListening}
-                  transcriptPreview={transcriptPreview}
-                  defaultPrompt={defaultPrompt}
-                />
-              </div>
-
-              <IntakeControls
-                isRecording={isRecording}
-                isSubmitting={isSubmitting}
-                onToggleMic={toggleMic}
-                onSubmitText={(txt) => void sendTranscript(txt)}
-                onReset={resetConversation}
-              />
-            </div>
+            <VoiceStudio
+              isRecording={isRecording}
+              isListening={isListening}
+              isSubmitting={isSubmitting}
+              transcriptPreview={transcriptPreview}
+              defaultPrompt={defaultPrompt}
+              onToggleMic={toggleMic}
+              onSubmitText={(txt) => void sendTranscript(txt)}
+              onReset={resetConversation}
+            />
           </section>
 
-          <aside className="space-y-4 sm:space-y-6">
-            <CapturedFieldsSummary draft={draft} />
-            <ConversationLog items={chatItems} />
+          {/* Right Column: Live Clinical Card & History Drawer */}
+          <aside className="h-full min-h-0 overflow-hidden">
+            <ClinicalIntakeCard draft={draft} chatItems={chatItems} />
           </aside>
         </main>
 
-        <footer className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 text-[11px] sm:text-xs text-slate text-center sm:text-left">
-          <p>Speak naturally. You can switch languages mid-conversation.</p>
-          <p>{isComplete ? 'Ready for confirmation.' : 'Keep talking until Noa confirms your intake.'}</p>
+        {/* Micro Footer Bar */}
+        <footer className="shrink-0 flex items-center justify-between text-[11px] text-slate/80 px-1 pt-1 border-t border-deep-ink/5">
+          <span>Speak naturally. Switch languages any time.</span>
+          <span>{isComplete ? 'Intake ready for confirmation.' : 'Noa asks one question at a time.'}</span>
         </footer>
       </div>
     </div>

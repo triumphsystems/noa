@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
       }
 
       const doctor = await createDoctor({
+        ...(userSub ? { id: userSub } : {}),
         email: email.trim().toLowerCase(),
         name: `${firstName} ${lastName}`.trim(),
         specialty: specialty || 'General Practice',
@@ -93,6 +94,7 @@ export async function POST(request: NextRequest) {
       }
 
       const patient = await createPatient({
+        ...(userSub ? { id: userSub } : {}),
         ...(doctorId ? { doctorId } : {}),
         email: email.trim().toLowerCase(),
         firstName: firstName.trim(),

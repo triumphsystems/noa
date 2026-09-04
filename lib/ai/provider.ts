@@ -1,9 +1,9 @@
 /**
  * Unified Clinical AI Provider Engine
  * Golden Standard: AWS Bedrock (Nova Lite, Nova Pro, Sonic)
- * Local Alternative: Real Local LLM via OpenAI-compatible endpoint (e.g. Ollama)
- * 
- * Strict Clinical Safety: Zero mock data in production paths. Fails fast with typed errors.
+ * Local Alternative: Local LLM via OpenAI-compatible endpoint (e.g. Ollama)
+ *
+ * Strict Clinical Safety: Fails fast with typed errors.
  */
 
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'

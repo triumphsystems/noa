@@ -96,9 +96,11 @@ export interface PatientIntake {
 }
 
 // ============ DOCTOR OPERATIONS ============
-export async function createDoctor(data: Omit<Doctor, 'id' | 'type' | 'createdAt' | 'updatedAt'>): Promise<Doctor> {
+export async function createDoctor(
+  data: Omit<Doctor, 'id' | 'type' | 'createdAt' | 'updatedAt'> & { id?: string }
+): Promise<Doctor> {
   const doctor: Doctor = {
-    id: `doctor-${nanoid()}`,
+    id: data.id || `doctor-${nanoid()}`,
     type: 'doctor',
     ...data,
     createdAt: Date.now(),
@@ -177,9 +179,11 @@ export async function updateDoctor(id: string, updates: Partial<Doctor>): Promis
 }
 
 // ============ PATIENT OPERATIONS ============
-export async function createPatient(data: Omit<Patient, 'id' | 'type' | 'createdAt' | 'updatedAt'>): Promise<Patient> {
+export async function createPatient(
+  data: Omit<Patient, 'id' | 'type' | 'createdAt' | 'updatedAt'> & { id?: string }
+): Promise<Patient> {
   const patient: Patient = {
-    id: `patient-${nanoid()}`,
+    id: data.id || `patient-${nanoid()}`,
     type: 'patient',
     ...data,
     createdAt: Date.now(),
