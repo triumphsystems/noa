@@ -21,14 +21,17 @@ import {
   ConfirmForgotPasswordCommand,
   AuthFlowType,
 } from '@aws-sdk/client-cognito-identity-provider'
-import { getAwsCredentials } from '@/lib/aws-config'
+import { createCredentialProvider, getAwsCredentials } from '@/lib/aws-config'
 
 const region = process.env.AWS_REGION || 'us-east-1'
-const credentials = getAwsCredentials(region)
+const hasCredentialsConfigured = Boolean(
+  (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
+  (process.env.VERCEL_OIDC_TOKEN && process.env.AWS_ROLE_ARN)
+)
 
 export const cognitoClient = new CognitoIdentityProviderClient({
   region,
-  ...(credentials ? { credentials } : {}),
+  ...(hasCredentialsConfigured ? { credentials: createCredentialProvider(region) } : {}),
 })
 
 export function getCognitoConfig() {

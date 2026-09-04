@@ -54,13 +54,36 @@ export async function getOidcCredentials(targetRegion = 'us-east-1'): Promise<Aw
     })
 
     if (!response.ok) {
-      console.error('[AWS OIDC] STS exchange failed:', await response.text())
+      const errorText = await response.text()
+      console.error('[AWS OIDC] STS exchange failed with status', response.status, ':', errorText)
       return undefined
     }
 
-    const data = await response.json()
-    const creds = data?.AssumeRoleWithWebIdentityResponse?.AssumeRoleWithWebIdentityResult?.Credentials
+    const rawText = await response.text()
+    let creds: any = null
+
+    try {
+      const data = JSON.parse(rawText)
+      creds = data?.AssumeRoleWithWebIdentityResponse?.AssumeRoleWithWebIdentityResult?.Credentials
+    } catch {
+      // Fallback regex parsing if AWS STS responds with XML format
+      const accessKeyMatch = rawText.match(/<AccessKeyId>(.*?)<\/AccessKeyId>/)
+      const secretKeyMatch = rawText.match(/<SecretAccessKey>(.*?)<\/SecretAccessKey>/)
+      const sessionTokenMatch = rawText.match(/<SessionToken>(.*?)<\/SessionToken>/)
+      const expirationMatch = rawText.match(/<Expiration>(.*?)<\/Expiration>/)
+
+      if (accessKeyMatch && secretKeyMatch) {
+        creds = {
+          AccessKeyId: accessKeyMatch[1],
+          SecretAccessKey: secretKeyMatch[1],
+          SessionToken: sessionTokenMatch ? sessionTokenMatch[1] : undefined,
+          Expiration: expirationMatch ? expirationMatch[1] : undefined,
+        }
+      }
+    }
+
     if (!creds?.AccessKeyId || !creds?.SecretAccessKey) {
+      console.error('[AWS OIDC] Could not parse STS credentials from response:', rawText.slice(0, 300))
       return undefined
     }
 
@@ -73,8 +96,8 @@ export async function getOidcCredentials(targetRegion = 'us-east-1'): Promise<Aw
     const expiresAt = creds.Expiration ? new Date(creds.Expiration).getTime() : now + 14 * 60_000
     cachedOidcSession = { credentials: result, expiresAt }
     return result
-  } catch (err) {
-    console.error('[AWS OIDC] Error exchanging token with AWS STS:', err)
+  } catch (err: any) {
+    console.error('[AWS OIDC] Error exchanging token with AWS STS:', err?.message || err)
     return undefined
   }
 }

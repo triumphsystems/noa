@@ -354,7 +354,10 @@ resource "aws_iam_role_policy" "cognito_policy" {
           "cognito-idp:AdminConfirmSignUp",
           "cognito-idp:AdminGetUser",
           "cognito-idp:AdminUpdateUserAttributes",
-          "cognito-idp:AdminSetUserPassword"
+          "cognito-idp:AdminSetUserPassword",
+          "cognito-idp:AdminAddUserToGroup",
+          "cognito-idp:AdminRemoveUserFromGroup",
+          "cognito-idp:AdminUserGlobalSignOut"
         ]
         Resource = aws_cognito_user_pool.noa_user_pool.arn
       }
