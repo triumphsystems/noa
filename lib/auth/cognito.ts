@@ -14,6 +14,8 @@ import {
   AdminConfirmSignUpCommand,
   GlobalSignOutCommand,
   GetUserCommand,
+  ForgotPasswordCommand,
+  ConfirmForgotPasswordCommand,
   AuthFlowType,
 } from '@aws-sdk/client-cognito-identity-provider'
 import { getAwsCredentials } from '@/lib/aws-config'
@@ -95,38 +97,6 @@ export async function signInWithCognito(
       throw new Error('No account found with this email address.')
     }
     if (error?.name === 'UserNotConfirmedException') {
-      // Allow unverified accounts to log in: auto-confirm via admin privileges and retry authentication
-      const { userPoolId } = getCognitoConfig()
-      if (userPoolId) {
-        try {
-          const confirmCmd = new AdminConfirmSignUpCommand({
-            UserPoolId: userPoolId,
-            Username: email.trim().toLowerCase(),
-          })
-          await cognitoClient.send(confirmCmd)
-
-          // Retry authentication now that account is confirmed
-          const retryCommand = new InitiateAuthCommand({
-            AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
-            ClientId: clientId,
-            AuthParameters: {
-              USERNAME: email.trim().toLowerCase(),
-              PASSWORD: password,
-            },
-          })
-          const retryResponse = await cognitoClient.send(retryCommand)
-          if (retryResponse.AuthenticationResult?.AccessToken && retryResponse.AuthenticationResult?.IdToken) {
-            return {
-              accessToken: retryResponse.AuthenticationResult.AccessToken,
-              idToken: retryResponse.AuthenticationResult.IdToken,
-              refreshToken: retryResponse.AuthenticationResult.RefreshToken,
-              expiresIn: retryResponse.AuthenticationResult.ExpiresIn || 3600,
-            }
-          }
-        } catch (confirmError) {
-          console.error('[Cognito] Auto-confirm on unverified sign-in error:', confirmError)
-        }
-      }
       throw new Error('Account email is not verified yet. Please check your verification code.')
     }
     throw new Error(error?.message || 'Authentication failed')
@@ -170,26 +140,9 @@ export async function signUpWithCognito({
 
     const response = await cognitoClient.send(command)
 
-    let isConfirmed = Boolean(response.UserConfirmed)
-
-    // Auto-confirm newly registered user so they can immediately sign in without verification
-    const { userPoolId } = getCognitoConfig()
-    if (!isConfirmed && userPoolId) {
-      try {
-        const confirmCmd = new AdminConfirmSignUpCommand({
-          UserPoolId: userPoolId,
-          Username: email.trim().toLowerCase(),
-        })
-        await cognitoClient.send(confirmCmd)
-        isConfirmed = true
-      } catch (confirmError) {
-        console.warn('[Cognito] Auto-confirm at signup skipped or failed:', confirmError)
-      }
-    }
-
     return {
       userSub: response.UserSub || '',
-      isConfirmed,
+      isConfirmed: Boolean(response.UserConfirmed),
     }
   } catch (error: any) {
     console.error('[Cognito] Sign-up error:', error?.name, error?.message)
@@ -280,3 +233,86 @@ export async function getCognitoUser(accessToken: string): Promise<CognitoUserSe
     return null
   }
 }
+
+/**
+ * Initiate password reset request by sending a verification code to the user's email
+ */
+export async function forgotPasswordWithCognito(email: string): Promise<{ destination?: string }> {
+  const { clientId, isConfigured } = getCognitoConfig()
+
+  if (!isConfigured) {
+    throw new Error('AWS Cognito is not configured.')
+  }
+
+  try {
+    const command = new ForgotPasswordCommand({
+      ClientId: clientId,
+      Username: email.trim().toLowerCase(),
+    })
+
+    const response = await cognitoClient.send(command)
+    return {
+      destination: response.CodeDeliveryDetails?.Destination,
+    }
+  } catch (error: any) {
+    console.error('[Cognito] Forgot-password error:', error?.name, error?.message)
+    if (error?.name === 'UserNotFoundException') {
+      // In security practices, still respond gracefully or give standard error
+      throw new Error('No account found with this email address.')
+    }
+    if (error?.name === 'LimitExceededException') {
+      throw new Error('Attempt limit exceeded. Please try again later.')
+    }
+    if (error?.name === 'InvalidParameterException') {
+      throw new Error('Invalid email parameter.')
+    }
+    throw new Error(error?.message || 'Failed to request password reset.')
+  }
+}
+
+/**
+ * Confirm password reset using the verification code and new password
+ */
+export async function confirmForgotPasswordWithCognito({
+  email,
+  code,
+  newPassword,
+}: {
+  email: string
+  code: string
+  newPassword: string
+}): Promise<{ success: boolean }> {
+  const { clientId, isConfigured } = getCognitoConfig()
+
+  if (!isConfigured) {
+    throw new Error('AWS Cognito is not configured.')
+  }
+
+  try {
+    const command = new ConfirmForgotPasswordCommand({
+      ClientId: clientId,
+      Username: email.trim().toLowerCase(),
+      ConfirmationCode: code.trim(),
+      Password: newPassword,
+    })
+
+    await cognitoClient.send(command)
+    return { success: true }
+  } catch (error: any) {
+    console.error('[Cognito] Confirm-forgot-password error:', error?.name, error?.message)
+    if (error?.name === 'CodeMismatchException') {
+      throw new Error('Invalid verification code. Please check and try again.')
+    }
+    if (error?.name === 'ExpiredCodeException') {
+      throw new Error('Verification code has expired. Please request a new one.')
+    }
+    if (error?.name === 'InvalidPasswordException') {
+      throw new Error('Password does not meet requirements (must be at least 6 characters).')
+    }
+    if (error?.name === 'UserNotFoundException') {
+      throw new Error('No user found for this email address.')
+    }
+    throw new Error(error?.message || 'Failed to reset password.')
+  }
+}
+

@@ -111,9 +111,12 @@ export default function LoginForm({ userType }: LoginFormProps) {
             <input type="checkbox" className="rounded border-deep-ink/20 text-deep-ink focus:ring-deep-ink" />
             <span className="text-slate">Remember me</span>
           </label>
-          <a href="#" className="font-medium text-slate hover:text-deep-ink underline-offset-4 hover:underline">
+          <Link
+            href={`/auth/forgot-password?email=${encodeURIComponent(formData.email)}&type=${userType}`}
+            className="font-medium text-slate hover:text-deep-ink underline-offset-4 hover:underline"
+          >
             Forgot password?
-          </a>
+          </Link>
         </div>
 
         <Button
