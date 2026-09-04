@@ -50,6 +50,12 @@ variable "enable_bedrock" {
   default     = true
 }
 
+variable "bedrock_region" {
+  description = "AWS region for Amazon Bedrock runtime (recommended: us-east-1 or us-west-2 if aws_region does not natively host Bedrock models)"
+  type        = string
+  default     = "us-east-1"
+}
+
 variable "enable_vercel_oidc" {
   description = "Enable OpenID Connect (OIDC) identity federation for Vercel deployments (zero static keys)"
   type        = bool

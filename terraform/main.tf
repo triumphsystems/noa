@@ -261,13 +261,22 @@ resource "aws_iam_role_policy" "bedrock_policy" {
         Action = [
           "bedrock:InvokeModel",
           "bedrock:InvokeModelWithResponseStream",
-          "bedrock:ListFoundationModels"
+          "bedrock:ListFoundationModels",
+          "bedrock:GetInferenceProfile",
+          "bedrock:ListInferenceProfiles"
         ]
-        Resource = "arn:aws:bedrock:${var.aws_region}::foundation-model/*"
+        Resource = [
+          "arn:aws:bedrock:*::foundation-model/*",
+          "arn:aws:bedrock:*:${data.aws_caller_identity.current.account_id}:inference-profile/*",
+          "arn:aws:bedrock:*::inference-profile/*"
+        ]
       },
       {
-        Effect   = "Allow"
-        Action   = ["bedrock:GetFoundationModel"]
+        Effect = "Allow"
+        Action = [
+          "bedrock:GetFoundationModel",
+          "bedrock:ListInferenceProfiles"
+        ]
         Resource = "*"
       }
     ]

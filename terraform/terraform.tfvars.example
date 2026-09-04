@@ -5,6 +5,7 @@ environment      = "prod"
 app_url          = "https://noa.yourdomain.com"
 
 enable_bedrock         = true
+bedrock_region         = "us-east-1" # Native region for Bedrock Nova & Sonic models
 enable_monitoring      = true
 enable_s3_replication  = true
 s3_replication_region  = "us-west-2"

@@ -193,14 +193,14 @@ export const awsConfig = {
   bedrock: {
     region: bedrockRegion,
     models: {
-      // Nova Lite - Fast, efficient model for SOAP notes and basic tasks
-      novaLite: process.env.BEDROCK_NOVA_LITE_MODEL || 'us.anthropic.claude-3-5-sonnet-20241022',
+      // Nova Lite v2 - Fast, efficient model for SOAP notes and basic tasks
+      novaLite: process.env.BEDROCK_NOVA_LITE_MODEL || 'amazon.nova-lite-v2:0',
       
-      // Nova Pro - Advanced model for clinical analysis
-      novaPro: process.env.BEDROCK_NOVA_PRO_MODEL || 'us.anthropic.claude-3-5-sonnet-20241022',
+      // Nova Pro v2 - Advanced model for clinical analysis
+      novaPro: process.env.BEDROCK_NOVA_PRO_MODEL || 'amazon.nova-pro-v2:0',
       
-      // Sonic - Voice/audio processing model
-      sonic: process.env.BEDROCK_SONIC_MODEL || 'amazon.nova-lite-v1:0',
+      // Sonic v2 - Voice/audio processing model
+      sonic: process.env.BEDROCK_SONIC_MODEL || 'amazon.nova-sonic-v2:0',
     },
     config: {
       maxTokens: parseInt(process.env.BEDROCK_MAX_TOKENS || '2048'),

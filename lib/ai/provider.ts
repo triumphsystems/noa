@@ -6,8 +6,8 @@
  * Strict Clinical Safety: Fails fast with typed errors.
  */
 
-import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
-import { getAwsCredentials, createCredentialProvider } from '@/lib/aws-config'
+import { ConverseCommand, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
+import { bedrockClient } from '@/lib/aws-config'
 
 export type AIModelTier = 'fast' | 'reasoning' | 'intake'
 export type AIProvider = 'bedrock' | 'local'
@@ -52,20 +52,6 @@ interface InvokeResult {
   model: string
 }
 
-// Bedrock client initialization
-const region = process.env.AWS_REGION || 'us-east-1'
-const hasCredentialsConfigured = Boolean(
-  (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
-  (process.env.VERCEL_OIDC_TOKEN && process.env.AWS_ROLE_ARN)
-)
-
-const bedrockClient = new BedrockRuntimeClient({
-  region,
-  maxAttempts: 5,
-  retryMode: 'adaptive',
-  ...(hasCredentialsConfigured ? { credentials: createCredentialProvider(region) } : {}),
-})
-
 // Configuration getters
 export function getActiveAIProvider(): AIProvider {
   const configured = (process.env.CLINICAL_AI_PROVIDER || 'bedrock').toLowerCase()
@@ -77,15 +63,15 @@ export function getModelForTier(provider: AIProvider, tier: AIModelTier = 'fast'
     return process.env.LOCAL_AI_MODEL || 'llama3.2:latest'
   }
 
-  // Bedrock Nova model mapping
+  // Bedrock Nova v2 model mapping (supports direct or cross-region inference profiles)
   switch (tier) {
     case 'reasoning':
-      return process.env.BEDROCK_NOVA_PRO_MODEL || 'anthropic.nova-pro-v1:0'
+      return process.env.BEDROCK_NOVA_PRO_MODEL || 'amazon.nova-pro-v2:0'
     case 'intake':
-      return process.env.BEDROCK_SONIC_MODEL || 'amazon.nova-lite-v1:0'
+      return process.env.BEDROCK_SONIC_MODEL || 'amazon.nova-sonic-v2:0'
     case 'fast':
     default:
-      return process.env.BEDROCK_NOVA_LITE_MODEL || 'anthropic.nova-lite-v1:0'
+      return process.env.BEDROCK_NOVA_LITE_MODEL || 'amazon.nova-lite-v2:0'
   }
 }
 
@@ -126,23 +112,26 @@ async function invokeBedrockAI({
   temperature: number
   model: string
 }): Promise<InvokeResult> {
-  const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt
-
   try {
-    const command = new InvokeModelCommand({
+    // Bedrock Converse API provides uniform support across Nova, Claude, and Cross-Region inference profiles
+    const command = new ConverseCommand({
       modelId: model,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        prompt: fullPrompt,
-        max_tokens: maxTokens,
+      messages: [
+        {
+          role: 'user',
+          content: [{ text: prompt }],
+        },
+      ],
+      system: systemPrompt ? [{ text: systemPrompt }] : undefined,
+      inferenceConfig: {
+        maxTokens,
         temperature,
-        top_p: 0.9,
-      }),
+        topP: 0.9,
+      },
     })
 
     const response = await bedrockClient.send(command)
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body))
-    const text = responseBody.content?.[0]?.text || responseBody.text || ''
+    const text = response.output?.message?.content?.[0]?.text || ''
 
     if (!text) {
       throw new Error('Empty response received from Bedrock model')
@@ -153,12 +142,54 @@ async function invokeBedrockAI({
       provider: 'bedrock',
       model,
     }
-  } catch (error) {
+  } catch (error: any) {
+    // If ConverseCommand fails or is unsupported for a specific model, fallback to InvokeModelCommand
+    try {
+      const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt
+      const isNova = model.includes('nova')
+      const payload = isNova
+        ? {
+            messages: [{ role: 'user', content: [{ text: fullPrompt }] }],
+            ...(systemPrompt ? { system: [{ text: systemPrompt }] } : {}),
+            inferenceConfig: { maxTokens, temperature, topP: 0.9 },
+          }
+        : {
+            prompt: fullPrompt,
+            max_tokens: maxTokens,
+            temperature,
+            top_p: 0.9,
+          }
+
+      const invokeCmd = new InvokeModelCommand({
+        modelId: model,
+        contentType: 'application/json',
+        body: JSON.stringify(payload),
+      })
+
+      const fallbackResponse = await bedrockClient.send(invokeCmd)
+      const responseBody = JSON.parse(new TextDecoder().decode(fallbackResponse.body))
+      const text =
+        responseBody.output?.message?.content?.[0]?.text ||
+        responseBody.content?.[0]?.text ||
+        responseBody.text ||
+        ''
+
+      if (text) {
+        return {
+          text,
+          provider: 'bedrock',
+          model,
+        }
+      }
+    } catch {
+      // Fall through to primary error
+    }
+
     throw new ClinicalAIUnavailableError(
       'bedrock',
       model,
       error,
-      'Check AWS IAM credentials, Bedrock model access permissions, or configure CLINICAL_AI_PROVIDER=local.'
+      'Check AWS IAM credentials, Bedrock cross-region inference profiles, model access in AWS Console, or configure CLINICAL_AI_PROVIDER=local.'
     )
   }
 }

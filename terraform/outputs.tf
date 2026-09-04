@@ -55,6 +55,7 @@ output "environment_variables" {
     AWS_REGION           = var.aws_region
     AWS_ACCOUNT_ID       = var.aws_account_id
     AWS_ROLE_ARN         = aws_iam_role.app_role.arn
+    BEDROCK_REGION       = var.bedrock_region
     DYNAMODB_TABLE_NAME  = aws_dynamodb_table.noa_db.name
     S3_BUCKET            = aws_s3_bucket.audio_bucket.id
     S3_BACKUP_BUCKET     = try(aws_s3_bucket.backup_bucket[0].id, "")
@@ -82,6 +83,7 @@ output "deployment_instructions" {
        AWS_REGION=${var.aws_region}
        AWS_ACCOUNT_ID=${var.aws_account_id}
        AWS_ROLE_ARN=${aws_iam_role.app_role.arn}
+       BEDROCK_REGION=${var.bedrock_region}
        DYNAMODB_TABLE_NAME=${aws_dynamodb_table.noa_db.name}
        S3_BUCKET=${aws_s3_bucket.audio_bucket.id}
        S3_BACKUP_BUCKET=${try(aws_s3_bucket.backup_bucket[0].id, "")}

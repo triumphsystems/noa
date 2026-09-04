@@ -1,24 +1,9 @@
-import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-import { getAwsCredentials, awsConfig } from './aws-config'
+import { PutObjectCommand } from '@aws-sdk/client-s3'
+import { bedrockClient, s3Client, awsConfig } from './aws-config'
 import { invokeClinicalAI } from '@/lib/ai/provider'
 
-const region = process.env.AWS_REGION || 'us-east-1'
-const bedrockCredentials = getAwsCredentials(region)
-const s3Credentials = getAwsCredentials(region)
-
-const bedrockClient = new BedrockRuntimeClient({
-  region,
-  ...(bedrockCredentials ? { credentials: bedrockCredentials } : {}),
-})
-
-const s3Client = new S3Client({
-  region,
-  ...(s3Credentials ? { credentials: s3Credentials } : {}),
-})
-
 // Sonic model ID for real-time voice conversations
-const SONIC_MODEL = process.env.BEDROCK_SONIC_MODEL || 'anthropic.nova-sonic-v1:0'
+const SONIC_MODEL = process.env.BEDROCK_SONIC_MODEL || 'amazon.nova-sonic-v2:0'
 
 interface VoiceMessage {
   role: 'doctor' | 'patient' | 'system'
@@ -99,26 +84,19 @@ ${conversationHistory}
 
 Provide brief, focused responses that support clinical decision-making. Keep responses under 100 words.`
 
-  const prompt = `${systemPrompt}\n\nDoctor/Patient just said: ${userTranscript}\n\nClinical AI Response:`
+  const prompt = `Doctor/Patient just said: ${userTranscript}\n\nClinical AI Response:`
 
   try {
-    const response = await bedrockClient.send(
-      new InvokeModelCommand({
-        modelId: SONIC_MODEL,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          prompt,
-          max_tokens: 500,
-          temperature: 0.3,
-          top_p: 0.9,
-        }),
-      })
-    )
-
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body))
-    return responseBody.content[0]?.text || 'Unable to process voice input'
+    const { text } = await invokeClinicalAI({
+      prompt,
+      systemPrompt,
+      maxTokens: 500,
+      temperature: 0.3,
+      modelTier: 'intake',
+    })
+    return text || 'Unable to process voice input'
   } catch (error) {
-    console.error('[v0] Error processing voice input:', error)
+    console.error('[Voice] Error processing voice input:', error)
     throw error
   }
 }
@@ -200,20 +178,12 @@ Return as JSON:
 }`
 
   try {
-    const response = await bedrockClient.send(
-      new InvokeModelCommand({
-        modelId: SONIC_MODEL,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          prompt,
-          max_tokens: 400,
-          temperature: 0.3,
-        }),
-      })
-    )
-
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body))
-    const text = responseBody.content[0]?.text || '{}'
+    const { text } = await invokeClinicalAI({
+      prompt,
+      maxTokens: 400,
+      temperature: 0.3,
+      modelTier: 'intake',
+    })
 
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (jsonMatch) {
@@ -226,7 +196,7 @@ Return as JSON:
       assessmentSummary: 'Unable to generate',
     }
   } catch (error) {
-    console.error('[v0] Error generating real-time notes:', error)
+    console.error('[Voice] Error generating real-time notes:', error)
     return {
       keyFindings: [],
       chiefComplaint: 'Error',
@@ -253,20 +223,12 @@ Provide actionable clinical suggestions as a JSON array:
 ["Suggestion 1", "Suggestion 2", "Suggestion 3"]`
 
   try {
-    const response = await bedrockClient.send(
-      new InvokeModelCommand({
-        modelId: SONIC_MODEL,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          prompt,
-          max_tokens: 300,
-          temperature: 0.4,
-        }),
-      })
-    )
-
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body))
-    const text = responseBody.content[0]?.text || '[]'
+    const { text } = await invokeClinicalAI({
+      prompt,
+      maxTokens: 300,
+      temperature: 0.4,
+      modelTier: 'intake',
+    })
 
     const arrayMatch = text.match(/\[[\s\S]*\]/)
     if (arrayMatch) {
@@ -275,7 +237,7 @@ Provide actionable clinical suggestions as a JSON array:
 
     return []
   } catch (error) {
-    console.error('[v0] Error getting clinical suggestions:', error)
+    console.error('[Voice] Error getting clinical suggestions:', error)
     return []
   }
 }
@@ -306,20 +268,12 @@ Respond as JSON:
 }`
 
   try {
-    const response = await bedrockClient.send(
-      new InvokeModelCommand({
-        modelId: SONIC_MODEL,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          prompt,
-          max_tokens: 300,
-          temperature: 0.3,
-        }),
-      })
-    )
-
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body))
-    const text = responseBody.content[0]?.text || '{}'
+    const { text } = await invokeClinicalAI({
+      prompt,
+      maxTokens: 300,
+      temperature: 0.3,
+      modelTier: 'intake',
+    })
 
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (jsonMatch) {
@@ -332,7 +286,7 @@ Respond as JSON:
       concerns: [],
     }
   } catch (error) {
-    console.error('[v0] Error analyzing session sentiment:', error)
+    console.error('[Voice] Error analyzing session sentiment:', error)
     return {
       sentiment: 'neutral',
       urgency: 'medium',
