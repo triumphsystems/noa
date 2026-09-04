@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ErrorAlert } from '@/components/ui/error-alert'
@@ -13,12 +13,20 @@ type LoginFormProps = {
 
 export default function LoginForm({ userType }: LoginFormProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false)
+
+  useEffect(() => {
+    if (searchParams?.get('expired') === '1') {
+      setSessionExpiredNotice(true)
+    }
+  }, [searchParams])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -75,6 +83,18 @@ export default function LoginForm({ userType }: LoginFormProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 font-sans">
+        {sessionExpiredNotice && (
+          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
+            <span>Your session has expired. Please sign in again to continue.</span>
+            <button
+              type="button"
+              onClick={() => setSessionExpiredNotice(false)}
+              className="text-amber-700 hover:text-amber-900 font-bold ml-2"
+            >
+              ×
+            </button>
+          </div>
+        )}
         {error && <ErrorAlert message={error} onDismiss={() => setError('')} />}
 
         <div className="space-y-1">

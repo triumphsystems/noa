@@ -2,6 +2,7 @@ import { create } from 'zustand'
 
 import type { DoctorDashboardPayload, DoctorProfile, DoctorProfileUpdateInput } from '@/lib/types/doctor.types'
 import type { Patient, Session } from '@/lib/db'
+import { http } from '@/lib/http'
 
 export interface DoctorState {
   doctorId: string | null
@@ -31,20 +32,6 @@ const initialState = {
   lastLoadedDoctorId: null,
 }
 
-const fetchJson = async <T,>(url: string, init?: RequestInit): Promise<T> => {
-  const response = await fetch(url, {
-    cache: 'no-store',
-    ...init,
-  })
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.message || data.error || 'Request failed')
-  }
-
-  return data.data as T
-}
-
 export const useDoctorStore = create<DoctorState>((set, get) => ({
   ...initialState,
 
@@ -61,7 +48,7 @@ export const useDoctorStore = create<DoctorState>((set, get) => ({
     set({ isLoading: true, error: null, doctorId: activeDoctorId })
 
     try {
-      const payload = await fetchJson<DoctorDashboardPayload>(
+      const payload = await http<DoctorDashboardPayload>(
         `/api/dashboard/doctor?doctorId=${encodeURIComponent(activeDoctorId)}`,
       )
 
@@ -92,13 +79,10 @@ export const useDoctorStore = create<DoctorState>((set, get) => ({
     set({ isSaving: true, error: null })
 
     try {
-      const updatedDoctor = await fetchJson<DoctorProfile>(`/api/doctors/${encodeURIComponent(doctorId)}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
-      })
+      const updatedDoctor = await http.put<DoctorProfile>(
+        `/api/doctors/${encodeURIComponent(doctorId)}`,
+        updates,
+      )
 
       set({
         doctor: updatedDoctor,

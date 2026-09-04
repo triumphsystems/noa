@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { PatientDashboardPayload, PatientProfile } from '@/lib/types/patient.types'
 import type { Doctor, PatientIntake, Session } from '@/lib/db'
+import { http } from '@/lib/http'
 
 export interface PatientState {
   patientId: string | null
@@ -45,16 +46,9 @@ export const usePatientStore = create<PatientState>((set, get) => ({
     set({ isLoading: true, error: null, patientId: activeId })
 
     try {
-      const response = await fetch(`/api/dashboard/patient?patientId=${encodeURIComponent(activeId)}`, {
-        cache: 'no-store',
-      })
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || 'Failed to load patient data')
-      }
-
-      const payload = data.data as PatientDashboardPayload
+      const payload = await http<PatientDashboardPayload>(
+        `/api/dashboard/patient?patientId=${encodeURIComponent(activeId)}`
+      )
 
       set({
         patient: payload.patient,

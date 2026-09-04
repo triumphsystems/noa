@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { refreshCognitoTokens, getCognitoUser, getCognitoConfig } from '@/lib/auth/cognito'
-import { AUTH_COOKIE_NAMES, setAuthCookies } from '@/lib/auth/cookies'
+import { AUTH_COOKIE_NAMES, setAuthCookies, clearAuthCookies } from '@/lib/auth/cookies'
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,10 +8,11 @@ export async function POST(request: NextRequest) {
     const sessionMeta = request.cookies.get(AUTH_COOKIE_NAMES.SESSION_META)?.value
 
     if (!refreshToken) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { message: 'No refresh token present' },
         { status: 401 }
       )
+      return clearAuthCookies(response)
     }
 
     const { isConfigured } = getCognitoConfig()
@@ -60,9 +61,10 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('[Auth] Token refresh error:', error?.message)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { message: error?.message || 'Failed to refresh authentication session' },
       { status: 401 }
     )
+    return clearAuthCookies(response)
   }
 }
