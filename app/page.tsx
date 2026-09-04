@@ -53,7 +53,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/intake"
-              className="text-sm font-semibold text-deep-ink hover:text-deep-ink/80 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-hi-yellow/25 border border-hi-yellow/60 transition-colors"
+              className="text-sm font-semibold text-deep-ink hover:text-deep-ink/80 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-soft-meadow border border-deep-ink/10 hover:bg-soft-meadow/70 transition-colors"
             >
               <UserCheck className="w-3.5 h-3.5 text-deep-ink" />
               <span>Patient Check-in</span>
@@ -110,10 +110,10 @@ export default function LandingPage() {
               <Link
                 href="/intake"
                 onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-2 rounded-lg text-sm font-semibold text-deep-ink bg-hi-yellow/25 border border-hi-yellow/50 flex items-center gap-2 transition-colors"
+                className="px-3 py-2 rounded-lg text-sm font-semibold text-deep-ink bg-soft-meadow border border-deep-ink/10 flex items-center gap-2 transition-colors"
               >
                 <UserCheck className="w-4 h-4 text-deep-ink" />
-                <span>Patient Check-in (No login)</span>
+                <span>Patient Check-in</span>
               </Link>
             </div>
             <div className="pt-2 border-t border-deep-ink/8 flex flex-col gap-2">
@@ -132,10 +132,6 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
             <div className="space-y-6">
-              <Badge variant="default" className="px-3 py-1 gap-1.5 inline-flex items-center">
-                <Sparkles className="w-3.5 h-3.5 text-deep-ink" />
-                <span>Next-Generation Clinical Voice AI</span>
-              </Badge>
               <h1 className="text-3xl sm:text-5xl lg:text-6xl font-normal font-serif leading-[1.15] text-balance text-deep-ink">
                 Medical memory, powered by AI
               </h1>
@@ -144,7 +140,7 @@ export default function LandingPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Link href="/auth/signup?type=doctor" className="block w-full sm:w-auto">
-                  <Button variant="default" className="w-full sm:w-auto rounded-lg px-6 py-2.5 h-11 text-sm font-semibold shadow-2xs gap-2">
+                  <Button variant="dark" className="w-full sm:w-auto rounded-lg px-6 py-2.5 h-11 text-sm font-semibold shadow-2xs gap-2">
                     <span>Start for Doctors</span>
                     <ArrowRight className="w-4 h-4" />
                   </Button>
@@ -156,16 +152,13 @@ export default function LandingPage() {
                   >
                     <UserCheck className="w-4 h-4 text-deep-ink" />
                     <span>Patient Check-in</span>
-                    <span className="text-[10px] uppercase font-bold tracking-wider bg-hi-yellow/50 text-deep-ink px-1.5 py-0.5 rounded">
-                      Demo
-                    </span>
                   </Button>
                 </Link>
               </div>
               <p className="text-xs text-slate/80">
-                Are you a patient or judge testing the flow?{' '}
+                Are you a patient?{' '}
                 <Link href="/intake" className="text-deep-ink font-semibold underline underline-offset-4 hover:text-deep-ink/80">
-                  Try the interactive Check-in &rarr;
+                  Complete your check-in &rarr;
                 </Link>
               </p>
             </div>
@@ -173,7 +166,7 @@ export default function LandingPage() {
             {/* Interactive Hero Card Preview */}
             <div className="relative mt-4 lg:mt-0">
               {/* Background ambient lighting */}
-              <div className="absolute -inset-3 rounded-3xl bg-gradient-to-br from-hi-yellow/20 via-soft-meadow to-moss-green/15 blur-2xl opacity-70" />
+              <div className="absolute -inset-3 rounded-3xl bg-gradient-to-br from-emerald-500/10 via-soft-meadow to-deep-ink/5 blur-2xl opacity-60" />
 
               <Card className="relative p-5 sm:p-6 space-y-4 border border-deep-ink/10 shadow-xl bg-white/95 backdrop-blur-md rounded-3xl font-sans">
                 {/* Session Header */}
@@ -202,8 +195,8 @@ export default function LandingPage() {
                       <span className="w-0.5 h-2 bg-emerald-500 rounded-full animate-pulse [animation-delay:200ms]" />
                     </div>
 
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-hi-yellow/20 border border-hi-yellow/40 text-deep-ink font-mono text-[10px] font-semibold">
-                      <span className="w-1.5 h-1.5 rounded-full bg-deep-ink/60" />
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-soft-meadow border border-deep-ink/10 text-deep-ink font-mono text-[10px] font-semibold">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
                       <span>00:24</span>
                     </div>
                   </div>
@@ -229,7 +222,7 @@ export default function LandingPage() {
 
                   {/* Patient Turn */}
                   <div className="flex items-start gap-2.5 bg-soft-meadow/50 p-2.5 rounded-xl border border-deep-ink/5 shadow-2xs">
-                    <div className="w-6 h-6 rounded-full bg-hi-yellow text-deep-ink border border-deep-ink/10 flex items-center justify-center shrink-0 font-bold text-[9px] mt-0.5">
+                    <div className="w-6 h-6 rounded-full bg-soft-meadow text-deep-ink border border-deep-ink/20 flex items-center justify-center shrink-0 font-bold text-[9px] mt-0.5">
                       PT
                     </div>
                     <div className="space-y-0.5 flex-1 min-w-0">
@@ -379,14 +372,14 @@ export default function LandingPage() {
               return (
                 <div
                   key={idx}
-                  className="group relative p-7 sm:p-8 rounded-2xl bg-white hover:bg-white border border-deep-ink/8 hover:border-hi-yellow/80 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between"
+                  className="group relative p-7 sm:p-8 rounded-2xl bg-white hover:bg-white border border-deep-ink/8 hover:border-deep-ink/25 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-6">
-                      <div className="w-12 h-12 rounded-xl bg-hi-yellow border border-deep-ink/15 flex items-center justify-center text-deep-ink shadow-2xs group-hover:scale-105 transition-transform duration-200">
-                        <Icon className="w-5 h-5 text-deep-ink" />
+                      <div className="w-12 h-12 rounded-xl bg-soft-meadow border border-deep-ink/10 flex items-center justify-center text-deep-ink shadow-2xs group-hover:bg-deep-ink group-hover:text-white group-hover:scale-105 transition-all duration-200">
+                        <Icon className="w-5 h-5 transition-colors" />
                       </div>
-                      <span className="text-[11px] font-semibold text-deep-ink uppercase tracking-wider font-sans bg-hi-yellow/25 px-2.5 py-0.5 rounded-full border border-hi-yellow/50">
+                      <span className="text-[11px] font-semibold text-deep-ink/75 uppercase tracking-wider font-sans bg-soft-meadow px-2.5 py-0.5 rounded-full border border-deep-ink/8">
                         {feature.badge}
                       </span>
                     </div>
@@ -401,7 +394,7 @@ export default function LandingPage() {
 
                   <div className="pt-5 mt-6 border-t border-deep-ink/5 flex items-center justify-between text-xs text-slate/80 font-sans">
                     <span className="flex items-center gap-1.5 font-medium">
-                      <span className="w-2 h-2 rounded-full bg-hi-yellow border border-deep-ink/30" />
+                      <span className="w-2 h-2 rounded-full bg-emerald-500/80 border border-emerald-600/30" />
                       {feature.metric}
                     </span>
                     <ArrowRight className="w-3.5 h-3.5 text-slate/40 group-hover:text-deep-ink group-hover:translate-x-0.5 transition-all" />
@@ -448,7 +441,7 @@ export default function LandingPage() {
                 description: 'Review the note, sign off, and send an easy-to-read summary to the patient portal.',
               },
             ].map((item, idx) => (
-              <Card key={idx} className="p-7 sm:p-9 flex gap-5 sm:gap-6 items-start bg-white shadow-editorial rounded-2xl border border-deep-ink/8 hover:border-hi-yellow/60 transition-all">
+              <Card key={idx} className="p-7 sm:p-9 flex gap-5 sm:gap-6 items-start bg-white shadow-editorial rounded-2xl border border-deep-ink/8 hover:border-deep-ink/25 transition-all">
                 <span className="text-3xl sm:text-4xl font-semibold font-serif text-deep-ink/25 shrink-0 pt-0.5">
                   {item.step}
                 </span>
@@ -473,7 +466,7 @@ export default function LandingPage() {
           </p>
           <div className="pt-3">
             <Link href="/auth/signup?type=doctor" className="inline-block w-full sm:w-auto">
-              <Button variant="default" className="w-full sm:w-auto rounded-lg px-8 py-3 h-12 text-sm font-semibold shadow-2xs">
+              <Button variant="dark" className="w-full sm:w-auto rounded-lg px-8 py-3 h-12 text-sm font-semibold shadow-2xs">
                 Start Your Practice Trial
               </Button>
             </Link>
@@ -485,7 +478,7 @@ export default function LandingPage() {
       <footer className="bg-deep-ink text-white/70 py-12 sm:py-16">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-hi-yellow">
+            <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-emerald-400">
               <Sparkles className="w-3.5 h-3.5" />
             </div>
             <div className="flex items-baseline gap-2">

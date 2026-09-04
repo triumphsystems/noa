@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     let userId = cognitoUser?.sub || 'user'
     let userName = cognitoUser?.name || 'User'
-    let userType: 'doctor' | 'patient' = cognitoUser?.userType || 'doctor'
+    let userType: 'doctor' | 'patient' | 'admin' = cognitoUser?.userType || 'doctor'
 
     if (sessionMeta) {
       try {

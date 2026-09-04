@@ -98,11 +98,12 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const resolvedUserId = userAuth.dbId || userAuth.sub
     const context: ExecutionContext = {
-      userId: userAuth.userId,
+      userId: resolvedUserId,
       userType: userAuth.userType as 'doctor' | 'patient' | 'system' | undefined,
-      doctorId: userAuth.doctorId,
-      patientId: userAuth.patientId,
+      doctorId: userAuth.userType === 'doctor' ? resolvedUserId : undefined,
+      patientId: userAuth.userType === 'patient' ? resolvedUserId : undefined,
       apiKey: apiKeyHeader || (authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined),
     }
 

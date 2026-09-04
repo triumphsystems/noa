@@ -115,8 +115,8 @@ export async function createDoctor(
   const doctor: Doctor = {
     id: data.id || `doctor-${nanoid()}`,
     type: 'doctor',
-    verificationStatus: data.verificationStatus || 'pending',
     ...data,
+    verificationStatus: data.verificationStatus || 'pending',
     createdAt: Date.now(),
     updatedAt: Date.now(),
   }
