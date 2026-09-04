@@ -26,12 +26,12 @@ export function ClinicalIntakeCard({ draft, chatItems }: RightPanelProps) {
   const percentComplete = Math.round((capturedCount / fields.length) * 100)
 
   return (
-    <div className="h-full flex flex-col justify-between rounded-3xl border border-deep-ink/10 bg-white p-4 shadow-sm overflow-hidden">
+    <div className="h-full flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-deep-ink/10 bg-white p-3 sm:p-4 shadow-sm">
       {/* Header & Progress */}
-      <div className="space-y-2 pb-2">
+      <div className="space-y-1.5 pb-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold font-serif text-deep-ink">Captured Information</h2>
-          <span className="text-[11px] font-bold text-deep-ink bg-hi-yellow/35 px-2 py-0.5 rounded-full border border-hi-yellow/60">
+          <h2 className="text-xs sm:text-sm font-bold font-serif text-deep-ink">Captured Information</h2>
+          <span className="text-[10px] sm:text-[11px] font-bold text-deep-ink bg-hi-yellow/35 px-2 py-0.5 rounded-full border border-hi-yellow/60">
             {capturedCount} of {fields.length} ({percentComplete}%)
           </span>
         </div>
@@ -45,13 +45,13 @@ export function ClinicalIntakeCard({ draft, chatItems }: RightPanelProps) {
       </div>
 
       {/* Extracted Fields Table */}
-      <div className="flex-1 space-y-1.5 overflow-y-auto py-1">
+      <div className="flex-1 space-y-1 sm:space-y-1.5 overflow-y-auto max-h-56 sm:max-h-none py-1">
         {fields.map((field) => {
           const isCaptured = Boolean(field.value && field.value.trim())
           return (
             <div
               key={field.label}
-              className="flex items-center justify-between gap-2 rounded-xl bg-canvas px-3 py-1.5 text-xs transition-colors"
+              className="flex items-center justify-between gap-2 rounded-xl bg-canvas px-2.5 sm:px-3 py-1.5 text-xs transition-colors"
             >
               <div className="flex items-center gap-1.5 shrink-0">
                 {isCaptured ? (
@@ -76,11 +76,11 @@ export function ClinicalIntakeCard({ draft, chatItems }: RightPanelProps) {
       </div>
 
       {/* History Drawer Toggle at Bottom */}
-      <div className="pt-2 border-t border-deep-ink/8">
+      <div className="pt-2 border-t border-deep-ink/8 shrink-0">
         <button
           type="button"
           onClick={() => setShowHistory(!showHistory)}
-          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-soft-meadow/50 hover:bg-soft-meadow text-xs text-slate hover:text-deep-ink transition-colors"
+          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-soft-meadow/50 hover:bg-soft-meadow text-xs text-slate hover:text-deep-ink transition-colors cursor-pointer"
         >
           <span className="flex items-center gap-1.5 font-medium text-[11px]">
             <MessageSquare className="w-3.5 h-3.5" />
@@ -90,7 +90,7 @@ export function ClinicalIntakeCard({ draft, chatItems }: RightPanelProps) {
         </button>
 
         {showHistory && (
-          <div className="mt-2 space-y-1.5 max-h-36 overflow-y-auto pr-1">
+          <div className="mt-2 space-y-1.5 max-h-32 sm:max-h-40 overflow-y-auto pr-1">
             {chatItems.map((item) => (
               <div
                 key={item.id}
