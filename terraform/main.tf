@@ -238,7 +238,7 @@ resource "aws_iam_role" "app_role" {
               "oidc.vercel.com:aud" = "https://vercel.com"
             }
             StringLike = {
-              "oidc.vercel.com:sub" = "owner:*:project:${var.vercel_project_name}:environment:*"
+              "oidc.vercel.com:sub" = "owner:${var.vercel_owner}:project:${var.vercel_project_name}:environment:*"
             }
           }
         }

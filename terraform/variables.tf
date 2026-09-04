@@ -62,6 +62,12 @@ variable "vercel_project_name" {
   default     = "noa"
 }
 
+variable "vercel_owner" {
+  description = "Vercel username or team slug for scoping OIDC subject claims"
+  type        = string
+  default     = "leoemaxie"
+}
+
 variable "enable_monitoring" {
   description = "Create CloudWatch log group, SNS topic, and alarms. Recommended for prod only."
   type        = bool
