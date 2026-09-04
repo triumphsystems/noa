@@ -5,14 +5,17 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ErrorAlert } from '@/components/ui/error-alert'
+import { Stethoscope, User, ArrowRight } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 type SignupFormProps = {
   userType: 'doctor' | 'patient'
 }
 
-export default function SignupForm({ userType }: SignupFormProps) {
+export default function SignupForm({ userType: initialUserType }: SignupFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [userType, setUserType] = useState<'doctor' | 'patient'>(initialUserType)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -25,13 +28,26 @@ export default function SignupForm({ userType }: SignupFormProps) {
   })
 
   useEffect(() => {
+    setUserType(initialUserType)
+  }, [initialUserType])
+
+  useEffect(() => {
     const urlDoctorId = searchParams.get('doctorId')
     if (urlDoctorId) {
       setFormData(prev => ({ ...prev, doctorId: urlDoctorId }))
     }
   }, [searchParams])
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const handleRoleChange = (newRole: 'doctor' | 'patient') => {
+    setUserType(newRole)
+    setError('')
+    const url = new URL(window.location.href)
+    url.searchParams.set('type', newRole)
+    window.history.replaceState({}, '', url.toString())
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -70,9 +86,9 @@ export default function SignupForm({ userType }: SignupFormProps) {
       }
 
       if (data.isConfirmed) {
-        router.push(`/auth/login?verified=true&email=${encodeURIComponent(formData.email)}`)
+        router.push(`/auth/login?verified=true&email=${encodeURIComponent(formData.email)}&type=${userType}`)
       } else {
-        router.push(`/auth/login?registered=true&email=${encodeURIComponent(formData.email)}`)
+        router.push(`/auth/login?registered=true&email=${encodeURIComponent(formData.email)}&type=${userType}`)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
@@ -83,120 +99,137 @@ export default function SignupForm({ userType }: SignupFormProps) {
 
   return (
     <div className="space-y-6">
+      {/* 1. Top Segmented Role Switcher */}
+      <div className="p-1.5 bg-soft-meadow rounded-2xl border border-deep-ink/10 flex gap-2">
+        <button
+          type="button"
+          onClick={() => handleRoleChange('doctor')}
+          className={cn(
+            'flex-1 py-3 px-4 rounded-xl font-medium text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer select-none',
+            userType === 'doctor'
+              ? 'bg-white text-deep-ink font-semibold shadow-xs border border-deep-ink/10'
+              : 'text-slate hover:text-deep-ink hover:bg-white/50'
+          )}
+        >
+          <Stethoscope className={cn('w-4 h-4', userType === 'doctor' ? 'text-deep-ink' : 'text-slate')} />
+          <span>Doctor / Provider</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleRoleChange('patient')}
+          className={cn(
+            'flex-1 py-3 px-4 rounded-xl font-medium text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer select-none',
+            userType === 'patient'
+              ? 'bg-white text-deep-ink font-semibold shadow-xs border border-deep-ink/10'
+              : 'text-slate hover:text-deep-ink hover:bg-white/50'
+          )}
+        >
+          <User className={cn('w-4 h-4', userType === 'patient' ? 'text-deep-ink' : 'text-slate')} />
+          <span>Patient Account</span>
+        </button>
+      </div>
+
+      {/* 2. Heading */}
       <div>
-        <h2 className="text-2xl font-bold font-serif mb-2 text-deep-ink">Create your account</h2>
-        <p className="text-slate text-sm">
-          Sign up as a {userType === 'doctor' ? 'doctor' : 'patient'} to get started with Noa
+        <h2 className="text-2xl font-bold font-serif mb-1 text-deep-ink">
+          Create {userType === 'doctor' ? 'Physician' : 'Patient'} Account
+        </h2>
+        <p className="text-slate text-xs sm:text-sm">
+          {userType === 'doctor'
+            ? 'Register as a licensed medical practitioner to manage consultations and clinical records.'
+            : 'Register to access your personal AI health intake and consultation portal.'}
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 font-sans">
         {error && <ErrorAlert message={error} onDismiss={() => setError('')} />}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-deep-ink">First Name</label>
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-deep-ink">First Name</label>
             <input
               type="text"
               name="firstName"
               value={formData.firstName}
               onChange={handleChange}
               required
-              className="w-full px-3.5 py-2 border border-deep-ink/15 rounded-lg text-deep-ink placeholder:text-slate/60 focus:outline-none focus:border-deep-ink focus:ring-1 focus:ring-deep-ink/20 text-sm bg-white shadow-2xs transition-colors"
+              className="w-full px-3.5 py-2.5 border border-deep-ink/15 rounded-xl text-deep-ink placeholder:text-slate/50 focus:outline-none focus:border-deep-ink focus:ring-2 focus:ring-deep-ink/10 text-sm bg-white shadow-2xs transition-all"
               placeholder="First name"
             />
           </div>
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-deep-ink">Last Name</label>
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-deep-ink">Last Name</label>
             <input
               type="text"
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
               required
-              className="w-full px-3.5 py-2 border border-deep-ink/15 rounded-lg text-deep-ink placeholder:text-slate/60 focus:outline-none focus:border-deep-ink focus:ring-1 focus:ring-deep-ink/20 text-sm bg-white shadow-2xs transition-colors"
+              className="w-full px-3.5 py-2.5 border border-deep-ink/15 rounded-xl text-deep-ink placeholder:text-slate/50 focus:outline-none focus:border-deep-ink focus:ring-2 focus:ring-deep-ink/10 text-sm bg-white shadow-2xs transition-all"
               placeholder="Last name"
             />
           </div>
         </div>
 
-        <div className="space-y-1">
-          <label className="block text-xs font-medium text-deep-ink">Email</label>
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold text-deep-ink">
+            {userType === 'doctor' ? 'Clinical Email' : 'Email Address'}
+          </label>
           <input
             type="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
             required
-            className="w-full px-3.5 py-2 border border-deep-ink/15 rounded-lg text-deep-ink placeholder:text-slate/60 focus:outline-none focus:border-deep-ink focus:ring-1 focus:ring-deep-ink/20 text-sm bg-white shadow-2xs transition-colors"
-            placeholder="you@example.com"
+            className="w-full px-3.5 py-2.5 border border-deep-ink/15 rounded-xl text-deep-ink placeholder:text-slate/50 focus:outline-none focus:border-deep-ink focus:ring-2 focus:ring-deep-ink/10 text-sm bg-white shadow-2xs transition-all"
+            placeholder={userType === 'doctor' ? 'doctor@hospital.org' : 'you@example.com'}
           />
         </div>
 
         {userType === 'doctor' ? (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="block text-xs font-medium text-deep-ink">Specialty</label>
-              <select
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-deep-ink">Medical Specialty</label>
+              <input
+                type="text"
                 name="specialty"
                 value={formData.specialty}
                 onChange={handleChange}
                 required
-                className="w-full px-3.5 py-2 border border-deep-ink/15 rounded-lg text-deep-ink focus:outline-none focus:border-deep-ink focus:ring-1 focus:ring-deep-ink/20 text-sm bg-white shadow-2xs transition-colors cursor-pointer"
-              >
-                <option value="">Select specialty</option>
-                <option value="General Practice">General Practice</option>
-                <option value="Cardiology">Cardiology</option>
-                <option value="Dermatology">Dermatology</option>
-                <option value="Neurology">Neurology</option>
-                <option value="Pediatrics">Pediatrics</option>
-                <option value="Psychiatry">Psychiatry</option>
-              </select>
+                className="w-full px-3.5 py-2.5 border border-deep-ink/15 rounded-xl text-deep-ink placeholder:text-slate/50 focus:outline-none focus:border-deep-ink focus:ring-2 focus:ring-deep-ink/10 text-sm bg-white shadow-2xs transition-all"
+                placeholder="e.g. Cardiology"
+              />
             </div>
-            <div className="space-y-1">
-              <label className="block text-xs font-medium text-deep-ink">Clinic Name</label>
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-deep-ink">Clinic / Hospital</label>
               <input
                 type="text"
                 name="clinic"
                 value={formData.clinic}
                 onChange={handleChange}
                 required
-                className="w-full px-3.5 py-2 border border-deep-ink/15 rounded-lg text-deep-ink placeholder:text-slate/60 focus:outline-none focus:border-deep-ink focus:ring-1 focus:ring-deep-ink/20 text-sm bg-white shadow-2xs transition-colors"
-                placeholder="Clinic name"
+                className="w-full px-3.5 py-2.5 border border-deep-ink/15 rounded-xl text-deep-ink placeholder:text-slate/50 focus:outline-none focus:border-deep-ink focus:ring-2 focus:ring-deep-ink/10 text-sm bg-white shadow-2xs transition-all"
+                placeholder="e.g. St. Jude Clinic"
               />
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="block text-xs font-medium text-deep-ink">Date of Birth</label>
-              <input
-                type="date"
-                name="dateOfBirth"
-                value={formData.dateOfBirth}
-                onChange={handleChange}
-                required
-                className="w-full px-3.5 py-2 border border-deep-ink/15 rounded-lg text-deep-ink focus:outline-none focus:border-deep-ink focus:ring-1 focus:ring-deep-ink/20 text-sm bg-white shadow-2xs transition-colors"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="block text-xs font-medium text-deep-ink">
-                Doctor ID <span className="text-slate font-normal">(Optional)</span>
-              </label>
-              <input
-                type="text"
-                name="doctorId"
-                value={formData.doctorId}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2 border border-deep-ink/15 rounded-lg text-deep-ink placeholder:text-slate/60 focus:outline-none focus:border-deep-ink focus:ring-1 focus:ring-deep-ink/20 text-sm bg-white shadow-2xs transition-colors"
-                placeholder="e.g. doctor-xyz"
-              />
-            </div>
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-deep-ink">Date of Birth</label>
+            <input
+              type="date"
+              name="dateOfBirth"
+              value={formData.dateOfBirth}
+              onChange={handleChange}
+              required
+              className="w-full px-3.5 py-2.5 border border-deep-ink/15 rounded-xl text-deep-ink focus:outline-none focus:border-deep-ink focus:ring-2 focus:ring-deep-ink/10 text-sm bg-white shadow-2xs transition-all"
+            />
           </div>
         )}
 
-        <div className="space-y-1">
-          <label className="block text-xs font-medium text-deep-ink">Password</label>
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold text-deep-ink">Password</label>
           <input
             type="password"
             name="password"
@@ -204,51 +237,40 @@ export default function SignupForm({ userType }: SignupFormProps) {
             onChange={handleChange}
             required
             minLength={6}
-            className="w-full px-3.5 py-2 border border-deep-ink/15 rounded-lg text-deep-ink placeholder:text-slate/60 focus:outline-none focus:border-deep-ink focus:ring-1 focus:ring-deep-ink/20 text-sm bg-white shadow-2xs transition-colors"
+            className="w-full px-3.5 py-2.5 border border-deep-ink/15 rounded-xl text-deep-ink placeholder:text-slate/50 focus:outline-none focus:border-deep-ink focus:ring-2 focus:ring-deep-ink/10 text-sm bg-white shadow-2xs transition-all"
             placeholder="At least 6 characters"
           />
         </div>
 
+        {/* Primary Action Button */}
         <Button
           type="submit"
           disabled={loading}
-          variant="dark"
-          className="w-full rounded-lg font-medium py-2.5 h-10 shadow-2xs mt-2"
+          className="w-full rounded-xl bg-deep-ink text-white hover:bg-deep-ink/90 font-semibold py-3 h-11 text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
         >
-          {loading ? 'Creating account...' : 'Create Account'}
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <span>Creating Account...</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-white">
+              <span>Register as {userType === 'doctor' ? 'Doctor' : 'Patient'}</span>
+              <ArrowRight className="w-4 h-4 text-white" />
+            </div>
+          )}
         </Button>
       </form>
 
-      <div className="text-center text-xs text-slate">
+      {/* Footer Link */}
+      <div className="text-center text-xs text-slate pt-2 border-t border-deep-ink/10">
         Already have an account?{' '}
-        <Link href={`/auth/login?type=${userType}`} className="font-medium text-deep-ink hover:underline">
-          Sign in
+        <Link
+          href={`/auth/login?type=${userType}`}
+          className="font-semibold text-deep-ink hover:underline"
+        >
+          Sign in to your {userType === 'doctor' ? 'Doctor' : 'Patient'} account
         </Link>
-      </div>
-
-      <div className="pt-4 border-t border-deep-ink/10">
-        <div className="flex gap-1.5 p-1 bg-soft-meadow/80 rounded-xl border border-deep-ink/8 text-xs font-sans">
-          <Link
-            href="/auth/signup?type=doctor"
-            className={`flex-1 text-center py-1.5 px-3 rounded-lg font-medium transition-all ${
-              userType === 'doctor'
-                ? 'bg-white text-deep-ink font-semibold shadow-2xs'
-                : 'text-slate hover:text-deep-ink hover:bg-white/50'
-            }`}
-          >
-            Doctor Signup
-          </Link>
-          <Link
-            href="/auth/signup?type=patient"
-            className={`flex-1 text-center py-1.5 px-3 rounded-lg font-medium transition-all ${
-              userType === 'patient'
-                ? 'bg-white text-deep-ink font-semibold shadow-2xs'
-                : 'text-slate hover:text-deep-ink hover:bg-white/50'
-            }`}
-          >
-            Patient Signup
-          </Link>
-        </div>
       </div>
     </div>
   )
