@@ -243,29 +243,29 @@ export function ToolsTab({ tools, onExecuteTool, logActivity }: ToolsProps) {
     <div className="flex-1 flex flex-col overflow-hidden min-h-0 bg-canvas font-sans">
       {/* Search & Category Header with Pure Cream Background */}
       <div className="px-4 sm:px-5 py-2.5 border-b border-deep-ink/10 bg-canvas flex flex-wrap items-center justify-between gap-3 shrink-0">
-        <div className="flex-1 min-w-[180px] max-w-xs">
-          <div className="flex items-center gap-2 px-3 h-8 rounded-lg border border-deep-ink/10 bg-soft-meadow/70 focus-within:border-deep-ink/30 focus-within:bg-white focus-within:ring-1 focus-within:ring-deep-ink/15 transition-all">
-            <Search className="w-3.5 h-3.5 text-slate/70 shrink-0 pointer-events-none" />
+        <div className="flex-1 min-w-[220px] max-w-sm">
+          <div className="flex items-center gap-2.5 px-3.5 h-10 min-h-[40px] rounded-xl border border-deep-ink/12 bg-white/80 focus-within:bg-white focus-within:border-deep-ink/30 focus-within:ring-2 focus-within:ring-deep-ink/10 transition-all shadow-2xs">
+            <Search className="w-4 h-4 text-slate/70 shrink-0 pointer-events-none" />
             <input
               type="text"
               placeholder="Search tools..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full bg-transparent text-xs text-deep-ink placeholder:text-slate/60 outline-none border-none p-0 focus:ring-0"
+              className="w-full bg-transparent text-xs sm:text-sm text-deep-ink placeholder:text-slate/60 outline-none border-none p-0 focus:ring-0 leading-normal"
             />
           </div>
         </div>
 
         {/* Category Filter Controls */}
-        <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1">
           {(['all', 'clinical', 'records', 'database', 'browser'] as ToolCategory[]).map(cat => (
             <button
               key={cat}
               onClick={() => setToolCategory(cat)}
-              className={`text-xs px-2.5 py-1 rounded-lg transition-colors cursor-pointer capitalize ${
+              className={`text-xs px-3 py-1.5 rounded-xl transition-all cursor-pointer capitalize font-medium ${
                 toolCategory === cat
-                  ? 'bg-deep-ink text-white font-medium shadow-2xs'
-                  : 'text-slate hover:text-deep-ink hover:bg-soft-meadow/80'
+                  ? 'bg-deep-ink text-white shadow-xs'
+                  : 'text-slate hover:text-deep-ink hover:bg-white/80 border border-transparent hover:border-deep-ink/10'
               }`}
             >
               {cat}
