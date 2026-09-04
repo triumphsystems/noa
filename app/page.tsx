@@ -365,7 +365,7 @@ export default function LandingPage() {
                       </span>
                     </div>
 
-                    <h3 className="text-base sm:text-lg font-semibold font-sans text-deep-ink mb-2 tracking-tight">
+                    <h3 className="text-lg sm:text-xl font-bold font-serif text-deep-ink mb-2 tracking-tight">
                       {feature.title}
                     </h3>
                     <p className="text-slate text-sm leading-relaxed font-sans">
