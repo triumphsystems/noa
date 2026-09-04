@@ -4,12 +4,16 @@ import * as React from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Bell, LogOut } from 'lucide-react'
+import { usePatientStore } from '@/lib/stores/patient.store'
 
 export default function PatientDashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const patient = usePatientStore(state => state.patient)
+  const initial = patient?.firstName ? patient.firstName.charAt(0).toUpperCase() : 'P'
+
   return (
     <div className="min-h-screen bg-canvas text-deep-ink flex flex-col">
       {/* Patient Portal Header */}
@@ -32,7 +36,7 @@ export default function PatientDashboardLayout({
               <Bell className="w-4 h-4" />
             </button>
             <div className="w-8 h-8 rounded-lg bg-hi-yellow border border-deep-ink/10 flex items-center justify-center font-serif font-bold text-deep-ink shadow-2xs text-xs">
-              P
+              {initial}
             </div>
             <Link
               href="/auth/logout"

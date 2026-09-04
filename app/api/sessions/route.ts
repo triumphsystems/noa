@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSession, getSessionsByDoctor, getSessionsByPatient, Session } from '@/lib/db'
+import { createSession, getSessionsByDoctor, getSessionsByPatient, getSessionById, Session } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,12 +38,24 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const sessionId = request.nextUrl.searchParams.get('sessionId')
     const doctorId = request.nextUrl.searchParams.get('doctorId')
     const patientId = request.nextUrl.searchParams.get('patientId')
 
+    if (sessionId) {
+      const session = await getSessionById(sessionId)
+      if (!session) {
+        return NextResponse.json({ error: 'Session not found' }, { status: 404 })
+      }
+      return NextResponse.json({
+        success: true,
+        session,
+      })
+    }
+
     if (!doctorId && !patientId) {
       return NextResponse.json(
-        { error: 'Either doctorId or patientId is required' },
+        { error: 'Either sessionId, doctorId, or patientId is required' },
         { status: 400 }
       )
     }

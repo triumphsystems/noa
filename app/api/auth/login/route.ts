@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDoctorByEmail } from '@/lib/db'
+import { getDoctorByEmail, getPatientByEmail } from '@/lib/db'
 import { signInWithCognito, getCognitoConfig, getCognitoUser } from '@/lib/auth/cognito'
 import { setAuthCookies } from '@/lib/auth/cookies'
 
@@ -30,12 +30,18 @@ export async function POST(request: NextRequest) {
         userType: (cognitoUser?.userType || userType || 'doctor') as 'doctor' | 'patient',
       }
 
-      // If doctor, cross-reference DynamoDB profile
+      // Cross-reference DynamoDB profile to resolve exact medical record ID
       if (resolvedUser.userType === 'doctor') {
         const doctor = await getDoctorByEmail(email)
         if (doctor) {
           resolvedUser.id = doctor.id
           resolvedUser.name = doctor.name
+        }
+      } else {
+        const patient = await getPatientByEmail(email)
+        if (patient) {
+          resolvedUser.id = patient.id
+          resolvedUser.name = `${patient.firstName} ${patient.lastName}`.trim()
         }
       }
 

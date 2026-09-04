@@ -18,6 +18,7 @@ import {
   Mic,
   ShieldCheck,
   Sparkles,
+  UserCheck,
   Users,
   X,
 } from 'lucide-react'
@@ -49,6 +50,13 @@ export default function LandingPage() {
             </Link>
             <Link href="#how-it-works" className="text-sm font-medium text-slate hover:text-deep-ink transition-colors">
               How It Works
+            </Link>
+            <Link
+              href="/intake"
+              className="text-sm font-semibold text-deep-ink hover:text-deep-ink/80 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-hi-yellow/25 border border-hi-yellow/60 transition-colors"
+            >
+              <UserCheck className="w-3.5 h-3.5 text-deep-ink" />
+              <span>Patient Check-in</span>
             </Link>
             <div className="flex items-center gap-2.5 pl-2">
               <Link href="/auth/login">
@@ -99,6 +107,14 @@ export default function LandingPage() {
               >
                 How It Works
               </Link>
+              <Link
+                href="/intake"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-lg text-sm font-semibold text-deep-ink bg-hi-yellow/25 border border-hi-yellow/50 flex items-center gap-2 transition-colors"
+              >
+                <UserCheck className="w-4 h-4 text-deep-ink" />
+                <span>Patient Check-in (No login)</span>
+              </Link>
             </div>
             <div className="pt-2 border-t border-deep-ink/8 flex flex-col gap-2">
               <Link href="/auth/signup" onClick={() => setMobileMenuOpen(false)} className="w-full">
@@ -133,15 +149,25 @@ export default function LandingPage() {
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </Link>
-                <Link href="/auth/signup?type=patient" className="block w-full sm:w-auto">
+                <Link href="/intake" className="block w-full sm:w-auto">
                   <Button
                     variant="outline"
-                    className="w-full sm:w-auto rounded-lg px-6 py-2.5 h-11 text-sm font-medium hover:bg-soft-meadow"
+                    className="w-full sm:w-auto rounded-lg px-6 py-2.5 h-11 text-sm font-medium hover:bg-soft-meadow border-deep-ink/20 gap-2"
                   >
-                    Patient Portal
+                    <UserCheck className="w-4 h-4 text-deep-ink" />
+                    <span>Patient Check-in</span>
+                    <span className="text-[10px] uppercase font-bold tracking-wider bg-hi-yellow/50 text-deep-ink px-1.5 py-0.5 rounded">
+                      Demo
+                    </span>
                   </Button>
                 </Link>
               </div>
+              <p className="text-xs text-slate/80">
+                Are you a patient or judge testing the flow?{' '}
+                <Link href="/intake" className="text-deep-ink font-semibold underline underline-offset-4 hover:text-deep-ink/80">
+                  Try the interactive Check-in &rarr;
+                </Link>
+              </p>
             </div>
 
             {/* Interactive Hero Card Preview */}
@@ -470,6 +496,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-6 text-white/60">
             <Link href="#features" className="hover:text-white transition-colors">Features</Link>
             <Link href="#how-it-works" className="hover:text-white transition-colors">How It Works</Link>
+            <Link href="/intake" className="hover:text-white transition-colors">Patient Check-in</Link>
             <Link href="/auth/login" className="hover:text-white transition-colors">Portal Login</Link>
           </div>
           <p className="text-white/40">&copy; 2026 Noa Health. All rights reserved.</p>
