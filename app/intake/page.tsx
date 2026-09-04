@@ -533,10 +533,14 @@ function PatientIntake() {
                 <Button
                   onClick={handleMicPress}
                   disabled={isSubmitting}
-                  className={`flex-1 rounded-full px-6 py-4 text-sm sm:text-base font-semibold ${isRecording ? 'bg-deep-ink text-white hover:bg-deep-ink/90' : 'bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90'}`}
+                  className={`flex-1 rounded-full px-6 py-4 text-sm sm:text-base font-semibold gap-2 ${isRecording ? 'bg-deep-ink text-white hover:bg-deep-ink/90' : 'bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90'}`}
                 >
-                  <span className="mr-2 inline-flex h-3 w-3 rounded-full bg-current opacity-70" />
-                  {isRecording ? 'Stop microphone' : 'Start microphone'}
+                  {isRecording ? (
+                    <MicOff className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 animate-pulse" />
+                  ) : (
+                    <Mic className="w-4 h-4 sm:w-5 sm:h-5 text-deep-ink" />
+                  )}
+                  <span>{isRecording ? 'Stop microphone' : 'Start microphone'}</span>
                 </Button>
                 <div className="flex gap-2">
                   <Button
