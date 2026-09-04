@@ -4,8 +4,8 @@
  */
 
 import { WebMCPRegistry } from '../core/registry'
-import { registerClinicalTools } from './clinical-tools'
-import { registerIntakeTools } from './intake-tools'
+import { registerClinicalTools } from './clinical'
+import { registerIntakeTools } from './intake'
 
 export function registerAllTools(registry: WebMCPRegistry): void {
   registerClinicalTools(registry)

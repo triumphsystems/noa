@@ -14,43 +14,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Dev mode handling
-    if (process.env.ALLOW_DEV_AUTH === 'true' && process.env.NODE_ENV !== 'production') {
-      if (refreshToken.startsWith('dev-')) {
-        let cachedUser = {
-          id: 'dev-doctor-1',
-          email: 'dev@noa.health',
-          name: 'Dr. Dev Mode',
-          userType: 'doctor' as const,
-        }
-        if (sessionMeta) {
-          try {
-            cachedUser = { ...cachedUser, ...JSON.parse(sessionMeta) }
-          } catch {}
-        }
-
-        const devTokens = {
-          accessToken: `dev-token-${cachedUser.id}`,
-          idToken: `dev-id-${cachedUser.id}`,
-          refreshToken,
-          expiresIn: 3600,
-        }
-
-        const response = NextResponse.json({
-          success: true,
-          message: 'Development session refreshed',
-          user: cachedUser,
-        })
-
-        return setAuthCookies(response, devTokens, {
-          sub: cachedUser.id,
-          email: cachedUser.email,
-          name: cachedUser.name,
-          userType: cachedUser.userType,
-        })
-      }
-    }
-
     const { isConfigured } = getCognitoConfig()
     if (!isConfigured) {
       return NextResponse.json(

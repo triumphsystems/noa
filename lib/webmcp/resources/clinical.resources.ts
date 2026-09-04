@@ -16,6 +16,57 @@ import {
 } from '@/lib/db'
 
 export function registerClinicalResources(registry: WebMCPRegistry): void {
+  // Helper to verify caller has access to the given patient
+  const assertPatientAccess = (patient: any, context?: any) => {
+    if (!context?.userId && !context?.apiKey) {
+      throw new Error('Unauthorized: Authentication required to access clinical resources.')
+    }
+    // If authenticated via server-to-server API key, allow access
+    if (context?.apiKey) return
+
+    const { userId, userType, doctorId, patientId } = context
+    const isOwner = userId === patient.id || patientId === patient.id
+    const isAssignedDoctor = (userId === patient.doctorId) || (doctorId && doctorId === patient.doctorId) || (userType === 'doctor' && patient.doctorId === userId)
+
+    if (!isOwner && !isAssignedDoctor) {
+      throw new Error('Forbidden: You do not have permission to view this patient resource.')
+    }
+  }
+
+  // Helper to verify caller has access to the given session
+  const assertSessionAccess = (session: any, context?: any) => {
+    if (!context?.userId && !context?.apiKey) {
+      throw new Error('Unauthorized: Authentication required to access session resources.')
+    }
+    if (context?.apiKey) return
+
+    const { userId, doctorId, patientId } = context
+    const isParticipant =
+      userId === session.doctorId ||
+      userId === session.patientId ||
+      (doctorId && doctorId === session.doctorId) ||
+      (patientId && patientId === session.patientId)
+
+    if (!isParticipant) {
+      throw new Error('Forbidden: You do not have permission to access this session resource.')
+    }
+  }
+
+  // Helper to verify caller has access to the doctor's data
+  const assertDoctorAccess = (targetDoctorId: string, context?: any) => {
+    if (!context?.userId && !context?.apiKey) {
+      throw new Error('Unauthorized: Authentication required to access doctor resources.')
+    }
+    if (context?.apiKey) return
+
+    const { userId, doctorId } = context
+    const isSelf = userId === targetDoctorId || doctorId === targetDoctorId
+
+    if (!isSelf) {
+      throw new Error('Forbidden: You do not have permission to access this clinician resource.')
+    }
+  }
+
   // 1. patient://{patientId}
   registry.registerResourceTemplate(
     {
@@ -24,9 +75,10 @@ export function registerClinicalResources(registry: WebMCPRegistry): void {
       description: 'Demographics, allergies, medications, and medical conditions for a patient.',
       mimeType: 'application/json',
     },
-    async (uri, params) => {
+    async (uri, params, context) => {
       const patient = await getPatientById(params.patientId)
       if (!patient) throw new Error(`Patient not found: ${params.patientId}`)
+      assertPatientAccess(patient, context)
       return { patient }
     }
   )
@@ -39,7 +91,11 @@ export function registerClinicalResources(registry: WebMCPRegistry): void {
       description: 'Chronological consultation sessions and care plans for a patient.',
       mimeType: 'application/json',
     },
-    async (uri, params) => {
+    async (uri, params, context) => {
+      const patient = await getPatientById(params.patientId)
+      if (!patient) throw new Error(`Patient not found: ${params.patientId}`)
+      assertPatientAccess(patient, context)
+
       const sessions = await getSessionsByPatient(params.patientId)
       return { patientId: params.patientId, totalSessions: sessions.length, sessions }
     }
@@ -53,7 +109,10 @@ export function registerClinicalResources(registry: WebMCPRegistry): void {
       description: 'Clinician credentials, specialty, clinic affiliation, and contact details.',
       mimeType: 'application/json',
     },
-    async (uri, params) => {
+    async (uri, params, context) => {
+      if (!context?.userId && !context?.apiKey) {
+        throw new Error('Unauthorized: Authentication required to access doctor profile.')
+      }
       const doctor = await getDoctorById(params.doctorId)
       if (!doctor) throw new Error(`Doctor not found: ${params.doctorId}`)
       return { doctor }
@@ -68,7 +127,9 @@ export function registerClinicalResources(registry: WebMCPRegistry): void {
       description: 'Unified clinical dashboard including doctor profile, patient list, recent sessions, and metrics.',
       mimeType: 'application/json',
     },
-    async (uri, params) => {
+    async (uri, params, context) => {
+      assertDoctorAccess(params.doctorId, context)
+
       const [doctor, patients, sessions] = await Promise.all([
         getDoctorById(params.doctorId),
         getPatientsByDoctor(params.doctorId),
@@ -104,9 +165,10 @@ export function registerClinicalResources(registry: WebMCPRegistry): void {
       description: 'Full consultation record including doctor, patient, status, timestamps, transcript, and SOAP note.',
       mimeType: 'application/json',
     },
-    async (uri, params) => {
+    async (uri, params, context) => {
       const session = await getSessionById(params.sessionId)
       if (!session) throw new Error(`Session not found: ${params.sessionId}`)
+      assertSessionAccess(session, context)
       return { session }
     }
   )
@@ -119,9 +181,10 @@ export function registerClinicalResources(registry: WebMCPRegistry): void {
       description: 'Raw conversational audio transcript recorded during consultation.',
       mimeType: 'text/plain',
     },
-    async (uri, params) => {
+    async (uri, params, context) => {
       const session = await getSessionById(params.sessionId)
       if (!session) throw new Error(`Session not found: ${params.sessionId}`)
+      assertSessionAccess(session, context)
       return session.transcript || 'No transcript recorded for this session.'
     }
   )
@@ -134,9 +197,10 @@ export function registerClinicalResources(registry: WebMCPRegistry): void {
       description: 'Structured clinical SOAP note (Subjective, Objective, Assessment, Plan) for a consultation session.',
       mimeType: 'application/json',
     },
-    async (uri, params) => {
+    async (uri, params, context) => {
       const session = await getSessionById(params.sessionId)
       if (!session) throw new Error(`Session not found: ${params.sessionId}`)
+      assertSessionAccess(session, context)
       if (!session.soapNote) throw new Error(`No SOAP note finalized for session: ${params.sessionId}`)
       return { sessionId: params.sessionId, soapNote: session.soapNote }
     }
@@ -150,7 +214,11 @@ export function registerClinicalResources(registry: WebMCPRegistry): void {
       description: 'Captured medical intake history, family history, lifestyle, and allergies.',
       mimeType: 'application/json',
     },
-    async (uri, params) => {
+    async (uri, params, context) => {
+      const patient = await getPatientById(params.patientId)
+      if (!patient) throw new Error(`Patient not found: ${params.patientId}`)
+      assertPatientAccess(patient, context)
+
       const intake = await getPatientIntake(params.patientId)
       if (!intake) throw new Error(`No intake record found for patient: ${params.patientId}`)
       return { intake }
@@ -165,7 +233,9 @@ export function registerClinicalResources(registry: WebMCPRegistry): void {
       description: 'Live aggregate statistics for clinical consultations and documentation completion.',
       mimeType: 'application/json',
     },
-    async (uri, params) => {
+    async (uri, params, context) => {
+      assertDoctorAccess(params.doctorId, context)
+
       const [patients, sessions] = await Promise.all([
         getPatientsByDoctor(params.doctorId),
         getSessionsByDoctor(params.doctorId),

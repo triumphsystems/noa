@@ -75,11 +75,8 @@ export async function POST(req: NextRequest) {
       expectedApiKey &&
       (apiKeyHeader === expectedApiKey || authHeader === `Bearer ${expectedApiKey}`)
     )
-    const isDevAuth =
-      (process.env.ALLOW_DEV_AUTH === 'true' || !expectedApiKey) &&
-      process.env.NODE_ENV !== 'production'
 
-    const isAuthorized = hasValidApiKey || userAuth.isValid || isDevAuth
+    const isAuthorized = hasValidApiKey || userAuth.isValid
 
     // Guard: Tools execution and resource access require authentication in production
     const requests = Array.isArray(rawBody) ? rawBody : [rawBody]
@@ -102,6 +99,10 @@ export async function POST(req: NextRequest) {
     }
 
     const context: ExecutionContext = {
+      userId: userAuth.userId,
+      userType: userAuth.userType as 'doctor' | 'patient' | 'system' | undefined,
+      doctorId: userAuth.doctorId,
+      patientId: userAuth.patientId,
       apiKey: apiKeyHeader || (authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined),
     }
 

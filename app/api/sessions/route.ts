@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     const callerId = auth.dbId || auth.sub
-    if (auth.userType === 'doctor' && callerId && callerId !== doctorId && !auth.isDev) {
+    if (auth.userType === 'doctor' && callerId && callerId !== doctorId) {
       return NextResponse.json({ error: 'Forbidden: Cannot manage sessions for another doctor' }, { status: 403 })
     }
 
@@ -84,9 +84,8 @@ export async function GET(request: NextRequest) {
       if (!session) {
         return NextResponse.json({ error: 'Session not found' }, { status: 404 })
       }
-      // BOLA check: only the session's doctor, patient, or dev can view it
+      // BOLA check: only the session's doctor or patient can view it
       if (
-        !auth.isDev &&
         callerId !== session.doctorId &&
         callerId !== session.patientId
       ) {
@@ -109,12 +108,12 @@ export async function GET(request: NextRequest) {
     let sessions: Session[] = []
 
     if (doctorId) {
-      if (!auth.isDev && auth.userType === 'doctor' && callerId !== doctorId) {
+      if (auth.userType === 'doctor' && callerId !== doctorId) {
         return NextResponse.json({ error: 'Forbidden: Cannot list sessions for another doctor' }, { status: 403 })
       }
       sessions = await getSessionsByDoctor(doctorId)
     } else if (patientId) {
-      if (!auth.isDev && auth.userType === 'patient' && callerId !== patientId) {
+      if (auth.userType === 'patient' && callerId !== patientId) {
         return NextResponse.json({ error: 'Forbidden: Cannot list sessions for another patient' }, { status: 403 })
       }
       sessions = await getSessionsByPatient(patientId)

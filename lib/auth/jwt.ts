@@ -12,7 +12,6 @@ export interface VerifiedAuthPayload {
   dbId?: string
   email?: string
   userType?: 'doctor' | 'patient'
-  isDev?: boolean
 }
 
 /**
@@ -39,24 +38,7 @@ function parseJwtPayload(token: string): any | null {
  * Validates Cognito JWT payload (exp, iss, user_type)
  */
 export function verifyToken(idToken?: string, accessToken?: string): VerifiedAuthPayload {
-  const isDevAuthAllowed =
-    process.env.ALLOW_DEV_AUTH === 'true' && process.env.NODE_ENV !== 'production'
-
-  // 1. Check Dev tokens if allowed
-  if (isDevAuthAllowed) {
-    if (accessToken?.startsWith('dev-token-') || idToken?.startsWith('dev-id-')) {
-      const sub = (accessToken || idToken)?.replace(/^(dev-token-|dev-id-)/, '') || 'dev-user'
-      return {
-        isValid: true,
-        sub,
-        email: `${sub}@example.com`,
-        userType: 'doctor',
-        isDev: true,
-      }
-    }
-  }
-
-  // 2. Validate ID Token first (contains user attributes like custom:user_type)
+  // Validate ID Token first (contains user attributes like custom:user_type)
   const tokenToVerify = idToken || accessToken
   if (!tokenToVerify) {
     return { isValid: false }

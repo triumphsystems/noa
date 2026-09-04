@@ -2,11 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDoctorByEmail, getPatientByEmail } from '@/lib/db'
 import { signInWithCognito, getCognitoConfig, getCognitoUser } from '@/lib/auth/cognito'
 import { setAuthCookies } from '@/lib/auth/cookies'
+import { checkRateLimit, getClientIdentifier, rateLimitResponse } from '@/lib/ratelimit'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { email, password, userType } = body
+
+    // 1. Rate limiting: max 5 login attempts per minute per client to prevent brute-force
+    const clientId = getClientIdentifier(request, email)
+    const rateCheck = await checkRateLimit(`login:${clientId}`, { limit: 5, windowSeconds: 60 })
+    if (!rateCheck.success) {
+      return rateLimitResponse(rateCheck)
+    }
 
     // Validate input
     if (!email || !password) {
@@ -18,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     const { isConfigured } = getCognitoConfig()
 
-    // 1. AWS Cognito Authentication
+    // 2. AWS Cognito Authentication
     if (isConfigured) {
       const tokens = await signInWithCognito(email, password)
       const cognitoUser = await getCognitoUser(tokens.accessToken)
@@ -58,36 +66,6 @@ export async function POST(request: NextRequest) {
         name: resolvedUser.name,
         userType: resolvedUser.userType,
       })
-    }
-
-    // 2. Unconfigured Cognito Guard (Fail-fast transparency)
-    // In healthcare, we never silently bypass passwords unless explicitly configured for local test mode
-    if (process.env.ALLOW_DEV_AUTH === 'true' && process.env.NODE_ENV !== 'production') {
-      const doctor = await getDoctorByEmail(email)
-      if (!doctor) {
-        return NextResponse.json({ message: 'Doctor account not found' }, { status: 401 })
-      }
-
-      const devUser = {
-        sub: doctor.id,
-        email: doctor.email,
-        name: doctor.name,
-        userType: 'doctor' as const,
-      }
-
-      const devTokens = {
-        accessToken: `dev-token-${doctor.id}`,
-        idToken: `dev-id-${doctor.id}`,
-        expiresIn: 3600,
-      }
-
-      const response = NextResponse.json({
-        success: true,
-        message: 'Logged in via development auth bypass',
-        user: devUser,
-      })
-
-      return setAuthCookies(response, devTokens, devUser)
     }
 
     return NextResponse.json(

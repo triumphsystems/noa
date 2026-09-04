@@ -7,23 +7,7 @@ export async function GET(request: NextRequest) {
     const accessToken = request.cookies.get(AUTH_COOKIE_NAMES.ACCESS_TOKEN)?.value
     const sessionMeta = request.cookies.get(AUTH_COOKIE_NAMES.SESSION_META)?.value
 
-    // 1. Development mode bypass
-    if (process.env.ALLOW_DEV_AUTH === 'true' && process.env.NODE_ENV !== 'production') {
-      if (accessToken?.startsWith('dev-token-')) {
-        const docId = accessToken.replace('dev-token-', '')
-        return NextResponse.json({
-          authenticated: true,
-          user: {
-            id: docId,
-            email: `${docId}@example.com`,
-            name: 'Dr. Dev Mode',
-            userType: 'doctor',
-          },
-        })
-      }
-    }
-
-    // 2. Token MUST be present for authentication
+    // Token MUST be present for authentication
     if (!accessToken) {
       return NextResponse.json({ authenticated: false }, { status: 401 })
     }

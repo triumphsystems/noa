@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createDoctor, createPatient, getDoctorByEmail, getPatientByEmail } from '@/lib/db'
 import { signUpWithCognito, getCognitoConfig } from '@/lib/auth/cognito'
+import { checkRateLimit, getClientIdentifier, rateLimitResponse } from '@/lib/ratelimit'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { email, password, firstName, lastName, userType, specialty, clinic, doctorId } = body
+
+    // 1. Rate limiting: max 5 signups per minute per client
+    const clientId = getClientIdentifier(request, email)
+    const rateCheck = await checkRateLimit(`signup:${clientId}`, { limit: 5, windowSeconds: 60 })
+    if (!rateCheck.success) {
+      return rateLimitResponse(rateCheck)
+    }
 
     // Validate input
     if (!email || !password || !firstName || !lastName || !userType) {
@@ -45,7 +53,7 @@ export async function POST(request: NextRequest) {
       })
       userSub = result.userSub
       isConfirmed = result.isConfirmed
-    } else if (process.env.ALLOW_DEV_AUTH !== 'true' && process.env.NODE_ENV === 'production') {
+    } else {
       return NextResponse.json(
         { message: 'AWS Cognito User Pool is not configured for registration.' },
         { status: 503 }

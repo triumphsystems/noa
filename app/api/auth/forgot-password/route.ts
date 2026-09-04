@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { forgotPasswordWithCognito, getCognitoConfig } from '@/lib/auth/cognito'
+import { checkRateLimit, getClientIdentifier, rateLimitResponse } from '@/lib/ratelimit'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { email } = body
+
+    // 1. Rate limiting: max 5 requests per minute per client
+    const clientId = getClientIdentifier(request, email)
+    const rateCheck = await checkRateLimit(`forgot-pwd:${clientId}`, { limit: 5, windowSeconds: 60 })
+    if (!rateCheck.success) {
+      return rateLimitResponse(rateCheck)
+    }
 
     if (!email || typeof email !== 'string' || !email.trim()) {
       return NextResponse.json(
@@ -39,15 +47,6 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
-    }
-
-    // Dev/Local fallback if Cognito is not configured
-    if (process.env.ALLOW_DEV_AUTH === 'true' || process.env.NODE_ENV !== 'production') {
-      return NextResponse.json({
-        success: true,
-        message: 'Dev mode: Reset code simulated (use 123456)',
-        destination: trimmedEmail,
-      })
     }
 
     return NextResponse.json(

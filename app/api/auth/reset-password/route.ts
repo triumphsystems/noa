@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { confirmForgotPasswordWithCognito, getCognitoConfig } from '@/lib/auth/cognito'
+import { confirmForgotPasswordWithCognito, revokeAllUserSessions, getCognitoConfig } from '@/lib/auth/cognito'
+import { checkRateLimit, getClientIdentifier, rateLimitResponse } from '@/lib/ratelimit'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { email, code, newPassword } = body
+
+    // 1. Rate limiting: max 5 code attempts per minute per client to prevent brute-forcing
+    const clientId = getClientIdentifier(request, email)
+    const rateCheck = await checkRateLimit(`reset-pwd:${clientId}`, { limit: 5, windowSeconds: 60 })
+    if (!rateCheck.success) {
+      return rateLimitResponse(rateCheck)
+    }
 
     if (!email || !code || !newPassword) {
       return NextResponse.json(
@@ -32,6 +40,9 @@ export async function POST(request: NextRequest) {
           newPassword,
         })
 
+        // Terminate all existing sessions on other devices after password change
+        await revokeAllUserSessions(trimmedEmail)
+
         return NextResponse.json({
           success: true,
           message: 'Password has been reset successfully. You can now log in.',
@@ -43,14 +54,6 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
-    }
-
-    // Dev fallback
-    if (process.env.ALLOW_DEV_AUTH === 'true' || process.env.NODE_ENV !== 'production') {
-      return NextResponse.json({
-        success: true,
-        message: 'Dev mode: Password reset simulated successfully.',
-      })
     }
 
     return NextResponse.json(

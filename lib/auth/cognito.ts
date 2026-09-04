@@ -13,6 +13,7 @@ import {
   ConfirmSignUpCommand,
   AdminConfirmSignUpCommand,
   GlobalSignOutCommand,
+  AdminUserGlobalSignOutCommand,
   GetUserCommand,
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
@@ -351,3 +352,22 @@ export async function confirmForgotPasswordWithCognito({
     throw new Error(error?.message || 'Failed to reset password.')
   }
 }
+
+/**
+ * Revoke all active sessions and refresh tokens for a user across all devices
+ */
+export async function revokeAllUserSessions(email: string): Promise<void> {
+  const { userPoolId, isConfigured } = getCognitoConfig()
+  if (!isConfigured || !userPoolId) return
+
+  try {
+    const command = new AdminUserGlobalSignOutCommand({
+      UserPoolId: userPoolId,
+      Username: email.trim().toLowerCase(),
+    })
+    await cognitoClient.send(command)
+  } catch (error) {
+    console.warn('[Cognito] Failed to perform admin global sign-out:', error)
+  }
+}
+

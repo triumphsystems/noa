@@ -4,7 +4,7 @@
  */
 
 import { WebMCPRegistry } from '../core/registry'
-import { registerClinicalResources } from './clinical-resources'
+import { registerClinicalResources } from './clinical.resources'
 
 export function registerAllResources(registry: WebMCPRegistry): void {
   registerClinicalResources(registry)
