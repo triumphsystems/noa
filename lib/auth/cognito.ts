@@ -147,7 +147,7 @@ export async function signUpWithCognito({
       throw new Error('An account with this email already exists.')
     }
     if (error?.name === 'InvalidPasswordException') {
-      throw new Error('Password must be at least 8 characters long and contain uppercase, lowercase, numbers, and symbols.')
+      throw new Error('Password must be at least 6 characters long.')
     }
     throw new Error(error?.message || 'Registration failed')
   }

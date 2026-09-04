@@ -178,8 +178,9 @@ export default function SignupForm({ userType }: SignupFormProps) {
             value={formData.password}
             onChange={handleChange}
             required
+            minLength={6}
             className="w-full px-3.5 py-2 border border-deep-ink/15 rounded-lg text-deep-ink placeholder:text-slate/60 focus:outline-none focus:border-deep-ink focus:ring-1 focus:ring-deep-ink/20 text-sm bg-white shadow-2xs transition-colors"
-            placeholder="••••••••"
+            placeholder="At least 6 characters"
           />
         </div>
 

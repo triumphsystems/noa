@@ -15,6 +15,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (password.length < 6) {
+      return NextResponse.json(
+        { message: 'Password must be at least 6 characters long.' },
+        { status: 400 }
+      )
+    }
+
     if (userType !== 'doctor' && userType !== 'patient') {
       return NextResponse.json(
         { message: 'Invalid user type. Must be doctor or patient.' },
