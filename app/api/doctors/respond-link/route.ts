@@ -48,6 +48,8 @@ export async function POST(request: NextRequest) {
         { message: 'No pending connection request from this patient found for your account.' },
         { status: 400 }
       )
+    }
+
     const doctor = await getDoctorById(doctorId)
     if (!doctor) {
       return NextResponse.json({ message: 'Doctor profile not found' }, { status: 404 })
