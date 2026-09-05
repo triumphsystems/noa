@@ -196,66 +196,101 @@ export default function PatientDashboardPage() {
   return (
     <div className="min-h-screen bg-[#f9fbf2] text-deep-ink font-sans antialiased pb-28 select-none-headers">
       {/* ============================================================ */}
-      {/* Top Mobile-Native App Bar                                    */}
+      {/* Active Screen Content Container (Responsive max-w)           */}
       {/* ============================================================ */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-deep-ink/5 px-4 py-3 transition-shadow">
-        <div className="max-w-xl mx-auto flex items-center justify-between gap-3">
-          {/* Left: Brand Identity & Greeting */}
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-hi-yellow/30 border border-hi-yellow/60 flex items-center justify-center shrink-0 shadow-2xs">
+      <main className="max-w-xl lg:max-w-5xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 space-y-5">
+        {/* Top Page Action & Greeting Bar (Single clean header) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-hi-yellow/30 border border-hi-yellow/60 flex items-center justify-center shrink-0 shadow-2xs">
               <Sparkles className="w-5 h-5 text-deep-ink" />
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="font-serif font-bold text-deep-ink text-sm tracking-tight">Noa</span>
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 text-[10px] font-semibold bg-soft-meadow text-deep-ink rounded-full border border-deep-ink/10">
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="font-serif font-bold text-xl sm:text-2xl text-deep-ink">
+                  {getGreeting()}, <span className="text-deep-ink">{patient?.firstName || 'Patient'}</span>
+                </h1>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-800 rounded-full border border-emerald-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Health
+                  Active Portal
                 </span>
               </div>
-              <p className="text-[11px] text-slate truncate">
-                {getGreeting()}, <span className="font-semibold text-deep-ink">{patient?.firstName || 'Patient'}</span>
+              <p className="text-xs text-slate">
+                Your encrypted personal AI health records and consultation summaries
               </p>
             </div>
           </div>
 
-          {/* Right: Quick Actions (Refresh & New Intake) */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-auto">
             <button
               onClick={handleRefresh}
               disabled={isLoading}
               title="Refresh Dashboard"
               aria-label="Refresh Dashboard"
-              className="w-8 h-8 rounded-full border border-deep-ink/10 bg-white hover:bg-soft-meadow flex items-center justify-center text-slate hover:text-deep-ink transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-full border border-deep-ink/10 bg-white hover:bg-soft-meadow flex items-center gap-1.5 text-xs text-slate hover:text-deep-ink transition-colors cursor-pointer shadow-2xs"
             >
               <RefreshCw className={cn('w-3.5 h-3.5', isLoading && 'animate-spin text-deep-ink')} />
+              <span className="hidden sm:inline">Refresh</span>
             </button>
 
             <Link href="/intake">
               <Button
                 size="sm"
-                className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-semibold text-xs px-3 py-1.5 h-8 gap-1.5 shadow-2xs cursor-pointer"
+                className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-semibold text-xs px-4 py-2 h-9 gap-2 shadow-2xs cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">New Intake</span>
+                <span>New Intake</span>
               </Button>
             </Link>
           </div>
         </div>
-      </header>
 
-      {/* ============================================================ */}
-      {/* Active Screen Content Container                              */}
-      {/* ============================================================ */}
-      <main className="max-w-xl mx-auto px-4 pt-4 space-y-4">
+        {/* Desktop Top Navigation Tabs (Hidden on mobile where bottom nav is active) */}
+        <div className="hidden sm:flex items-center gap-1.5 p-1.5 bg-white/80 backdrop-blur-md rounded-2xl border border-deep-ink/8 shadow-2xs">
+          {[
+            { id: 'home', label: 'Overview', icon: Home },
+            { id: 'visits', label: 'Consultations', icon: CalendarDays, badge: sessions.length || null },
+            { id: 'care-team', label: 'Care Team', icon: Stethoscope, badge: isPendingApproval ? '1' : null },
+            { id: 'records', label: 'Health Records', icon: ShieldCheck },
+          ].map(tab => {
+            const Icon = tab.icon
+            const isActive = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={cn(
+                  'flex-1 py-2 px-3.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer',
+                  isActive
+                    ? 'bg-deep-ink text-canvas shadow-xs'
+                    : 'text-slate hover:text-deep-ink hover:bg-soft-meadow/60'
+                )}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{tab.label}</span>
+                {tab.badge && (
+                  <span
+                    className={cn(
+                      'px-1.5 py-0.2 rounded-full text-[10px] font-bold',
+                      isActive ? 'bg-hi-yellow text-deep-ink' : 'bg-amber-100 text-amber-900'
+                    )}
+                  >
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
         {/* ============================================================ */}
         {/* SCREEN 1: HOME / OVERVIEW                                    */}
         {/* ============================================================ */}
         {activeTab === 'home' && (
-          <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="space-y-5 animate-in fade-in duration-200">
             {/* Pending Doctor Invitation Card - Priority Banner */}
             {isPendingApproval && pendingDoctor && (
-              <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-300/80 shadow-xs space-y-3">
+              <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/90 border border-amber-300/80 shadow-xs space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="w-9 h-9 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center shrink-0 mt-0.5">
                     <UserCheck className="w-5 h-5" />
@@ -267,19 +302,19 @@ export default function PatientDashboardPage() {
                       </span>
                       <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
                     </div>
-                    <h4 className="text-sm font-bold text-deep-ink mt-0.5">
-                      Dr. {pendingDoctor.name} invited you
+                    <h4 className="text-sm sm:text-base font-bold text-deep-ink mt-0.5">
+                      Dr. {pendingDoctor.name} invited you to connect
                     </h4>
                     <p className="text-xs text-slate mt-0.5 leading-relaxed">
                       Accept to share your AI intake summaries and consultation notes with your clinician.
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 pt-1">
+                <div className="flex items-center gap-2 pt-1 sm:max-w-xs">
                   <Button
                     size="sm"
                     onClick={() => setActiveTab('care-team')}
-                    className="flex-1 rounded-xl bg-deep-ink text-white hover:bg-deep-ink/90 font-semibold text-xs h-8 shadow-xs"
+                    className="flex-1 rounded-xl bg-deep-ink text-white hover:bg-deep-ink/90 font-semibold text-xs h-8 shadow-xs cursor-pointer"
                   >
                     Review Invitation
                   </Button>
@@ -287,7 +322,7 @@ export default function PatientDashboardPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => setActiveTab('care-team')}
-                    className="rounded-xl border-amber-300 text-slate hover:text-deep-ink text-xs h-8"
+                    className="rounded-xl border-amber-300 text-slate hover:text-deep-ink text-xs h-8 cursor-pointer"
                   >
                     View Details
                   </Button>
@@ -302,193 +337,202 @@ export default function PatientDashboardPage() {
               doctorName={doctor?.name}
             />
 
-            {/* Quick Metrics Grid */}
-            <div className="grid grid-cols-3 gap-2.5">
-              <button
-                onClick={() => setActiveTab('visits')}
-                className="p-3 bg-white rounded-2xl border border-deep-ink/10 shadow-2xs text-left hover:border-deep-ink/30 transition-all cursor-pointer group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate uppercase tracking-wider">Visits</span>
-                  <CalendarDays className="w-3.5 h-3.5 text-slate group-hover:text-deep-ink transition-colors" />
-                </div>
-                <div className="text-2xl font-bold font-serif text-deep-ink mt-1.5">
-                  {stats?.totalConsultations ?? sessions.length}
-                </div>
-                <span className="text-[10px] text-slate block truncate">Recorded visits</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('visits')}
-                className="p-3 bg-white rounded-2xl border border-deep-ink/10 shadow-2xs text-left hover:border-deep-ink/30 transition-all cursor-pointer group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate uppercase tracking-wider">Status</span>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                </div>
-                <div className="text-2xl font-bold font-serif text-emerald-700 mt-1.5">
-                  {stats?.completedConsultations ?? sessions.filter(s => s.status === 'completed').length}
-                </div>
-                <span className="text-[10px] text-slate block truncate">Completed visits</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('records')}
-                className="p-3 bg-white rounded-2xl border border-deep-ink/10 shadow-2xs text-left hover:border-deep-ink/30 transition-all cursor-pointer group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate uppercase tracking-wider">Intake</span>
-                  <Activity className="w-3.5 h-3.5 text-slate group-hover:text-deep-ink transition-colors" />
-                </div>
-                <div className="text-sm font-bold font-serif text-deep-ink mt-2 truncate">
-                  {stats?.hasIntake || intake ? 'Active' : 'Pending'}
-                </div>
-                <span className="text-[10px] text-slate block truncate">Health profile</span>
-              </button>
-            </div>
-
-            {/* Care Team Glance Card */}
-            <div className="bg-white p-4 rounded-2xl border border-deep-ink/10 shadow-2xs space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Stethoscope className="w-4 h-4 text-deep-ink" />
-                  <h3 className="font-serif font-bold text-sm text-deep-ink">Your Physician</h3>
-                </div>
-                <button
-                  onClick={() => setActiveTab('care-team')}
-                  className="text-xs font-semibold text-slate hover:text-deep-ink flex items-center gap-0.5 cursor-pointer"
-                >
-                  <span>Manage</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {hasDoctor ? (
-                <div className="flex items-center justify-between p-3 rounded-xl bg-soft-meadow/50 border border-deep-ink/5">
-                  <div className="min-w-0">
-                    <p className="font-bold text-sm text-deep-ink truncate">Dr. {doctor?.name}</p>
-                    <p className="text-xs text-slate truncate">
-                      {doctor?.specialty || 'General Practice'} • {doctor?.clinic || 'Clinical Center'}
-                    </p>
-                  </div>
-                  <Badge variant="success" className="text-[10px] shrink-0">
-                    Linked
-                  </Badge>
-                </div>
-              ) : (
-                <div className="p-3 rounded-xl bg-amber-50/60 border border-amber-200/60 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-xs text-amber-900">No Doctor Linked</p>
-                    <p className="text-[11px] text-slate">Connect with your physician using their Care Code.</p>
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={() => setActiveTab('care-team')}
-                    className="rounded-xl bg-deep-ink text-canvas hover:bg-deep-ink/90 text-xs px-3 h-7 shrink-0"
-                  >
-                    Connect
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {/* Recent Visit Preview */}
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between px-1">
-                <h3 className="font-serif font-bold text-sm text-deep-ink">Recent Visit Summary</h3>
-                {sessions.length > 0 && (
+            {/* Desktop 2-Column Responsive Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+              {/* Left Column (2 cols): Metrics & Consultation History */}
+              <div className="lg:col-span-2 space-y-5">
+                {/* Quick Metrics Grid */}
+                <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
                   <button
                     onClick={() => setActiveTab('visits')}
-                    className="text-xs font-semibold text-slate hover:text-deep-ink flex items-center gap-0.5 cursor-pointer"
+                    className="p-3.5 sm:p-4 bg-white rounded-2xl border border-deep-ink/10 shadow-2xs text-left hover:border-deep-ink/30 transition-all cursor-pointer group"
                   >
-                    <span>View all ({sessions.length})</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] sm:text-xs font-bold text-slate uppercase tracking-wider">Visits</span>
+                      <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate group-hover:text-deep-ink transition-colors" />
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-bold font-serif text-deep-ink mt-1.5">
+                      {stats?.totalConsultations ?? sessions.length}
+                    </div>
+                    <span className="text-[10px] sm:text-xs text-slate block truncate">Recorded visits</span>
                   </button>
-                )}
-              </div>
 
-              {sessions.length === 0 ? (
-                <Card className="p-6 text-center border-dashed rounded-2xl bg-white/70">
-                  <Clock className="w-8 h-8 text-slate/40 mx-auto mb-2" />
-                  <p className="text-xs font-medium text-slate">No consultation visits recorded yet.</p>
-                  <p className="text-[11px] text-slate/70 mt-1 mb-3">
-                    Your summaries and AI care plans will appear here after consultations.
-                  </p>
-                  <Link href="/intake">
-                    <Button variant="outline" className="rounded-full text-xs font-semibold px-4 h-8">
-                      Start First Intake
-                    </Button>
-                  </Link>
-                </Card>
-              ) : (
-                (() => {
-                  const recent = sessions[0]
-                  const dateStr = recent.startedAt
-                    ? new Date(recent.startedAt).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })
-                    : 'Recent'
-                  const summarySnippet =
-                    recent.soapNote?.assessment ||
-                    recent.soapNote?.plan ||
-                    recent.transcript?.slice(0, 120) ||
-                    'Clinical consultation recorded.'
+                  <button
+                    onClick={() => setActiveTab('visits')}
+                    className="p-3.5 sm:p-4 bg-white rounded-2xl border border-deep-ink/10 shadow-2xs text-left hover:border-deep-ink/30 transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] sm:text-xs font-bold text-slate uppercase tracking-wider">Status</span>
+                      <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-bold font-serif text-emerald-700 mt-1.5">
+                      {stats?.completedConsultations ?? sessions.filter(s => s.status === 'completed').length}
+                    </div>
+                    <span className="text-[10px] sm:text-xs text-slate block truncate">Completed visits</span>
+                  </button>
 
-                  return (
-                    <Card className="p-4 rounded-2xl bg-white border border-deep-ink/10 shadow-2xs space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <span className="text-[11px] font-semibold text-slate flex items-center gap-1">
-                            <Calendar className="w-3 h-3 text-slate/60" />
-                            {dateStr}
-                          </span>
-                          <h4 className="font-serif font-bold text-base text-deep-ink mt-0.5">
-                            Consultation Summary
-                          </h4>
-                        </div>
-                        <Badge variant={recent.status === 'completed' ? 'success' : 'default'} className="text-[10px]">
-                          {recent.status === 'completed' ? 'Completed' : 'Active'}
-                        </Badge>
-                      </div>
+                  <button
+                    onClick={() => setActiveTab('records')}
+                    className="p-3.5 sm:p-4 bg-white rounded-2xl border border-deep-ink/10 shadow-2xs text-left hover:border-deep-ink/30 transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] sm:text-xs font-bold text-slate uppercase tracking-wider">Intake</span>
+                      <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate group-hover:text-deep-ink transition-colors" />
+                    </div>
+                    <div className="text-base sm:text-lg font-bold font-serif text-deep-ink mt-2 truncate">
+                      {stats?.hasIntake || intake ? 'Active' : 'Pending'}
+                    </div>
+                    <span className="text-[10px] sm:text-xs text-slate block truncate">Health profile</span>
+                  </button>
+                </div>
 
-                      <p className="text-xs text-slate line-clamp-2 leading-relaxed bg-soft-meadow/40 p-2.5 rounded-xl border border-deep-ink/5">
-                        {summarySnippet}
+                {/* Recent Visit Preview */}
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between px-1">
+                    <h3 className="font-serif font-bold text-sm sm:text-base text-deep-ink">Recent Visit Summary</h3>
+                    {sessions.length > 0 && (
+                      <button
+                        onClick={() => setActiveTab('visits')}
+                        className="text-xs font-semibold text-slate hover:text-deep-ink flex items-center gap-0.5 cursor-pointer"
+                      >
+                        <span>View all ({sessions.length})</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {sessions.length === 0 ? (
+                    <Card className="p-6 sm:p-8 text-center border-dashed rounded-2xl bg-white/70">
+                      <Clock className="w-8 h-8 text-slate/40 mx-auto mb-2" />
+                      <p className="text-xs font-medium text-slate">No consultation visits recorded yet.</p>
+                      <p className="text-[11px] text-slate/70 mt-1 mb-3">
+                        Your summaries and AI care plans will appear here after consultations.
                       </p>
-
-                      <Link href={`/dashboard/patient/consultations/${recent.id}`} className="block">
-                        <Button className="w-full rounded-xl bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-semibold text-xs h-9 gap-1.5 shadow-2xs cursor-pointer">
-                          <span>View Full Clinical Report</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
+                      <Link href="/intake">
+                        <Button variant="outline" className="rounded-full text-xs font-semibold px-4 h-8 cursor-pointer">
+                          Start First Intake
                         </Button>
                       </Link>
                     </Card>
-                  )
-                })()
-              )}
-            </div>
+                  ) : (
+                    (() => {
+                      const recent = sessions[0]
+                      const dateStr = recent.startedAt
+                        ? new Date(recent.startedAt).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })
+                        : 'Recent'
+                      const summarySnippet =
+                        recent.soapNote?.assessment ||
+                        recent.soapNote?.plan ||
+                        recent.transcript?.slice(0, 120) ||
+                        'Clinical consultation recorded.'
 
-            {/* Quick Link to Records Snapshot */}
-            <div
-              onClick={() => setActiveTab('records')}
-              role="button"
-              tabIndex={0}
-              className="p-4 rounded-2xl bg-white border border-deep-ink/10 shadow-2xs flex items-center justify-between cursor-pointer hover:border-deep-ink/30 transition-all"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-soft-meadow flex items-center justify-center text-deep-ink">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-deep-ink">Medical Information & Medications</h4>
-                  <p className="text-[11px] text-slate">
-                    {intake?.medications?.length || patient?.medications?.length || 0} meds •{' '}
-                    {intake?.allergies?.length || patient?.allergies?.length || 0} allergies documented
-                  </p>
+                      return (
+                        <Card className="p-4 sm:p-5 rounded-2xl bg-white border border-deep-ink/10 shadow-2xs space-y-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <span className="text-[11px] font-semibold text-slate flex items-center gap-1">
+                                <Calendar className="w-3 h-3 text-slate/60" />
+                                {dateStr}
+                              </span>
+                              <h4 className="font-serif font-bold text-base text-deep-ink mt-0.5">
+                                Consultation Summary
+                              </h4>
+                            </div>
+                            <Badge variant={recent.status === 'completed' ? 'success' : 'default'} className="text-[10px]">
+                              {recent.status === 'completed' ? 'Completed' : 'Active'}
+                            </Badge>
+                          </div>
+
+                          <p className="text-xs sm:text-sm text-slate line-clamp-2 leading-relaxed bg-soft-meadow/40 p-3 rounded-xl border border-deep-ink/5">
+                            {summarySnippet}
+                          </p>
+
+                          <Link href={`/dashboard/patient/consultations/${recent.id}`} className="block">
+                            <Button className="w-full rounded-xl bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-semibold text-xs h-9 gap-1.5 shadow-2xs cursor-pointer">
+                              <span>View Full Clinical Report</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </Button>
+                          </Link>
+                        </Card>
+                      )
+                    })()
+                  )}
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate" />
+
+              {/* Right Column (1 col): Care Team & Records Snapshot */}
+              <div className="space-y-5">
+                {/* Care Team Glance Card */}
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-deep-ink/10 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Stethoscope className="w-4 h-4 text-deep-ink" />
+                      <h3 className="font-serif font-bold text-sm text-deep-ink">Your Physician</h3>
+                    </div>
+                    <button
+                      onClick={() => setActiveTab('care-team')}
+                      className="text-xs font-semibold text-slate hover:text-deep-ink flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <span>Manage</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {hasDoctor ? (
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-soft-meadow/50 border border-deep-ink/5">
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm text-deep-ink truncate">Dr. {doctor?.name}</p>
+                        <p className="text-xs text-slate truncate">
+                          {doctor?.specialty || 'General Practice'} • {doctor?.clinic || 'Clinical Center'}
+                        </p>
+                      </div>
+                      <Badge variant="success" className="text-[10px] shrink-0">
+                        Linked
+                      </Badge>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-xl bg-amber-50/60 border border-amber-200/60 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-xs text-amber-900">No Doctor Linked</p>
+                        <p className="text-[11px] text-slate">Connect with your physician using their Care Code.</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => setActiveTab('care-team')}
+                        className="rounded-xl bg-deep-ink text-canvas hover:bg-deep-ink/90 text-xs px-3 h-7 shrink-0 cursor-pointer"
+                      >
+                        Connect
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Quick Link to Records Snapshot */}
+                <div
+                  onClick={() => setActiveTab('records')}
+                  role="button"
+                  tabIndex={0}
+                  className="p-4 sm:p-5 rounded-2xl bg-white border border-deep-ink/10 shadow-2xs flex items-center justify-between cursor-pointer hover:border-deep-ink/30 transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-soft-meadow flex items-center justify-center text-deep-ink shrink-0">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-deep-ink">Medical Information & Medications</h4>
+                      <p className="text-[11px] text-slate mt-0.5">
+                        {intake?.medications?.length || patient?.medications?.length || 0} meds •{' '}
+                        {intake?.allergies?.length || patient?.allergies?.length || 0} allergies documented
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate shrink-0" />
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -803,18 +847,21 @@ export default function PatientDashboardPage() {
       </main>
 
       {/* ============================================================ */}
-      {/* Bottom Navigation Dock (Reusable Role-Aware BottomNav)       */}
+      {/* Bottom Navigation Dock (Mobile only; desktop uses top tabs)  */}
       {/* ============================================================ */}
-      <BottomNav
-        role="patient"
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-        badgeCounts={{
-          visits: sessions.length > 0 ? sessions.length : undefined,
-          'care-team': isPendingApproval ? '1' : undefined,
-        }}
-        floatingDockOnDesktop={true}
-      />
+      <div className="sm:hidden">
+        <BottomNav
+          role="patient"
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          badgeCounts={{
+            visits: sessions.length > 0 ? sessions.length : undefined,
+            'care-team': isPendingApproval ? '1' : undefined,
+          }}
+          floatingDockOnDesktop={false}
+        />
+      </div>
     </div>
   )
 }
+

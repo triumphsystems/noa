@@ -18,7 +18,7 @@ export function handleAuthExpiration() {
   if (typeof window === 'undefined') return
 
   // 1. Identify user role before clearing for accurate redirect
-  const storedUserType = window.localStorage.getItem('userType') || 'doctor'
+  const storedUserType = window.localStorage.getItem('userType') || ''
 
   // 2. Clear all local storage authentication items
   const keysToRemove = [

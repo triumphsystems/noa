@@ -65,7 +65,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       patient,
     })
   } catch (error) {
-    console.error('[v0] Error fetching patient:', error)
+    console.error('Error fetching patient:', error)
     return NextResponse.json(
       { error: 'Failed to fetch patient', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
