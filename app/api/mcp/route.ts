@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     // Extract execution context from headers and verified session cookies
     const authHeader = req.headers.get('authorization')
     const apiKeyHeader = req.headers.get('x-mcp-api-key')
-    const userAuth = getAuthenticatedUser(req)
+    const userAuth = await getAuthenticatedUser(req)
     const expectedApiKey = process.env.MCP_API_KEY || process.env.WEBMCP_API_KEY
 
     const hasValidApiKey = Boolean(

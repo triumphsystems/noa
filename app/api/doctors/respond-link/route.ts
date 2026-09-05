@@ -12,7 +12,7 @@ import { getAuthenticatedUser } from '@/lib/auth/jwt'
  */
 export async function POST(request: NextRequest) {
   try {
-    const auth = getAuthenticatedUser(request)
+    const auth = await getAuthenticatedUser(request)
     if (!auth.isValid) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }

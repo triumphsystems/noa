@@ -14,7 +14,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = getAuthenticatedUser(request)
+    const auth = await getAuthenticatedUser(request)
     if (!auth.isValid) {
       return NextResponse.json({ message: 'Unauthorized: Authentication required.' }, { status: 401 })
     }

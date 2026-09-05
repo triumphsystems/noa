@@ -12,7 +12,7 @@ import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = getAuthenticatedUser(request)
+    const auth = await getAuthenticatedUser(request)
     if (!auth.isValid || !auth.sub) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
@@ -35,8 +35,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Patient not found' }, { status: 404 })
     }
 
-    if (auth.userType === 'doctor' && patient.doctorId && patient.doctorId !== auth.sub) {
-      return NextResponse.json({ message: 'Forbidden: Cannot access a patient assigned to another doctor' }, { status: 403 })
+    if (auth.userType === 'doctor') {
+      const isLinked = patient.doctorId === auth.sub
+      const isPending = patient.pendingDoctorId === auth.sub
+      if (!isLinked && !isPending) {
+        return NextResponse.json({ message: 'Forbidden: Cannot access a patient not linked to your clinic' }, { status: 403 })
+      }
     }
 
     const [doctor, pendingDoctor, sessions, intakes] = await Promise.all([

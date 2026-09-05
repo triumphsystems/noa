@@ -4,7 +4,7 @@ import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = getAuthenticatedUser(request)
+    const auth = await getAuthenticatedUser(request)
     if (!auth.isValid) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       message: 'Intake form submitted successfully',
     })
   } catch (error) {
-    console.error('[v0] Error saving intake:', error)
+    console.error('[Intakes] Error saving intake:', error)
     return NextResponse.json(
       { error: 'Failed to submit intake form', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = getAuthenticatedUser(request)
+    const auth = await getAuthenticatedUser(request)
     if (!auth.isValid) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
       intakes,
     })
   } catch (error) {
-    console.error('[v0] Error fetching intakes:', error)
+    console.error('Error fetching intakes:', error)
     return NextResponse.json(
       { error: 'Failed to fetch intakes', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

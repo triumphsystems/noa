@@ -4,7 +4,7 @@ import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = getAuthenticatedUser(request)
+    const auth = await getAuthenticatedUser(request)
     if (!auth.isValid || !auth.sub) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       patients,
     })
   } catch (error) {
-    console.error('[v0] Error fetching patients:', error)
+    console.error('Error fetching patients:', error)
     return NextResponse.json(
       { error: 'Failed to fetch patients', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

@@ -143,7 +143,7 @@ export default function SessionPage({
   }
 
   const patientNameParts = patient ? [patient.firstName, patient.lastName].filter(Boolean) : []
-  const patientName = patientNameParts.length > 0 ? patientNameParts.join(' ').trim() : (patient?.name || patient?.email || `Patient #${session.patientId.slice(-6)}`)
+  const patientName = patientNameParts.length > 0 ? patientNameParts.join(' ').trim() : ((patient as any)?.name || patient?.email || `Patient #${session.patientId.slice(-6)}`)
   const doctorName = doctor?.name ? `Dr. ${doctor.name}` : 'Attending Physician'
   const sessionDate = session.startedAt
     ? new Date(session.startedAt).toLocaleDateString('en-US', {

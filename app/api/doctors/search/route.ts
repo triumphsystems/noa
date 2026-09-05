@@ -4,7 +4,7 @@ import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = getAuthenticatedUser(request)
+    const auth = await getAuthenticatedUser(request)
     if (!auth.isValid) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
@@ -18,29 +18,24 @@ export async function GET(request: NextRequest) {
       doctors = await getAllDoctors()
     }
 
-    // Sanitize results to avoid exposing internal credentials
-    const sanitized = doctors.map(doc => ({
-      id: doc.id,
-      name: doc.name,
-      specialty: doc.specialty,
-      clinic: doc.clinic,
-      careCode: doc.careCode,
-      email: doc.email,
-      phone: doc.phone,
-      avatar: doc.avatar,
-    }))
+    // Sanitize results — only expose public-facing identity fields.
+    // PII (email, phone) is NOT returned to prevent enumeration attacks.
+    const sanitized = doctors
+      .filter(doc => doc.verificationStatus === 'verified') // Only show verified doctors
+      .map(doc => ({
+        id: doc.id,
+        name: doc.name,
+        specialty: doc.specialty,
+        clinic: doc.clinic,
+        careCode: doc.careCode,
+        avatar: doc.avatar,
+      }))
 
-    return NextResponse.json({
-      success: true,
-      data: sanitized,
-    })
+    return NextResponse.json({ success: true, data: sanitized })
   } catch (error) {
-    console.error('[API /doctors/search] Error searching doctors:', error)
+    console.error('[Doctors/Search] Error searching doctors:', error)
     return NextResponse.json(
-      {
-        message: 'Failed to search doctors',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { message: 'Failed to search doctors', error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

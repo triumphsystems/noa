@@ -10,7 +10,7 @@ import { checkRateLimit, getClientIdentifier, rateLimitResponse } from '@/lib/ra
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = getAuthenticatedUser(request)
+    const auth = await getAuthenticatedUser(request)
     if (!auth.isValid) {
       return NextResponse.json({ message: 'Unauthorized: Authentication required.' }, { status: 401 })
     }

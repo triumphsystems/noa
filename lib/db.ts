@@ -7,9 +7,11 @@ import {
   ScanCommand,
   UpdateCommand,
   DeleteCommand,
+  TransactWriteCommand,
 } from '@aws-sdk/lib-dynamodb'
 import { nanoid } from 'nanoid'
 import { awsConfig, dynamodbClient } from './aws-config'
+import { buildUpdateExpression } from './db/update-expression'
 
 export const TABLE_NAME = awsConfig.dynamodb.tableName
 const PK = 'id'
@@ -222,48 +224,16 @@ export async function getDoctorByEmail(email: string): Promise<Doctor | null> {
 }
 
 export async function updateDoctor(id: string, updates: Partial<Doctor>): Promise<Doctor | null> {
-  const setParts: string[] = []
-  const removeParts: string[] = []
-  const expressionAttributeNames: Record<string, string> = {}
-  const expressionAttributeValues: Record<string, any> = {}
-
-  Object.entries(updates).forEach(([key, value]) => {
-    if (key === 'id' || key === 'type' || key === 'createdAt') return
-
-    // Skip undefined fields entirely
-    if (value === undefined) return
-
-    // If explicitly null, remove attribute from DynamoDB item
-    if (value === null) {
-      removeParts.push(`#${key}`)
-      expressionAttributeNames[`#${key}`] = key
-      return
-    }
-
-    setParts.push(`#${key} = :${key}`)
-    expressionAttributeNames[`#${key}`] = key
-    expressionAttributeValues[`:${key}`] = value
-  })
-
-  setParts.push('#updatedAt = :updatedAt')
-  expressionAttributeNames['#updatedAt'] = 'updatedAt'
-  expressionAttributeValues[':updatedAt'] = Date.now()
-
-  const updateExpressions: string[] = []
-  if (setParts.length > 0) {
-    updateExpressions.push(`SET ${setParts.join(', ')}`)
-  }
-  if (removeParts.length > 0) {
-    updateExpressions.push(`REMOVE ${removeParts.join(', ')}`)
-  }
+  const { UpdateExpression, ExpressionAttributeNames, ExpressionAttributeValues } =
+    buildUpdateExpression(updates as Record<string, unknown>)
 
   const result = await docClient.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
       Key: { [PK]: id, [SK]: 'doctor' },
-      UpdateExpression: updateExpressions.join(' '),
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
+      UpdateExpression,
+      ExpressionAttributeNames,
+      ExpressionAttributeValues,
       ReturnValues: 'ALL_NEW',
     }),
   )
@@ -436,31 +406,38 @@ export async function migratePatientId(oldId: string, newId: string): Promise<Pa
     throw new Error(`Patient with id ${oldId} not found for migration`)
   }
 
+  if (oldId === newId) {
+    return oldPatient
+  }
+
   const updatedPatient: Patient = {
     ...oldPatient,
     id: newId,
     updatedAt: Date.now(),
   }
 
+  // Atomic: write new record and delete old record in a single transaction.
+  // If either operation fails, neither is committed — no orphaned records.
   await docClient.send(
-    new PutCommand({
-      TableName: TABLE_NAME,
-      Item: updatedPatient,
-    }),
+    new TransactWriteCommand({
+      TransactItems: [
+        {
+          Put: {
+            TableName: TABLE_NAME,
+            Item: updatedPatient,
+            ConditionExpression: 'attribute_not_exists(#pk)',
+            ExpressionAttributeNames: { '#pk': PK },
+          },
+        },
+        {
+          Delete: {
+            TableName: TABLE_NAME,
+            Key: { [PK]: oldId, [SK]: 'patient' },
+          },
+        },
+      ],
+    })
   )
-
-  if (oldId !== newId) {
-    try {
-      await docClient.send(
-        new DeleteCommand({
-          TableName: TABLE_NAME,
-          Key: { [PK]: oldId, [SK]: 'patient' },
-        }),
-      )
-    } catch (err) {
-      console.warn(`[DB Migration] Failed to delete legacy patient record ${oldId}:`, err)
-    }
-  }
 
   return updatedPatient
 }
@@ -530,40 +507,16 @@ export async function getPendingPatientsByDoctor(doctorId: string): Promise<Pati
 }
 
 export async function updatePatient(id: string, updates: Partial<Patient>): Promise<Patient | null> {
-  const setParts: string[] = []
-  const removeParts: string[] = []
-  const expressionAttributeNames: Record<string, string> = {}
-  const expressionAttributeValues: Record<string, any> = {}
-
-  Object.entries(updates).forEach(([key, value]) => {
-    if (key === 'id' || key === 'type' || key === 'createdAt') return
-    if (value === undefined) return
-    if (value === null) {
-      removeParts.push(`#${key}`)
-      expressionAttributeNames[`#${key}`] = key
-      return
-    }
-
-    setParts.push(`#${key} = :${key}`)
-    expressionAttributeNames[`#${key}`] = key
-    expressionAttributeValues[`:${key}`] = value
-  })
-
-  setParts.push('#updatedAt = :updatedAt')
-  expressionAttributeNames['#updatedAt'] = 'updatedAt'
-  expressionAttributeValues[':updatedAt'] = Date.now()
-
-  const updateExpressions: string[] = []
-  if (setParts.length > 0) updateExpressions.push(`SET ${setParts.join(', ')}`)
-  if (removeParts.length > 0) updateExpressions.push(`REMOVE ${removeParts.join(', ')}`)
+  const { UpdateExpression, ExpressionAttributeNames, ExpressionAttributeValues } =
+    buildUpdateExpression(updates as Record<string, unknown>)
 
   const result = await docClient.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
       Key: { [PK]: id, [SK]: 'patient' },
-      UpdateExpression: updateExpressions.join(' '),
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
+      UpdateExpression,
+      ExpressionAttributeNames,
+      ExpressionAttributeValues,
       ReturnValues: 'ALL_NEW',
     }),
   )
@@ -657,46 +610,16 @@ export async function getSessionsByPatient(patientId: string): Promise<Session[]
 }
 
 export async function updateSession(id: string, updates: Partial<Session>): Promise<Session | null> {
-  const setParts: string[] = []
-  const removeParts: string[] = []
-  const expressionAttributeNames: Record<string, string> = {}
-  const expressionAttributeValues: Record<string, any> = {}
-
-  Object.entries(updates).forEach(([key, value]) => {
-    if (key === 'id' || key === 'type' || key === 'createdAt') return
-    if (value === undefined) return
-    if (value === null) {
-      removeParts.push(`#${key}`)
-      expressionAttributeNames[`#${key}`] = key
-      return
-    }
-
-    if (key === 'soapNote') {
-      setParts.push(`#soapNote = :soapNote`)
-      expressionAttributeNames['#soapNote'] = 'soapNote'
-      expressionAttributeValues[':soapNote'] = value
-    } else {
-      setParts.push(`#${key} = :${key}`)
-      expressionAttributeNames[`#${key}`] = key
-      expressionAttributeValues[`:${key}`] = value
-    }
-  })
-
-  setParts.push('#updatedAt = :updatedAt')
-  expressionAttributeNames['#updatedAt'] = 'updatedAt'
-  expressionAttributeValues[':updatedAt'] = Date.now()
-
-  const updateExpressions: string[] = []
-  if (setParts.length > 0) updateExpressions.push(`SET ${setParts.join(', ')}`)
-  if (removeParts.length > 0) updateExpressions.push(`REMOVE ${removeParts.join(', ')}`)
+  const { UpdateExpression, ExpressionAttributeNames, ExpressionAttributeValues } =
+    buildUpdateExpression(updates as Record<string, unknown>)
 
   const result = await docClient.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
       Key: { [PK]: id, [SK]: 'session' },
-      UpdateExpression: updateExpressions.join(' '),
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
+      UpdateExpression,
+      ExpressionAttributeNames,
+      ExpressionAttributeValues,
       ReturnValues: 'ALL_NEW',
     }),
   )
@@ -757,46 +680,23 @@ export async function getIntakesByPatient(patientId: string): Promise<PatientInt
 }
 
 export async function updateIntake(id: string, updates: Partial<PatientIntake>): Promise<PatientIntake | null> {
-  const setParts: string[] = []
-  const removeParts: string[] = []
-  const expressionAttributeNames: Record<string, string> = {}
-  const expressionAttributeValues: Record<string, any> = {}
-
-  Object.entries(updates).forEach(([key, value]) => {
-    if (key === 'id' || key === 'type' || key === 'createdAt') return
-    if (value === undefined) return
-    if (value === null) {
-      removeParts.push(`#${key}`)
-      expressionAttributeNames[`#${key}`] = key
-      return
-    }
-
-    setParts.push(`#${key} = :${key}`)
-    expressionAttributeNames[`#${key}`] = key
-    expressionAttributeValues[`:${key}`] = value
-  })
-
-  setParts.push('#updatedAt = :updatedAt')
-  expressionAttributeNames['#updatedAt'] = 'updatedAt'
-  expressionAttributeValues[':updatedAt'] = Date.now()
-
-  const updateExpressions: string[] = []
-  if (setParts.length > 0) updateExpressions.push(`SET ${setParts.join(', ')}`)
-  if (removeParts.length > 0) updateExpressions.push(`REMOVE ${removeParts.join(', ')}`)
+  const { UpdateExpression, ExpressionAttributeNames, ExpressionAttributeValues } =
+    buildUpdateExpression(updates as Record<string, unknown>)
 
   const result = await docClient.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
       Key: { [PK]: id, [SK]: 'intake' },
-      UpdateExpression: updateExpressions.join(' '),
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
+      UpdateExpression,
+      ExpressionAttributeNames,
+      ExpressionAttributeValues,
       ReturnValues: 'ALL_NEW',
     }),
   )
 
   return (result.Attributes as PatientIntake) || null
 }
+
 
 export async function completeSession(id: string): Promise<Session | null> {
   return updateSession(id, { status: 'completed', endedAt: Date.now() })

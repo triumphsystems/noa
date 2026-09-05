@@ -13,19 +13,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { email, password, userType } = body
 
-    // 1. Rate limiting: max 5 login attempts per minute per client to prevent brute-force
+    // Validate input FIRST before rate limiting, so we don't use 'undefined' as the rate-limit key
+    if (!email || !password) {
+      return NextResponse.json({ message: 'Email and password are required' }, { status: 400 })
+    }
+
+    // Rate limiting: max 5 login attempts per minute per client (uses validated email)
     const clientId = getClientIdentifier(request, email)
     const rateCheck = await checkRateLimit(`login:${clientId}`, { limit: 5, windowSeconds: 60 })
     if (!rateCheck.success) {
       return rateLimitResponse(rateCheck)
-    }
-
-    // Validate input
-    if (!email || !password) {
-      return NextResponse.json(
-        { message: 'Email and password are required' },
-        { status: 400 }
-      )
     }
 
     const { isConfigured } = getCognitoConfig()

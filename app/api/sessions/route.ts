@@ -4,7 +4,7 @@ import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = getAuthenticatedUser(request)
+    const auth = await getAuthenticatedUser(request)
     if (!auth.isValid) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -39,6 +39,10 @@ export async function POST(request: NextRequest) {
     if (targetId) {
       const existing = await getSessionById(targetId)
       if (existing) {
+        // Authorization: only the session's doctor or admin may update it
+        if (auth.userType !== 'admin' && existing.doctorId !== auth.sub) {
+          return NextResponse.json({ error: 'Forbidden: Cannot update another doctor\'s session' }, { status: 403 })
+        }
         session = await updateSession(targetId, {
           doctorId,
           patientId,
@@ -68,7 +72,7 @@ export async function POST(request: NextRequest) {
       session,
     })
   } catch (error) {
-    console.error('[v0] Error creating session:', error)
+    console.error('[Sessions] Error creating session:', error)
     return NextResponse.json(
       { error: 'Failed to create session', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -78,7 +82,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = getAuthenticatedUser(request)
+    const auth = await getAuthenticatedUser(request)
     if (!auth.isValid) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -86,6 +90,7 @@ export async function GET(request: NextRequest) {
     const sessionId = request.nextUrl.searchParams.get('sessionId')
     const doctorId = request.nextUrl.searchParams.get('doctorId')
     const patientId = request.nextUrl.searchParams.get('patientId')
+
     if (sessionId) {
       const session = await getSessionById(sessionId)
       if (!session) {
@@ -100,10 +105,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Forbidden: Access denied to this session' }, { status: 403 })
       }
 
-      return NextResponse.json({
-        success: true,
-        session,
-      })
+      return NextResponse.json({ success: true, session })
     }
 
     if (!doctorId && !patientId) {
@@ -127,12 +129,9 @@ export async function GET(request: NextRequest) {
       sessions = await getSessionsByPatient(patientId)
     }
 
-    return NextResponse.json({
-      success: true,
-      sessions,
-    })
+    return NextResponse.json({ success: true, sessions })
   } catch (error) {
-    console.error('[v0] Error fetching sessions:', error)
+    console.error('[Sessions] Error fetching sessions:', error)
     return NextResponse.json(
       { error: 'Failed to fetch sessions', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

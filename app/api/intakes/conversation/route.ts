@@ -14,7 +14,7 @@ function mergeStringArrays(existing: string[] = [], incoming: string[] = []) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = getAuthenticatedUser(request)
+    const auth = await getAuthenticatedUser(request)
     if (!auth.isValid) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       savedIntake,
     })
   } catch (error) {
-    console.error('[v0] Error handling intake conversation:', error)
+    console.error('Error handling intake conversation:', error)
     return NextResponse.json(
       {
         message: 'Failed to process intake conversation',

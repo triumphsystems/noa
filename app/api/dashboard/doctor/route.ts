@@ -7,13 +7,14 @@ import {
   getPatientsByDoctor,
   getPendingPatientsByDoctor,
   getSessionsByDoctor,
+  computeDoctorCareCode,
   type Patient,
 } from '@/lib/db'
 import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = getAuthenticatedUser(request)
+    const auth = await getAuthenticatedUser(request)
     if (!auth.isValid || !auth.sub) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
@@ -76,7 +77,6 @@ export async function GET(request: NextRequest) {
     linkedPatients.forEach(p => patientMap.set(p.id, p))
     pendingPatients.forEach(p => {
       if (!patientMap.has(p.id)) {
-        // Redact sensitive medical details: doctors can only see basic identity until patient accepts
         const isFullyLinked = p.linkStatus === 'linked' && p.doctorId === doctorId
         const sanitized: Patient = isFullyLinked
           ? p
@@ -105,9 +105,10 @@ export async function GET(request: NextRequest) {
       todaySessions: sessions.filter(session => new Date(session.startedAt).toDateString() === today.toDateString()).length,
     }
 
+    // Use canonical computeDoctorCareCode — no inline duplication
     const doctorWithCareCode = {
       ...doctor,
-      careCode: doctor.careCode || (doctor.id ? `NOA-${doctor.id.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase()}` : 'NOA-DOC'),
+      careCode: computeDoctorCareCode(doctor),
     }
 
     const dashboard: DoctorDashboardPayload = {
@@ -124,7 +125,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response)
   } catch (error) {
-    console.error('[v0] Error loading doctor dashboard:', error)
+    console.error('[Dashboard/Doctor] Error loading doctor dashboard:', error)
     return NextResponse.json(
       {
         message: 'Failed to load doctor dashboard',

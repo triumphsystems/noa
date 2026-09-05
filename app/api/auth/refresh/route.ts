@@ -28,21 +28,27 @@ export async function POST(request: NextRequest) {
     const cognitoUser = await getCognitoUser(tokens.accessToken)
 
     const userId = cognitoUser?.sub || 'user'
-    let userName = cognitoUser?.name || 'User'
-    let userType: 'doctor' | 'patient' | 'admin' = cognitoUser?.userType || 'doctor'
+    const userName = cognitoUser?.name || 'User'
+    // userType comes exclusively from Cognito — session cookie is non-authoritative
+    const userType: 'doctor' | 'patient' | 'admin' = cognitoUser?.userType || 'doctor'
 
-    if (sessionMeta) {
-      try {
-        const parsed = JSON.parse(sessionMeta)
-        if (parsed.name) userName = parsed.name
-        if (parsed.userType) userType = parsed.userType
-      } catch {}
+    // Session metadata cookie supplements display name if Cognito doesn't have it
+    // but NEVER overrides the userType from the verified token
+    let displayName = userName
+    if (!displayName || displayName === 'User') {
+      const sessionMeta = request.cookies.get(AUTH_COOKIE_NAMES.SESSION_META)?.value
+      if (sessionMeta) {
+        try {
+          const parsed = JSON.parse(sessionMeta)
+          if (parsed.name) displayName = parsed.name
+        } catch {}
+      }
     }
 
     const sessionUser = {
       id: userId,
       email: cognitoUser?.email || '',
-      name: userName,
+      name: displayName,
       userType,
     }
 

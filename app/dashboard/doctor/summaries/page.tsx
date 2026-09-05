@@ -97,7 +97,7 @@ export default function SummariesPage() {
           {filteredSessions.map(session => {
             const patient = session.patientId ? patientMap.get(session.patientId) : null
             const patientNameParts = patient ? [patient.firstName, patient.lastName].filter(Boolean) : []
-            const patientName = patientNameParts.length > 0 ? patientNameParts.join(' ').trim() : (patient?.name || patient?.email || (session.patientId ? `Patient #${session.patientId.slice(-6)}` : 'Patient'))
+            const patientName = patientNameParts.length > 0 ? patientNameParts.join(' ').trim() : ((patient as any)?.name || patient?.email || (session.patientId ? `Patient #${session.patientId.slice(-6)}` : 'Patient'))
             const formattedDate = session.startedAt
               ? new Date(session.startedAt).toLocaleDateString('en-US', {
                   month: 'short',

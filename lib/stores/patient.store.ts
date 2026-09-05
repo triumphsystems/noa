@@ -51,7 +51,7 @@ export const usePatientStore = create<PatientState>((set, get) => ({
       )
 
       const canonicalId = payload.patient?.id || activeId
-      if (typeof window !== 'undefined' && canonicalId) {
+      if (typeof window !== 'undefined' && canonicalId && window.localStorage.getItem('patientId') !== canonicalId) {
         window.localStorage.setItem('patientId', canonicalId)
       }
 

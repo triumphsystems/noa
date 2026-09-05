@@ -7,7 +7,7 @@ import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auth = getAuthenticatedUser(request)
+    const auth = await getAuthenticatedUser(request)
     if (!auth.isValid) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(response)
   } catch (error) {
-    console.error('[v0] Error fetching doctor:', error)
+    console.error('[Doctor] Error fetching doctor:', error)
     return NextResponse.json(
       {
         message: 'Failed to fetch doctor',
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auth = getAuthenticatedUser(request)
+    const auth = await getAuthenticatedUser(request)
     if (!auth.isValid) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }

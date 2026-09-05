@@ -1,46 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { AUTH_COOKIE_NAMES } from '@/lib/auth/cookies'
-import { getCognitoUser } from '@/lib/auth/cognito'
+import { getAuthenticatedUser } from '@/lib/auth/jwt'
+import { getDoctorById, getPatientById } from '@/lib/db'
 
+/**
+ * GET /api/auth/me
+ * Returns the currently authenticated user's identity.
+ * Used by AuthContext on mount to verify the server-side session and hydrate the client.
+ */
 export async function GET(request: NextRequest) {
   try {
-    const accessToken = request.cookies.get(AUTH_COOKIE_NAMES.ACCESS_TOKEN)?.value
-    const sessionMeta = request.cookies.get(AUTH_COOKIE_NAMES.SESSION_META)?.value
-
-    // Token MUST be present for authentication
-    if (!accessToken) {
-      return NextResponse.json({ authenticated: false }, { status: 401 })
+    const auth = await getAuthenticatedUser(request)
+    if (!auth.isValid || !auth.sub) {
+      return NextResponse.json({ user: null }, { status: 200 })
     }
 
-    // 3. Cryptographically verify token with Cognito
-    const user = await getCognitoUser(accessToken)
-    if (user) {
-      // Optional enhancement: if sessionMeta matches verified sub, use cached display name
-      let displayName = user.name
-      if (sessionMeta) {
-        try {
-          const parsed = JSON.parse(sessionMeta)
-          if (parsed.id === user.sub && parsed.name) {
-            displayName = parsed.name
-          }
-        } catch {
-          // Ignore parse errors
+    let name = ''
+    let email = auth.email || ''
+
+    // Fetch canonical display name from DynamoDB profile
+    try {
+      if (auth.userType === 'doctor') {
+        const doctor = await getDoctorById(auth.sub)
+        if (doctor) {
+          name = doctor.name || ''
+          email = doctor.email || email
+        }
+      } else if (auth.userType === 'patient') {
+        const patient = await getPatientById(auth.sub)
+        if (patient) {
+          name = `${patient.firstName || ''} ${patient.lastName || ''}`.trim()
+          email = patient.email || email
         }
       }
-
-      return NextResponse.json({
-        authenticated: true,
-        user: {
-          id: user.sub,
-          email: user.email,
-          name: displayName,
-          userType: user.userType,
-        },
-      })
+    } catch {
+      // Profile lookup failure is non-fatal — return auth-only identity
     }
 
-    return NextResponse.json({ authenticated: false }, { status: 401 })
+    return NextResponse.json({
+      user: {
+        id: auth.sub,
+        email,
+        name,
+        userType: auth.userType,
+      },
+    })
   } catch (error) {
-    return NextResponse.json({ authenticated: false }, { status: 401 })
+    console.error('[Auth/Me] Error:', error)
+    return NextResponse.json({ user: null }, { status: 200 })
   }
 }

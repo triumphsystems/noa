@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import {
   KeyRound,
   Search,
@@ -244,12 +245,12 @@ export function DoctorConnectCard({
               Doctor Care Code or Email
             </label>
             <div className="flex gap-2">
-              <input
+              <Input
                 type="text"
                 value={careCodeInput}
                 onChange={e => setCareCodeInput(e.target.value)}
                 placeholder="e.g. NOA-7492AB or doctor@clinic.com"
-                className="flex-1 px-3.5 py-2 rounded-xl border border-deep-ink/15 text-deep-ink placeholder-slate/60 text-xs sm:text-sm focus:outline-none focus:border-deep-ink bg-canvas/30"
+                className="flex-1"
               />
               <Button
                 type="submit"
@@ -276,12 +277,12 @@ export function DoctorConnectCard({
           <form onSubmit={handleSearchDirectory} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate" />
-              <input
+              <Input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search by doctor name, specialty, or clinic..."
-                className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-deep-ink/15 text-deep-ink placeholder-slate/60 text-xs sm:text-sm focus:outline-none focus:border-deep-ink bg-canvas/30"
+                className="pl-9"
               />
             </div>
             <Button

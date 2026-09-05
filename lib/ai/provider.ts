@@ -143,7 +143,38 @@ async function invokeBedrockAI({
       model,
     }
   } catch (error: any) {
-    // If ConverseCommand fails or is unsupported for a specific model, fallback to InvokeModelCommand
+    const errorName: string = error?.name || ''
+    const statusCode: number = error?.$metadata?.httpStatusCode
+
+    // Re-throw immediately for throttling and network errors — do NOT retry,
+    // as that doubles latency and cost with no benefit
+    if (
+      errorName === 'ThrottlingException' ||
+      errorName === 'RequestLimitExceeded' ||
+      statusCode === 429 ||
+      errorName === 'ServiceUnavailableException' ||
+      statusCode === 503
+    ) {
+      throw new ClinicalAIUnavailableError(
+        'bedrock',
+        model,
+        error,
+        'AWS Bedrock is throttling requests. Please retry in a few moments.'
+      )
+    }
+
+    // Only fall back to InvokeModelCommand for model-compatibility errors
+    // (e.g. model doesn't support the Converse API yet)
+    const isCompatibilityError =
+      errorName === 'UnsupportedOperationException' ||
+      errorName === 'ValidationException' ||
+      statusCode === 400
+
+    if (!isCompatibilityError) {
+      throw new ClinicalAIUnavailableError('bedrock', model, error)
+    }
+
+    // Fallback: Bedrock InvokeModel API for models that don't support Converse
     try {
       const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt
       const isNova = model.includes('nova')
@@ -175,22 +206,18 @@ async function invokeBedrockAI({
         ''
 
       if (text) {
-        return {
-          text,
-          provider: 'bedrock',
-          model,
-        }
+        return { text, provider: 'bedrock', model }
       }
-    } catch {
-      // Fall through to primary error
-    }
 
-    throw new ClinicalAIUnavailableError(
-      'bedrock',
-      model,
-      error,
-      'Check AWS IAM credentials, Bedrock cross-region inference profiles, model access in AWS Console, or configure CLINICAL_AI_PROVIDER=local.'
-    )
+      throw new Error('Empty response from InvokeModel fallback')
+    } catch (fallbackError: any) {
+      throw new ClinicalAIUnavailableError(
+        'bedrock',
+        model,
+        fallbackError,
+        'Check AWS IAM credentials, Bedrock cross-region inference profiles, model access in AWS Console, or configure CLINICAL_AI_PROVIDER=local.'
+      )
+    }
   }
 }
 

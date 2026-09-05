@@ -32,6 +32,12 @@ const initialState = {
   lastLoadedDoctorId: null,
 }
 
+function syncLocalStorage(key: string, value: string) {
+  if (typeof window !== 'undefined' && window.localStorage.getItem(key) !== value) {
+    window.localStorage.setItem(key, value)
+  }
+}
+
 export const useDoctorStore = create<DoctorState>((set, get) => ({
   ...initialState,
 
@@ -53,9 +59,7 @@ export const useDoctorStore = create<DoctorState>((set, get) => ({
       )
 
       const canonicalId = payload.doctor?.id || activeDoctorId
-      if (typeof window !== 'undefined' && canonicalId) {
-        window.localStorage.setItem('doctorId', canonicalId)
-      }
+      syncLocalStorage('doctorId', canonicalId)
 
       set({
         doctor: payload.doctor,
@@ -64,25 +68,30 @@ export const useDoctorStore = create<DoctorState>((set, get) => ({
         stats: payload.stats,
         doctorId: canonicalId,
         isLoading: false,
+        error: null,
         lastLoadedDoctorId: canonicalId,
       })
     } catch (error) {
-      // If 403 or dashboard fetch fails (e.g. pending/rejected credentials), load doctor profile directly
+      // If 403 (e.g. pending/rejected credentials), load just the doctor profile
+      // so the UI can show the verification status without full dashboard data.
       try {
         const res = await http<{ success: boolean; data: DoctorProfile }>(
           `/api/doctors/${encodeURIComponent(activeDoctorId)}`
         )
         if (res.data) {
+          // Set doctor data — but also propagate the original error so UI
+          // can distinguish "loaded profile" from "fully operational dashboard".
           set({
             doctor: res.data,
             isLoading: false,
-            error: error instanceof Error ? error.message : null,
+            // Intentionally set error to signal partial load state
+            error: error instanceof Error ? error.message : 'Dashboard unavailable',
             lastLoadedDoctorId: activeDoctorId,
           })
           return
         }
       } catch {
-        // Fall through to error
+        // Profile fetch also failed — fall through to error state
       }
 
       set({
@@ -108,7 +117,7 @@ export const useDoctorStore = create<DoctorState>((set, get) => ({
         updates,
       )
 
-      const updatedDoctor = (res as any)?.data || (res as any)
+      const updatedDoctor = (res as Record<string, unknown>)?.data as DoctorProfile || res as unknown as DoctorProfile
 
       set({
         doctor: updatedDoctor,
