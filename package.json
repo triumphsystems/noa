@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "seed:admin": "node scripts/seed-admin.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "node --test tests/webmcp.test.mjs tests/auth.test.mjs tests/ratelimit.test.mjs"
   },
   "dependencies": {
@@ -37,6 +39,8 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "postcss": "^8.5.26",
+    "prettier": "^3.9.6",
+    "prettier-plugin-tailwindcss": "^0.8.1",
     "shadcn": "^4.19.1",
     "tailwindcss": "^4.3.3",
     "typescript": "7.0.2"
