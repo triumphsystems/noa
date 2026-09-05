@@ -74,7 +74,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [doctor?.name])
 
   return (
-    <div className="min-h-screen bg-canvas text-deep-ink flex flex-col md:flex-row">
+    <div className="min-h-screen md:h-dvh md:overflow-hidden bg-canvas text-deep-ink flex flex-col md:flex-row">
       {/* Mobile Backdrop Overlay */}
       {mobileNavOpen && (
         <div
@@ -84,18 +84,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         />
       )}
 
-      {/* Sidebar (Responsive Drawer on Mobile, Collapsible on Desktop) */}
+      {/* Sidebar (Responsive Drawer on Mobile, Fixed/Sticky on Desktop) */}
       <aside
         className={cn(
           'bg-soft-meadow border-r border-deep-ink/10 transition-all duration-300 flex flex-col',
           // Mobile: fixed off-canvas drawer
-          'fixed inset-y-0 left-0 z-50 w-72 md:static shadow-xl md:shadow-none',
+          'fixed inset-y-0 left-0 z-50 w-72 md:sticky md:top-0 md:h-full md:self-start md:shrink-0 md:z-30 shadow-xl md:shadow-none',
           mobileNavOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
           // Desktop: responsive width based on sidebarOpen
           sidebarOpen ? 'md:w-64' : 'md:w-20'
         )}
       >
-        <div className="p-5 sm:p-6 flex items-center justify-between">
+        <div className="p-5 sm:p-6 flex items-center justify-between shrink-0">
           <div className={cn('flex items-center gap-2.5', !sidebarOpen && 'md:hidden')}>
             <img src="/logo.svg" alt="Noa Logo" className="w-8 h-8 rounded-lg shadow-2xs" />
             <div>
@@ -107,7 +107,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Desktop sidebar toggle button */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-deep-ink/10 rounded-full transition-colors hidden md:block"
+            className="p-2 hover:bg-deep-ink/10 rounded-full transition-colors hidden md:block cursor-pointer"
             aria-label="Toggle sidebar"
           >
             <Menu className="w-5 h-5 text-deep-ink" />
@@ -116,14 +116,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Mobile drawer close button */}
           <button
             onClick={() => setMobileNavOpen(false)}
-            className="p-2 hover:bg-deep-ink/10 rounded-full transition-colors md:hidden text-deep-ink"
+            className="p-2 hover:bg-deep-ink/10 rounded-full transition-colors md:hidden text-deep-ink cursor-pointer"
             aria-label="Close navigation"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto font-sans">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto overscroll-contain font-sans">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon
             const isRestricted = item.requiresVerified && doctor?.verificationStatus && doctor.verificationStatus !== 'verified'
@@ -169,7 +169,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
 
-        <div className="border-t border-deep-ink/8 p-3">
+        <div className="border-t border-deep-ink/8 p-3 shrink-0">
           <Link href="/auth/logout" className="block">
             <Button variant="outline" size="sm" className="w-full justify-center rounded-lg gap-2 text-xs font-medium">
               <LogOut className="h-3.5 w-3.5 shrink-0" />
@@ -181,7 +181,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main Content */}
       <main className="flex-1 overflow-x-hidden overflow-y-auto flex flex-col min-w-0">
-        <header className="bg-white border-b border-deep-ink/10 sticky top-0 z-20">
+        <header className="bg-white border-b border-deep-ink/10 sticky top-0 z-20 shrink-0">
           <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               {/* Mobile menu hamburger button */}

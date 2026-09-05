@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/empty-state'
-import { Calendar, FileText, ArrowRight, User } from 'lucide-react'
+import { Calendar, FileText, ArrowRight, User, Loader2 } from 'lucide-react'
 import { useDoctorStore } from '@/lib/stores/doctor.store'
 import type { Session, Patient } from '@/lib/db'
 
@@ -20,8 +20,17 @@ export default function SummariesPage() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'active'>('all')
 
   useEffect(() => {
-    if (doctorId && sessions.length === 0 && !isLoading) {
-      void loadDashboard(doctorId)
+    let resolvedDoctorId = doctorId
+    if (!resolvedDoctorId && typeof window !== 'undefined') {
+      const stored = window.localStorage.getItem('doctorId')
+      if (stored) {
+        resolvedDoctorId = stored
+        useDoctorStore.getState().setDoctorId(stored)
+      }
+    }
+
+    if (resolvedDoctorId && sessions.length === 0 && !isLoading) {
+      void loadDashboard(resolvedDoctorId)
     }
   }, [doctorId, sessions.length, isLoading, loadDashboard])
 
@@ -69,7 +78,10 @@ export default function SummariesPage() {
 
       {/* Summaries Grid */}
       {isLoading ? (
-        <div className="p-12 text-center text-slate text-sm">Loading clinical summaries...</div>
+        <div className="p-12 text-center text-slate text-sm max-w-5xl mx-auto flex flex-col items-center gap-3">
+          <Loader2 className="w-6 h-6 animate-spin text-deep-ink/50" />
+          <span>Loading clinical summaries...</span>
+        </div>
       ) : filteredSessions.length === 0 ? (
         <EmptyState
           icon={<FileText className="h-8 w-8 text-slate/40" />}
@@ -83,8 +95,9 @@ export default function SummariesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {filteredSessions.map(session => {
+            const patient = session.patientId ? patientMap.get(session.patientId) : null
             const patientNameParts = patient ? [patient.firstName, patient.lastName].filter(Boolean) : []
-            const patientName = patientNameParts.length > 0 ? patientNameParts.join(' ').trim() : (patient?.name || patient?.email || `Patient #${session.patientId.slice(-6)}`)
+            const patientName = patientNameParts.length > 0 ? patientNameParts.join(' ').trim() : (patient?.name || patient?.email || (session.patientId ? `Patient #${session.patientId.slice(-6)}` : 'Patient'))
             const formattedDate = session.startedAt
               ? new Date(session.startedAt).toLocaleDateString('en-US', {
                   month: 'short',
