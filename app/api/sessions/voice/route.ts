@@ -11,6 +11,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (auth.userType === 'doctor') {
+      if (!auth.sub) {
+        return NextResponse.json({ error: 'Doctor ID missing from auth token' }, { status: 400 })
+      }
       const verified = await isDoctorVerified(auth.sub)
       if (!verified) {
         return NextResponse.json(

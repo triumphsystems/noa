@@ -96,6 +96,7 @@ export interface PatientIntake {
   type: 'intake'
   patientId: string
   doctorId: string
+  chiefComplaint?: string
   medicalHistory: string
   medications: string[]
   allergies: string[]
