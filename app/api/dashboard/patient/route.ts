@@ -3,8 +3,6 @@ import type { ApiSuccess } from '@/lib/types/api.types'
 import type { PatientDashboardPayload } from '@/lib/types/patient.types'
 import {
   getPatientById,
-  getPatientByEmail,
-  migratePatientId,
   getDoctorById,
   getSessionsByPatient,
   getIntakeById,
@@ -29,23 +27,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (auth.userType === 'patient' && patientId !== canonicalPatientId) {
-      const legacyPatient = await getPatientById(patientId)
-      if (legacyPatient && legacyPatient.email?.toLowerCase() === auth.email?.toLowerCase()) {
-        await migratePatientId(patientId, canonicalPatientId)
-        patientId = canonicalPatientId
-      } else {
-        return NextResponse.json({ message: 'Forbidden: Cannot access another patient dashboard' }, { status: 403 })
-      }
+      return NextResponse.json({ message: 'Forbidden: Cannot access another patient dashboard' }, { status: 403 })
     }
 
-    let patient = await getPatientById(patientId)
-    if (!patient && auth.userType === 'patient' && auth.email) {
-      const legacyPatient = await getPatientByEmail(auth.email.trim().toLowerCase())
-      if (legacyPatient) {
-        patient = await migratePatientId(legacyPatient.id, canonicalPatientId)
-      }
-    }
-
+    const patient = await getPatientById(patientId)
     if (!patient) {
       return NextResponse.json({ message: 'Patient not found' }, { status: 404 })
     }

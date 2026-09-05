@@ -4,11 +4,10 @@ import type { ApiSuccess } from '@/lib/types/api.types'
 import type { DoctorDashboardPayload } from '@/lib/types/doctor.types'
 import {
   getDoctorById,
-  getDoctorByEmail,
-  migrateDoctorId,
   getPatientsByDoctor,
   getPendingPatientsByDoctor,
   getSessionsByDoctor,
+  type Patient,
 } from '@/lib/db'
 import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
@@ -32,41 +31,14 @@ export async function GET(request: NextRequest) {
       doctorId = requestedDoctorId
     }
 
-    // If a non-admin requests a specific doctorId, ensure it matches their auth ID or legacy record
     if (auth.userType === 'doctor' && requestedDoctorId && requestedDoctorId !== canonicalDoctorId) {
-      const legacyDoc = await getDoctorById(requestedDoctorId)
-      if (legacyDoc && legacyDoc.email?.toLowerCase() === auth.email?.toLowerCase()) {
-        await migrateDoctorId(requestedDoctorId, canonicalDoctorId)
-      } else {
-        return NextResponse.json({ message: 'Forbidden: Cannot access another doctor dashboard' }, { status: 403 })
-      }
+      return NextResponse.json({ message: 'Forbidden: Cannot access another doctor dashboard' }, { status: 403 })
     }
 
-    let doctor = await getDoctorById(doctorId)
-    if (!doctor && auth.email) {
-      const legacyDoctor = await getDoctorByEmail(auth.email.trim().toLowerCase())
-      if (legacyDoctor) {
-        doctor = await migrateDoctorId(legacyDoctor.id, doctorId)
-      }
-    }
-
+    const doctor = await getDoctorById(doctorId)
     if (!doctor) {
       return NextResponse.json({ message: 'Doctor not found' }, { status: 404 })
     }
-
-    const [linkedPatients, pendingPatients, sessions] = await Promise.all([
-      getPatientsByDoctor(doctorId),
-      getPendingPatientsByDoctor(doctorId),
-      getSessionsByDoctor(doctorId),
-    ])
-
-    // Combine linked and pending patients, avoiding duplicates
-    const patientMap = new Map()
-    linkedPatients.forEach(p => patientMap.set(p.id, p))
-    pendingPatients.forEach(p => {
-      if (!patientMap.has(p.id)) patientMap.set(p.id, p)
-    })
-    const patients = Array.from(patientMap.values())
 
     // Enforce credential verification: pending or rejected accounts cannot access clinical dashboard
     if (doctor.verificationStatus === 'pending') {
@@ -91,6 +63,37 @@ export async function GET(request: NextRequest) {
         { status: 403 }
       )
     }
+
+    const [linkedPatients, pendingPatients, sessions] = await Promise.all([
+      getPatientsByDoctor(doctorId),
+      getPendingPatientsByDoctor(doctorId),
+      getSessionsByDoctor(doctorId),
+    ])
+
+    // Combine linked and pending patients.
+    // Redact sensitive clinical data for patients who have not explicitly accepted the link!
+    const patientMap = new Map<string, Patient>()
+    linkedPatients.forEach(p => patientMap.set(p.id, p))
+    pendingPatients.forEach(p => {
+      if (!patientMap.has(p.id)) {
+        // Redact sensitive medical details: doctors can only see basic identity until patient accepts
+        const isFullyLinked = p.linkStatus === 'linked' && p.doctorId === doctorId
+        const sanitized: Patient = isFullyLinked
+          ? p
+          : {
+              ...p,
+              dateOfBirth: undefined,
+              gender: undefined,
+              phone: p.phone ? `${p.phone.slice(0, 3)}***` : undefined,
+              address: undefined,
+              allergies: [],
+              medications: [],
+              conditions: [],
+            }
+        patientMap.set(p.id, sanitized)
+      }
+    })
+    const patients = Array.from(patientMap.values())
 
     const today = new Date()
     const stats = {

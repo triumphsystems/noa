@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPatientsByDoctor } from '@/lib/db'
+import { getPatientsByDoctor, isDoctorVerified } from '@/lib/db'
 import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function GET(request: NextRequest) {
@@ -12,8 +12,18 @@ export async function GET(request: NextRequest) {
     const requestedDoctorId = request.nextUrl.searchParams.get('doctorId')
     const doctorId = auth.userType === 'admin' && requestedDoctorId ? requestedDoctorId : auth.sub
 
-    if (auth.userType === 'doctor' && requestedDoctorId && requestedDoctorId !== auth.sub) {
-      return NextResponse.json({ error: 'Forbidden: Cannot list patients for another doctor' }, { status: 403 })
+    if (auth.userType === 'doctor') {
+      if (requestedDoctorId && requestedDoctorId !== auth.sub) {
+        return NextResponse.json({ error: 'Forbidden: Cannot list patients for another doctor' }, { status: 403 })
+      }
+
+      const verified = await isDoctorVerified(auth.sub)
+      if (!verified) {
+        return NextResponse.json(
+          { error: 'Forbidden: Medical license verification is pending.' },
+          { status: 403 }
+        )
+      }
     }
 
     const patients = await getPatientsByDoctor(doctorId)

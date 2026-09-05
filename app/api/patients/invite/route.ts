@@ -28,6 +28,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Doctor record not found' }, { status: 404 })
     }
 
+    if (doctor.verificationStatus !== 'verified') {
+      return NextResponse.json(
+        {
+          message: 'Your medical credentials must be verified by clinical administration before inviting patients.',
+          verificationStatus: doctor.verificationStatus,
+        },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const { email, firstName, lastName, phone } = body || {}
 
@@ -42,8 +52,8 @@ export async function POST(request: NextRequest) {
     let isNew = false
 
     if (existingPatient) {
-      // If already assigned to this doctor
-      if (existingPatient.doctorId === doctorId) {
+      // If already fully assigned to this doctor
+      if (existingPatient.doctorId === doctorId && existingPatient.linkStatus === 'linked') {
         return NextResponse.json(
           {
             success: true,
@@ -66,27 +76,35 @@ export async function POST(request: NextRequest) {
         ...(phone && !existingPatient.phone ? { phone } : {}),
       })
     } else {
-      // Patient has not yet signed up: create preliminary record pre-linked to doctor
+      // Patient has not yet signed up: create preliminary record with pending approval (NOT linked!)
       isNew = true
       patient = await createPatient({
         email: cleanEmail,
         firstName: firstName?.trim() || 'Pending',
         lastName: lastName?.trim() || 'Patient',
         phone: phone?.trim(),
-        doctorId: doctorId,
-        linkStatus: 'linked',
+        pendingDoctorId: doctorId,
+        linkStatus: 'pending_patient_approval',
         linkRequestedBy: 'doctor',
         linkRequestedAt: Date.now(),
       })
     }
 
+    // Never return medical history/details before the patient explicitly accepts!
+    const sanitizedPatient = {
+      id: patient?.id,
+      email: patient?.email,
+      firstName: patient?.firstName,
+      lastName: patient?.lastName,
+      linkStatus: patient?.linkStatus,
+      linkRequestedAt: patient?.linkRequestedAt,
+    }
+
     return NextResponse.json({
       success: true,
-      data: patient,
+      data: sanitizedPatient,
       isNew,
-      message: isNew
-        ? `Patient record created and linked to Dr. ${doctor.name}.`
-        : `Invitation sent to ${patient?.firstName || cleanEmail}. Awaiting patient acceptance on their portal.`,
+      message: `Invitation sent to ${patient?.firstName || cleanEmail}. Awaiting patient acceptance on their portal.`,
     })
   } catch (error) {
     console.error('[API /patients/invite] Error inviting patient:', error)

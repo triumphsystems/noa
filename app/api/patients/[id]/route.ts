@@ -31,8 +31,33 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Forbidden: Cannot access another patient record' }, { status: 403 })
     }
 
-    if (auth.userType === 'doctor' && patient.doctorId && patient.doctorId !== auth.sub) {
-      return NextResponse.json({ error: 'Forbidden: Cannot access patient assigned to another doctor' }, { status: 403 })
+    if (auth.userType === 'doctor') {
+      const isLinkedToDoctor = patient.doctorId === auth.sub && patient.linkStatus === 'linked'
+      const isPendingDoctor = patient.pendingDoctorId === auth.sub
+
+      if (!isLinkedToDoctor && !isPendingDoctor && patient.doctorId && patient.doctorId !== auth.sub) {
+        return NextResponse.json({ error: 'Forbidden: Cannot access patient assigned to another doctor' }, { status: 403 })
+      }
+
+      // If pending approval, only allow basic contact details, redact medical records
+      if (!isLinkedToDoctor) {
+        const sanitized = {
+          id: patient.id,
+          email: patient.email,
+          firstName: patient.firstName,
+          lastName: patient.lastName,
+          linkStatus: patient.linkStatus,
+          linkRequestedAt: patient.linkRequestedAt,
+          phone: patient.phone ? `${patient.phone.slice(0, 3)}***` : undefined,
+          allergies: [],
+          medications: [],
+          conditions: [],
+        }
+        return NextResponse.json({
+          success: true,
+          patient: sanitized,
+        })
+      }
     }
 
     return NextResponse.json({

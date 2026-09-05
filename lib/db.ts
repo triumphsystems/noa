@@ -142,39 +142,9 @@ export async function getDoctorById(id: string): Promise<Doctor | null> {
   return (result.Item as Doctor) || null
 }
 
-export async function migrateDoctorId(oldId: string, newId: string): Promise<Doctor> {
-  const oldDoctor = await getDoctorById(oldId)
-  if (!oldDoctor) {
-    throw new Error(`Doctor with id ${oldId} not found for migration`)
-  }
-
-  const updatedDoctor: Doctor = {
-    ...oldDoctor,
-    id: newId,
-    updatedAt: Date.now(),
-  }
-
-  await docClient.send(
-    new PutCommand({
-      TableName: TABLE_NAME,
-      Item: updatedDoctor,
-    }),
-  )
-
-  if (oldId !== newId) {
-    try {
-      await docClient.send(
-        new DeleteCommand({
-          TableName: TABLE_NAME,
-          Key: { [PK]: oldId, [SK]: 'doctor' },
-        }),
-      )
-    } catch (err) {
-      console.warn(`[DB Migration] Failed to delete legacy doctor record ${oldId}:`, err)
-    }
-  }
-
-  return updatedDoctor
+export async function isDoctorVerified(doctorId: string): Promise<boolean> {
+  const doctor = await getDoctorById(doctorId)
+  return Boolean(doctor && doctor.verificationStatus === 'verified')
 }
 
 export async function getDoctorByEmail(email: string): Promise<Doctor | null> {

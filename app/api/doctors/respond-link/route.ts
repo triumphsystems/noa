@@ -48,9 +48,20 @@ export async function POST(request: NextRequest) {
         { message: 'No pending connection request from this patient found for your account.' },
         { status: 400 }
       )
+    const doctor = await getDoctorById(doctorId)
+    if (!doctor) {
+      return NextResponse.json({ message: 'Doctor profile not found' }, { status: 404 })
     }
 
-    const doctor = await getDoctorById(doctorId)
+    if (doctor.verificationStatus !== 'verified') {
+      return NextResponse.json(
+        {
+          message: 'Your medical credentials must be verified by clinical administration before connecting with patients.',
+          verificationStatus: doctor.verificationStatus,
+        },
+        { status: 403 }
+      )
+    }
 
     if (action === 'accept') {
       const updatedPatient = await updatePatient(patient.id, {

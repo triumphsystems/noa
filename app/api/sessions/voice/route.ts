@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { processVoiceInput, generateRealTimeNotes, transcribeAudio, getClinicaSuggestions } from '@/lib/voice-service'
-import { getSessionById, createSession, updateSession } from '@/lib/db'
+import { getSessionById, createSession, updateSession, isDoctorVerified } from '@/lib/db'
 import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function POST(request: NextRequest) {
@@ -8,6 +8,16 @@ export async function POST(request: NextRequest) {
     const auth = getAuthenticatedUser(request)
     if (!auth.isValid) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    if (auth.userType === 'doctor') {
+      const verified = await isDoctorVerified(auth.sub)
+      if (!verified) {
+        return NextResponse.json(
+          { error: 'Forbidden: Your medical license is pending review. Voice consultation is locked until verified.' },
+          { status: 403 }
+        )
+      }
     }
 
     const contentType = request.headers.get('content-type') || ''

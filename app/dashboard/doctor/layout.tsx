@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Bell, FileText, LayoutDashboard, LogOut, Menu, Mic, Settings, ShieldCheck, Users, X } from 'lucide-react'
@@ -13,25 +13,30 @@ interface NavItemConfig {
   href: string
   icon: React.ComponentType<{ className?: string }>
   label: string
+  requiresVerified?: boolean
 }
 
 const NAV_ITEMS: NavItemConfig[] = [
-  { href: '/dashboard/doctor', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/dashboard/doctor/sessions/new', icon: Mic, label: 'Sessions' },
-  { href: '/dashboard/doctor/patients', icon: Users, label: 'Patients' },
-  { href: '/dashboard/doctor/summaries', icon: FileText, label: 'Summaries' },
-  { href: '/dashboard/doctor/onboarding', icon: ShieldCheck, label: 'Licensure' },
-  { href: '/dashboard/doctor/settings', icon: Settings, label: 'Settings' },
+  { href: '/dashboard/doctor', icon: LayoutDashboard, label: 'Dashboard', requiresVerified: true },
+  { href: '/dashboard/doctor/sessions/new', icon: Mic, label: 'Sessions', requiresVerified: true },
+  { href: '/dashboard/doctor/patients', icon: Users, label: 'Patients', requiresVerified: true },
+  { href: '/dashboard/doctor/summaries', icon: FileText, label: 'Summaries', requiresVerified: true },
+  { href: '/dashboard/doctor/onboarding', icon: ShieldCheck, label: 'Licensure', requiresVerified: false },
+  { href: '/dashboard/doctor/settings', icon: Settings, label: 'Settings', requiresVerified: false },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const doctor = useDoctorStore(state => state.doctor)
   const doctorId = useDoctorStore(state => state.doctorId)
   const setDoctorId = useDoctorStore(state => state.setDoctorId)
   const loadDashboard = useDoctorStore(state => state.loadDashboard)
+
+  const isVerified = doctor?.verificationStatus === 'verified'
+  const isOnboardingRoute = pathname === '/dashboard/doctor/onboarding'
 
   // Auto-close mobile drawer on route change
   useEffect(() => {
@@ -52,6 +57,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       void loadDashboard(storedDoctorId)
     }
   }, [doctor, doctorId, loadDashboard, setDoctorId])
+
+  // Enforce doctor credential review lockout:
+  // If doctor's medical license is under review or rejected, keep redirecting to onboarding
+  useEffect(() => {
+    if (doctor && doctor.verificationStatus && doctor.verificationStatus !== 'verified') {
+      if (!isOnboardingRoute) {
+        router.replace('/dashboard/doctor/onboarding')
+      }
+    }
+  }, [doctor, isOnboardingRoute, router])
 
   const doctorInitial = useMemo(() => {
     const source = doctor?.name?.trim() || 'Doctor'
@@ -111,10 +126,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto font-sans">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon
+            const isRestricted = item.requiresVerified && doctor?.verificationStatus && doctor.verificationStatus !== 'verified'
             const isActive =
               item.href === '/dashboard/doctor'
                 ? pathname === '/dashboard/doctor'
                 : pathname.startsWith(item.href)
+
+            if (isRestricted) {
+              return (
+                <div
+                  key={item.href}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-slate/40 cursor-not-allowed text-xs sm:text-sm font-medium"
+                  title="Licensure verification required"
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="h-4 w-4 shrink-0 text-slate/30" />
+                    <span className={cn('truncate', !sidebarOpen && 'md:hidden')}>{item.label}</span>
+                  </div>
+                  <span className={cn('text-[10px] uppercase font-semibold tracking-wider text-slate/40', !sidebarOpen && 'md:hidden')}>
+                    Locked
+                  </span>
+                </div>
+              )
+            }
 
             return (
               <Link
@@ -192,7 +226,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         <div className="flex-1 min-w-0">
-          {children}
+          {doctor && doctor.verificationStatus && doctor.verificationStatus !== 'verified' && !isOnboardingRoute ? (
+            <div className="p-12 text-center text-slate text-sm flex flex-col items-center justify-center min-h-[50vh] gap-3">
+              <ShieldCheck className="w-8 h-8 text-amber-600 animate-pulse" />
+              <p className="font-semibold text-deep-ink">Medical Licensure Review In Progress</p>
+              <p className="text-xs text-slate max-w-md">
+                Your medical credentials are currently under review. Redirecting to licensure onboarding...
+              </p>
+            </div>
+          ) : (
+            children
+          )}
         </div>
       </main>
     </div>

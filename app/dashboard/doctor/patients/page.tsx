@@ -323,6 +323,10 @@ export default function PatientsPage() {
                           Decline
                         </Button>
                       </div>
+                    ) : patient.linkStatus === 'pending_patient_approval' ? (
+                      <span className="shrink-0 text-[11px] font-medium text-amber-800 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-full">
+                        Pending Acceptance
+                      </span>
                     ) : (
                       <Link
                         href={`/dashboard/doctor/patients/${patient.id}`}
@@ -336,11 +340,11 @@ export default function PatientsPage() {
                   <div className="grid grid-cols-2 gap-2 text-xs text-slate pt-1 border-t border-deep-ink/5">
                     <div>
                       <span className="text-slate/70">Phone: </span>
-                      <span className="text-deep-ink">{patient.phone || '—'}</span>
+                      <span className="text-deep-ink">{patient.phone || (patient.linkStatus === 'pending_patient_approval' ? 'Hidden (pending)' : '—')}</span>
                     </div>
                     <div>
                       <span className="text-slate/70">DOB: </span>
-                      <span className="text-deep-ink">{patient.dateOfBirth || '—'}</span>
+                      <span className="text-deep-ink">{patient.dateOfBirth || (patient.linkStatus === 'pending_patient_approval' ? 'Hidden (pending)' : '—')}</span>
                     </div>
                   </div>
 
@@ -377,9 +381,20 @@ export default function PatientsPage() {
                       <td className="px-6 py-4 text-sm font-medium text-deep-ink whitespace-nowrap">
                         {patient.firstName} {patient.lastName}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate whitespace-nowrap">{patient.email}</td>
-                      <td className="px-6 py-4 text-sm text-slate whitespace-nowrap">{patient.phone || '—'}</td>
-                      <td className="px-6 py-4 text-sm text-slate whitespace-nowrap">{patient.dateOfBirth || '—'}</td>
+                      <td className="px-6 py-4 text-sm text-slate whitespace-nowrap">
+                        {patient.linkStatus === 'pending_patient_approval' ? (
+                          <span className="text-slate/60 text-xs italic">Awaiting acceptance</span>
+                        ) : (
+                          patient.phone || '—'
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate whitespace-nowrap">
+                        {patient.linkStatus === 'pending_patient_approval' ? (
+                          <span className="text-slate/60 text-xs italic">Hidden</span>
+                        ) : (
+                          patient.dateOfBirth || '—'
+                        )}
+                      </td>
                       <td className="px-6 py-4 text-sm whitespace-nowrap">
                         {patient.linkStatus === 'pending_patient_approval' && (
                           <Badge variant="secondary" className="text-[10px] bg-amber-50 text-amber-800 border-amber-200">
@@ -401,22 +416,26 @@ export default function PatientsPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate">
-                        <div className="flex gap-1.5 flex-wrap max-w-xs">
-                          {patient.conditions && patient.conditions.length > 0 ? (
-                            patient.conditions.slice(0, 2).map((condition, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-[11px] px-2 py-0.5">
-                                {condition}
-                              </Badge>
-                            ))
-                          ) : (
-                            <span className="text-slate/60 text-xs">—</span>
-                          )}
-                          {(patient.conditions?.length || 0) > 2 && (
-                            <span className="text-xs text-slate font-medium">
-                              +{patient.conditions!.length - 2}
-                            </span>
-                          )}
-                        </div>
+                        {patient.linkStatus === 'pending_patient_approval' ? (
+                          <span className="text-slate/50 text-xs italic">Locked</span>
+                        ) : (
+                          <div className="flex gap-1.5 flex-wrap max-w-xs">
+                            {patient.conditions && patient.conditions.length > 0 ? (
+                              patient.conditions.slice(0, 2).map((condition, idx) => (
+                                <Badge key={idx} variant="secondary" className="text-[11px] px-2 py-0.5">
+                                  {condition}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-slate/60 text-xs">—</span>
+                            )}
+                            {(patient.conditions?.length || 0) > 2 && (
+                              <span className="text-xs text-slate font-medium">
+                                +{patient.conditions!.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-right whitespace-nowrap">
                         {patient.linkStatus === 'pending_doctor_approval' ? (
@@ -439,6 +458,10 @@ export default function PatientsPage() {
                               Decline
                             </Button>
                           </div>
+                        ) : patient.linkStatus === 'pending_patient_approval' ? (
+                          <span className="inline-flex items-center text-[11px] font-medium text-amber-800 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-full">
+                            Pending Acceptance
+                          </span>
                         ) : (
                           <Link
                             href={`/dashboard/doctor/patients/${patient.id}`}

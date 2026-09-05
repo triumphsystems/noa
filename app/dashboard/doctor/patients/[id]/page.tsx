@@ -108,6 +108,9 @@ export default function PatientProfilePage({
     }
   }
 
+  const isLinked = patient.linkStatus === 'linked'
+  const isPendingConsent = patient.linkStatus === 'pending_patient_approval'
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Top Back Link & Action */}
@@ -125,21 +128,37 @@ export default function PatientProfilePage({
             <Badge variant="secondary" className="text-xs">
               ID: {patient.id}
             </Badge>
-            {patient.linkStatus === 'pending_patient_approval' && (
-              <Badge variant="secondary" className="text-xs bg-amber-50 text-amber-800 border-amber-200">
-                Pending Approval
+            {isPendingConsent && (
+              <Badge variant="secondary" className="text-xs bg-amber-50 text-amber-800 border-amber-200 font-semibold">
+                Pending Patient Consent
               </Badge>
             )}
           </div>
         </div>
 
-        <Link href={`/dashboard/doctor/sessions/new?patientId=${patient.id}`} className="block sm:inline">
-          <Button className="w-full sm:w-auto rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-2 font-medium text-xs sm:text-sm shadow-2xs cursor-pointer">
+        {isLinked ? (
+          <Link href={`/dashboard/doctor/sessions/new?patientId=${patient.id}`} className="block sm:inline">
+            <Button className="w-full sm:w-auto rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-2 font-medium text-xs sm:text-sm shadow-2xs cursor-pointer">
+              <Mic className="h-4 w-4" />
+              Start Voice Session
+            </Button>
+          </Link>
+        ) : (
+          <Button disabled variant="outline" className="w-full sm:w-auto rounded-full gap-2 text-xs sm:text-sm opacity-60">
             <Mic className="h-4 w-4" />
-            Start Voice Session
+            Voice Session Locked (Pending Consent)
           </Button>
-        </Link>
+        )}
       </div>
+
+      {isPendingConsent && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center gap-3 text-xs sm:text-sm">
+          <AlertCircle className="w-5 h-5 shrink-0 text-amber-600" />
+          <span>
+            This patient has not yet accepted your clinic connection invitation. Clinical history, active conditions, and consultation notes are restricted until the patient accepts on their health portal.
+          </span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
         {/* Main Content (2 cols) */}
@@ -308,11 +327,17 @@ export default function PatientProfilePage({
           <Card className="p-6 space-y-3">
             <h3 className="font-semibold font-serif text-deep-ink text-base">Quick Actions</h3>
             <div className="space-y-2">
-              <Link href={`/dashboard/doctor/sessions/new?patientId=${patient.id}`} className="block">
-                <Button className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium text-xs cursor-pointer shadow-2xs">
-                  Conduct Voice Session
+              {isLinked ? (
+                <Link href={`/dashboard/doctor/sessions/new?patientId=${patient.id}`} className="block">
+                  <Button className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium text-xs cursor-pointer shadow-2xs">
+                    Conduct Voice Session
+                  </Button>
+                </Link>
+              ) : (
+                <Button disabled variant="outline" className="w-full rounded-full font-medium text-xs opacity-60">
+                  Voice Session Locked
                 </Button>
-              </Link>
+              )}
               <Button
                 variant="outline"
                 onClick={() => alert(`Direct email: ${patient.email}`)}

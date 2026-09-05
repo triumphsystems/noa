@@ -65,7 +65,7 @@ export function setAuthCookies(
       patientId: sessionUser.userType === 'patient' ? sessionUser.sub : undefined,
     }),
     {
-      httpOnly: true, // Tamper-proof and protected against XSS
+      httpOnly: true,
       secure: isProduction,
       sameSite: 'lax',
       path: '/',
@@ -96,4 +96,3 @@ export function clearAuthCookies(response: NextResponse): NextResponse {
 
   return response
 }
-

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSession, updateSession, getSessionsByDoctor, getSessionsByPatient, getSessionById, Session } from '@/lib/db'
+import { createSession, updateSession, getSessionsByDoctor, getSessionsByPatient, getSessionById, isDoctorVerified, Session } from '@/lib/db'
 import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function POST(request: NextRequest) {
@@ -19,8 +19,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (auth.userType === 'doctor' && doctorId !== auth.sub) {
-      return NextResponse.json({ error: 'Forbidden: Cannot manage sessions for another doctor' }, { status: 403 })
+    if (auth.userType === 'doctor') {
+      if (doctorId !== auth.sub) {
+        return NextResponse.json({ error: 'Forbidden: Cannot manage sessions for another doctor' }, { status: 403 })
+      }
+
+      const verified = await isDoctorVerified(doctorId)
+      if (!verified) {
+        return NextResponse.json(
+          { error: 'Forbidden: Your medical license is pending review. Clinical sessions are locked until verified.' },
+          { status: 403 }
+        )
+      }
     }
 
     const targetId = sessionId || id
