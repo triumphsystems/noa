@@ -69,11 +69,12 @@ export function WebMCPInspector() {
     }
   }, [modelContext]);
 
+  // Only sync definitions from /api/mcp when the inspector is opened
   useEffect(() => {
-    refreshRegistry();
-    const timer = setInterval(refreshRegistry, 5000);
-    return () => clearInterval(timer);
-  }, [refreshRegistry]);
+    if (isOpen) {
+      void refreshRegistry();
+    }
+  }, [isOpen, refreshRegistry]);
 
   // Keyboard shortcut: Ctrl + Shift + M to toggle, Esc to collapse/close
   useEffect(() => {
