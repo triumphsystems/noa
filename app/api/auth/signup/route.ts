@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       if (existing) {
         // Check if existing record was a pre-created invitation (i.e. starts with patient- and no registered user)
         // or an already-registered patient account with a Cognito sub ID
-        const isPreCreatedInvite = existing.id.startsWith('patient-') && (!existing.firstName || existing.firstName === 'Pending' || existing.linkStatus === 'linked')
+        const isPreCreatedInvite = (existing.id.startsWith('patient-') || existing.linkStatus === 'pending_patient_approval' || existing.id !== userSub) && (!existing.firstName || existing.firstName === 'Pending' || existing.linkStatus === 'pending_patient_approval' || existing.linkStatus === 'linked')
         
         if (!isPreCreatedInvite && existing.id === userSub) {
           return NextResponse.json(

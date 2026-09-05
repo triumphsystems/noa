@@ -153,8 +153,8 @@ export default function PatientsPage() {
 
   const filteredPatients = allPatients.filter(
     patient =>
-      `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.email.toLowerCase().includes(searchTerm.toLowerCase())
+      `${patient.firstName || ''} ${patient.lastName || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (patient.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const withConditionsCount = allPatients.filter(
@@ -288,7 +288,7 @@ export default function PatientsPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <h4 className="font-semibold text-deep-ink text-base">
-                          {patient.firstName} {patient.lastName}
+                          {[patient.firstName, patient.lastName].filter(Boolean).join(' ').trim() || patient.email || 'Patient'}
                         </h4>
                         {patient.linkStatus === 'pending_patient_approval' && (
                           <Badge variant="secondary" className="text-[10px] bg-amber-50 text-amber-800 border-amber-200">
@@ -379,11 +379,14 @@ export default function PatientsPage() {
                   {filteredPatients.map(patient => (
                     <tr key={patient.id} className="hover:bg-soft-meadow/40 transition-colors">
                       <td className="px-6 py-4 text-sm font-medium text-deep-ink whitespace-nowrap">
-                        {patient.firstName} {patient.lastName}
+                        {[patient.firstName, patient.lastName].filter(Boolean).join(' ').trim() || patient.email || 'Patient'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate whitespace-nowrap">
+                        {patient.email || '—'}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate whitespace-nowrap">
                         {patient.linkStatus === 'pending_patient_approval' ? (
-                          <span className="text-slate/60 text-xs italic">Awaiting acceptance</span>
+                          <span className="text-slate/60 text-xs italic">Hidden</span>
                         ) : (
                           patient.phone || '—'
                         )}

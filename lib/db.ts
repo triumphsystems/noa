@@ -2,6 +2,7 @@ import {
   DynamoDBDocumentClient,
   PutCommand,
   GetCommand,
+  BatchGetCommand,
   QueryCommand,
   ScanCommand,
   UpdateCommand,
@@ -19,6 +20,57 @@ const docClient = DynamoDBDocumentClient.from(dynamodbClient, {
     removeUndefinedValues: true,
   },
 })
+
+/**
+ * Hydrates full items from the primary DynamoDB table for GSIs configured with KEYS_ONLY projection.
+ */
+export async function batchGetItems<T>(keys: Array<{ id: string; type: string }>): Promise<T[]> {
+  if (!keys || keys.length === 0) return []
+
+  const uniqueKeysMap = new Map<string, { id: string; type: string }>()
+  keys.forEach(k => {
+    if (k.id && k.type) {
+      uniqueKeysMap.set(`${k.id}#${k.type}`, k)
+    }
+  })
+  const uniqueKeys = Array.from(uniqueKeysMap.values())
+  if (uniqueKeys.length === 0) return []
+
+  const chunks: Array<Array<{ id: string; type: string }>> = []
+  for (let i = 0; i < uniqueKeys.length; i += 100) {
+    chunks.push(uniqueKeys.slice(i, i + 100))
+  }
+
+  const results: T[] = []
+  for (const chunk of chunks) {
+    const res = await docClient.send(
+      new BatchGetCommand({
+        RequestItems: {
+          [TABLE_NAME]: {
+            Keys: chunk.map(k => ({ [PK]: k.id, [SK]: k.type })),
+          },
+        },
+      })
+    )
+    const items = (res.Responses?.[TABLE_NAME] || []) as T[]
+    results.push(...items)
+  }
+
+  const itemMap = new Map<string, any>()
+  results.forEach(item => {
+    if ((item as any)?.id) {
+      itemMap.set((item as any).id, item)
+    }
+  })
+
+  const ordered: T[] = []
+  for (const k of uniqueKeys) {
+    const it = itemMap.get(k.id)
+    if (it) ordered.push(it)
+  }
+
+  return ordered
+}
 
 // ============ TYPES ============
 export type DoctorVerificationStatus = 'pending' | 'verified' | 'rejected'
@@ -164,7 +216,9 @@ export async function getDoctorByEmail(email: string): Promise<Doctor | null> {
     }),
   )
 
-  return (result.Items?.[0] as Doctor) || null
+  const item = result.Items?.[0]
+  if (!item?.id) return null
+  return await getDoctorById(item.id)
 }
 
 export async function updateDoctor(id: string, updates: Partial<Doctor>): Promise<Doctor | null> {
@@ -427,7 +481,9 @@ export async function getPatientByEmail(email: string): Promise<Patient | null> 
     }),
   )
 
-  return (result.Items?.[0] as Patient) || null
+  const item = result.Items?.[0]
+  if (!item?.id) return null
+  return await getPatientById(item.id)
 }
 
 export async function getPatientsByDoctor(doctorId: string): Promise<Patient[]> {
@@ -446,7 +502,9 @@ export async function getPatientsByDoctor(doctorId: string): Promise<Patient[]> 
     }),
   )
 
-  return (result.Items || []) as Patient[]
+  const keys = (result.Items || []).map(item => ({ id: item.id as string, type: 'patient' }))
+  if (keys.length === 0) return []
+  return await batchGetItems<Patient>(keys)
 }
 
 export async function getPendingPatientsByDoctor(doctorId: string): Promise<Patient[]> {
@@ -572,7 +630,9 @@ export async function getSessionsByDoctor(doctorId: string): Promise<Session[]> 
     }),
   )
 
-  return (result.Items || []) as Session[]
+  const keys = (result.Items || []).map(item => ({ id: item.id as string, type: 'session' }))
+  if (keys.length === 0) return []
+  return await batchGetItems<Session>(keys)
 }
 
 export async function getSessionsByPatient(patientId: string): Promise<Session[]> {
@@ -591,7 +651,9 @@ export async function getSessionsByPatient(patientId: string): Promise<Session[]
     }),
   )
 
-  return (result.Items || []) as Session[]
+  const keys = (result.Items || []).map(item => ({ id: item.id as string, type: 'session' }))
+  if (keys.length === 0) return []
+  return await batchGetItems<Session>(keys)
 }
 
 export async function updateSession(id: string, updates: Partial<Session>): Promise<Session | null> {
@@ -689,7 +751,9 @@ export async function getIntakesByPatient(patientId: string): Promise<PatientInt
     }),
   )
 
-  return (result.Items || []) as PatientIntake[]
+  const keys = (result.Items || []).map(item => ({ id: item.id as string, type: 'intake' }))
+  if (keys.length === 0) return []
+  return await batchGetItems<PatientIntake>(keys)
 }
 
 export async function updateIntake(id: string, updates: Partial<PatientIntake>): Promise<PatientIntake | null> {
@@ -804,7 +868,9 @@ export async function getAdminByEmail(email: string): Promise<AdminUser | null> 
     })
   )
 
-  return (result.Items?.[0] as AdminUser) || null
+  const item = result.Items?.[0]
+  if (!item?.id) return null
+  return await getAdminById(item.id)
 }
 
 export async function getAdminById(id: string): Promise<AdminUser | null> {

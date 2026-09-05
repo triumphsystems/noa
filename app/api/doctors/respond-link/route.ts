@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (action === 'accept') {
       const updatedPatient = await updatePatient(patient.id, {
         doctorId: doctorId,
-        pendingDoctorId: undefined,
+        pendingDoctorId: null as any,
         linkStatus: 'linked',
         linkRequestedAt: Date.now(),
       })
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Decline connection request
       const updatedPatient = await updatePatient(patient.id, {
-        pendingDoctorId: undefined,
+        pendingDoctorId: null as any,
         linkStatus: 'unlinked',
       })
 

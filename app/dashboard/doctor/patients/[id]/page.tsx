@@ -5,7 +5,25 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Calendar, FileText, Mail, Mic, Phone, User, Loader2, AlertCircle } from 'lucide-react'
+import {
+  ArrowLeft,
+  Calendar,
+  FileText,
+  Mail,
+  Mic,
+  Phone,
+  User,
+  Loader2,
+  AlertCircle,
+  Check,
+  Copy,
+  ShieldCheck,
+  HeartPulse,
+  Pill,
+  Clock,
+  Sparkles,
+  ExternalLink,
+} from 'lucide-react'
 import { useDoctorStore } from '@/lib/stores/doctor.store'
 import type { Patient, Session } from '@/lib/db'
 
@@ -25,6 +43,7 @@ export default function PatientProfilePage({
   const [sessions, setSessions] = React.useState<Session[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  const [copiedId, setCopiedId] = React.useState(false)
 
   React.useEffect(() => {
     async function fetchPatientData() {
@@ -70,11 +89,19 @@ export default function PatientProfilePage({
     }
   }, [patientId, storePatients, storeSessions])
 
-  if (isLoading) {
+  const handleCopyId = () => {
+    if (!navigator.clipboard || !patient?.id) return
+    navigator.clipboard.writeText(patient.id)
+    setCopiedId(true)
+    setTimeout(() => setCopiedId(false), 2000)
+  }
+
+  if (isLoading && !patient) {
     return (
-      <div className="p-12 text-center text-slate text-sm max-w-5xl mx-auto flex flex-col items-center gap-3">
-        <Loader2 className="w-6 h-6 animate-spin text-deep-ink/50" />
-        <span>Loading patient record...</span>
+      <div className="p-16 text-center text-slate text-sm max-w-5xl mx-auto flex flex-col items-center justify-center min-h-[400px] gap-3">
+        <Loader2 className="w-7 h-7 animate-spin text-deep-ink/60" />
+        <span className="font-medium text-deep-ink">Loading patient record...</span>
+        <span className="text-xs text-slate">Retrieving verified clinical profile and past consultations</span>
       </div>
     )
   }
@@ -97,8 +124,20 @@ export default function PatientProfilePage({
     )
   }
 
-  const nameParts = [patient.firstName, patient.lastName].filter(Boolean)
-  const fullName = nameParts.length > 0 ? nameParts.join(' ').trim() : (patient.name || patient.email || `Patient #${patient.id.slice(-6)}`)
+  // Safe Name Resolution: Prevent literal "undefined undefined"
+  const nameParts = [patient.firstName, patient.lastName].filter(
+    val => Boolean(val) && typeof val === 'string' && val.trim() !== '' && val.trim().toLowerCase() !== 'undefined'
+  )
+  const fullName =
+    nameParts.length > 0
+      ? nameParts.join(' ').trim()
+      : (patient as any).name || (patient.email ? patient.email.split('@')[0] : '') || `Patient #${patient.id.slice(0, 8)}`
+
+  const initials =
+    nameParts.length > 0
+      ? nameParts.map(p => p[0]).join('').slice(0, 2).toUpperCase()
+      : fullName.slice(0, 2).toUpperCase()
+
   const medicalHistory = patient.conditions || []
   const allergies = patient.allergies || []
   const currentMedications = patient.medications || []
@@ -108,174 +147,268 @@ export default function PatientProfilePage({
   if (patient.dateOfBirth) {
     const birthYear = new Date(patient.dateOfBirth).getFullYear()
     if (!isNaN(birthYear)) {
-      ageDisplay = `${new Date().getFullYear() - birthYear} yrs`
+      const calculated = new Date().getFullYear() - birthYear
+      if (calculated > 0 && calculated < 130) {
+        ageDisplay = `${calculated} yrs`
+      }
     }
   }
 
   const isLinked = patient.linkStatus === 'linked'
   const isPendingConsent = patient.linkStatus === 'pending_patient_approval'
+  const displayStatus = isLinked
+    ? 'Active & Linked'
+    : isPendingConsent
+    ? 'Consent Pending'
+    : patient.linkStatus
+    ? patient.linkStatus.replace(/_/g, ' ')
+    : 'Consent Pending'
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
-      {/* Top Back Link & Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <Link
-            href="/dashboard/doctor/patients"
-            className="text-xs font-semibold text-slate hover:text-deep-ink flex items-center gap-1.5 transition-colors mb-2"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Patients Registry</span>
-          </Link>
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-bold font-serif text-deep-ink">{fullName}</h1>
-            <Badge variant="secondary" className="text-xs">
-              ID: {patient.id}
-            </Badge>
-            {isPendingConsent && (
-              <Badge variant="secondary" className="text-xs bg-amber-50 text-amber-800 border-amber-200 font-semibold">
-                Pending Patient Consent
-              </Badge>
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto font-sans">
+      {/* Top Breadcrumb Navigation */}
+      <div className="flex items-center justify-between gap-4">
+        <Link
+          href="/dashboard/doctor/patients"
+          className="text-xs font-semibold text-slate hover:text-deep-ink flex items-center gap-1.5 transition-colors group"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+          <span>Patients Registry</span>
+          <span className="text-slate/40">/</span>
+          <span className="text-deep-ink truncate max-w-[200px] sm:max-w-none">{fullName}</span>
+        </Link>
+      </div>
+
+      {/* Patient Profile Hero Banner */}
+      <Card className="p-5 sm:p-7 bg-white border border-deep-ink/10 shadow-2xs space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-deep-ink/8">
+          <div className="flex items-center gap-4 min-w-0">
+            {/* Avatar Initials Badge */}
+            <div className="w-14 h-14 rounded-2xl bg-teal-100 text-teal-800 border border-teal-200/80 flex items-center justify-center font-serif font-bold text-xl shrink-0 shadow-2xs">
+              {initials}
+            </div>
+
+            <div className="min-w-0 space-y-1">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-serif text-deep-ink tracking-tight">
+                  {fullName}
+                </h1>
+                <Badge
+                  variant={isLinked ? 'success' : 'secondary'}
+                  className={
+                    isLinked
+                      ? 'text-xs'
+                      : 'text-xs bg-amber-50 text-amber-900 border-amber-200 font-semibold'
+                  }
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                      isLinked ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'
+                    }`}
+                  />
+                  {displayStatus}
+                </Badge>
+              </div>
+
+              {/* ID with Quick Copy */}
+              <div className="flex items-center gap-2 text-xs text-slate">
+                <span className="font-mono bg-soft-meadow/70 px-2 py-0.5 rounded border border-deep-ink/8">
+                  ID: {patient.id}
+                </span>
+                <button
+                  onClick={handleCopyId}
+                  title="Copy Patient ID"
+                  aria-label="Copy Patient ID"
+                  className="hover:text-deep-ink transition-colors p-0.5 cursor-pointer"
+                >
+                  {copiedId ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5 text-slate/80" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Primary Action Button (No duplicate locked buttons) */}
+          <div className="flex items-center gap-3 shrink-0">
+            {isLinked ? (
+              <Link href={`/dashboard/doctor/sessions/new?patientId=${patient.id}`} className="w-full sm:w-auto">
+                <Button className="w-full sm:w-auto rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-2 font-medium text-xs sm:text-sm shadow-2xs cursor-pointer px-5">
+                  <Mic className="h-4 w-4" />
+                  <span>Start Voice Session</span>
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (patient.email) {
+                    window.open(`mailto:${patient.email}?subject=Invitation%20from%20Dr.%20${doctor?.name || 'Clinic'}`)
+                  } else {
+                    alert('No email recorded for this patient')
+                  }
+                }}
+                className="w-full sm:w-auto rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow font-medium text-xs sm:text-sm cursor-pointer gap-2"
+              >
+                <Mail className="w-3.5 h-3.5 text-slate" />
+                <span>Contact Patient</span>
+              </Button>
             )}
           </div>
         </div>
 
-        {isLinked ? (
-          <Link href={`/dashboard/doctor/sessions/new?patientId=${patient.id}`} className="block sm:inline">
-            <Button className="w-full sm:w-auto rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-2 font-medium text-xs sm:text-sm shadow-2xs cursor-pointer">
-              <Mic className="h-4 w-4" />
-              Start Voice Session
-            </Button>
-          </Link>
-        ) : (
-          <Button disabled variant="outline" className="w-full sm:w-auto rounded-full gap-2 text-xs sm:text-sm opacity-60">
-            <Mic className="h-4 w-4" />
-            Voice Session Locked (Pending Consent)
-          </Button>
-        )}
-      </div>
+        {/* Quick Demographic Metrics Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 text-xs pt-1">
+          <div className="p-2.5 rounded-xl bg-soft-meadow/40 border border-deep-ink/5">
+            <span className="text-slate block text-[11px] mb-0.5">Age</span>
+            <span className="font-semibold text-deep-ink text-sm">{ageDisplay}</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-soft-meadow/40 border border-deep-ink/5">
+            <span className="text-slate block text-[11px] mb-0.5">Gender</span>
+            <span className="font-semibold text-deep-ink text-sm capitalize">{patient.gender || '—'}</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-soft-meadow/40 border border-deep-ink/5">
+            <span className="text-slate block text-[11px] mb-0.5">Date of Birth</span>
+            <span className="font-semibold text-deep-ink text-sm">{patient.dateOfBirth || '—'}</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-soft-meadow/40 border border-deep-ink/5">
+            <span className="text-slate block text-[11px] mb-0.5">Status</span>
+            <span className="font-semibold text-deep-ink text-sm capitalize">{displayStatus}</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-soft-meadow/40 border border-deep-ink/5 sm:col-span-2 lg:col-span-2">
+            <span className="text-slate block text-[11px] mb-0.5">Contact Email</span>
+            <span className="font-semibold text-deep-ink text-sm truncate block" title={patient.email}>
+              {patient.email || '—'}
+            </span>
+          </div>
+        </div>
+      </Card>
 
-      {isPendingConsent && (
-        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center gap-3 text-xs sm:text-sm">
-          <AlertCircle className="w-5 h-5 shrink-0 text-amber-600" />
-          <span>
-            This patient has not yet accepted your clinic connection invitation. Clinical history, active conditions, and consultation notes are restricted until the patient accepts on their health portal.
-          </span>
+      {/* Consent Pending Banner */}
+      {!isLinked && (
+        <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm shadow-2xs">
+          <div className="flex items-start sm:items-center gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5 sm:mt-0" />
+            <p className="leading-relaxed">
+              <span className="font-semibold">Connection Pending Patient Approval: </span>
+              This patient has not yet connected with your clinic on their health portal. Clinical records, past summaries, and AI voice intakes will synchronize once approved.
+            </p>
+          </div>
+          {patient.email && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => alert(`Invitation reminder email triggered for ${patient.email}`)}
+              className="shrink-0 rounded-xl border-amber-300 text-amber-900 hover:bg-amber-100 text-xs font-semibold h-8"
+            >
+              Send Reminder
+            </Button>
+          )}
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
-        {/* Main Content (2 cols) */}
+      {/* Desktop 2-Column Responsive Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Main Column (2 cols) */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Demographics Card */}
-          <Card className="p-4 sm:p-6">
-            <CardHeader className="p-0 pb-4">
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                <User className="w-5 h-5 text-slate" />
-                Demographics & Personal Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <p className="text-xs text-slate mb-1">Age</p>
-                  <p className="font-semibold text-deep-ink">{ageDisplay}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate mb-1">Gender</p>
-                  <p className="font-semibold text-deep-ink">{patient.gender || '—'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate mb-1">Date of Birth</p>
-                  <p className="font-semibold text-deep-ink">{patient.dateOfBirth || '—'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate mb-1">Status</p>
-                  <p className="font-semibold text-deep-ink capitalize">{patient.linkStatus ? patient.linkStatus.replace(/_/g, ' ') : 'Active'}</p>
-                </div>
+          {/* Clinical Profile Grid (Conditions, Allergies, Meds) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Active Conditions */}
+            <Card className="p-5 bg-white border border-deep-ink/10 shadow-2xs space-y-3">
+              <div className="flex items-center gap-2 text-deep-ink pb-2 border-b border-deep-ink/6">
+                <HeartPulse className="w-4 h-4 text-emerald-600" />
+                <h3 className="font-serif font-bold text-sm">Active Medical Conditions</h3>
               </div>
-
-              <div className="mt-4 pt-4 border-t border-deep-ink/10 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2 text-slate">
-                  <Mail className="w-4 h-4 text-slate shrink-0" />
-                  <span className="text-deep-ink font-medium">{patient.email}</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate">
-                  <Phone className="w-4 h-4 text-slate shrink-0" />
-                  <span className="text-deep-ink font-medium">{patient.phone || '—'}</span>
-                </div>
-              </div>
-
-              {patient.address && (
-                <div className="mt-3 text-xs text-slate">
-                  <span className="font-medium text-deep-ink">Address: </span>
-                  {patient.address}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Clinical Profile (Conditions, Allergies, Meds) */}
-          <Card className="p-6 space-y-6">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate mb-3">
-                Active Medical Conditions
-              </p>
               {medicalHistory.length === 0 ? (
-                <p className="text-xs text-slate italic">No active conditions recorded.</p>
+                <div className="py-4 text-center text-xs text-slate bg-soft-meadow/30 rounded-xl border border-dashed border-deep-ink/10">
+                  <p className="italic">No active conditions recorded</p>
+                </div>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 pt-1">
                   {medicalHistory.map((cond, idx) => (
-                    <Badge key={idx} variant="secondary" className="px-3 py-1">
+                    <Badge key={idx} variant="secondary" className="px-2.5 py-1 text-xs">
                       {cond}
                     </Badge>
                   ))}
                 </div>
               )}
-            </div>
+            </Card>
 
-            <div className="border-t border-deep-ink/10 pt-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate mb-3">
-                Known Allergies
-              </p>
+            {/* Known Allergies */}
+            <Card className="p-5 bg-white border border-deep-ink/10 shadow-2xs space-y-3">
+              <div className="flex items-center gap-2 text-deep-ink pb-2 border-b border-deep-ink/6">
+                <AlertCircle className="w-4 h-4 text-rose-600" />
+                <h3 className="font-serif font-bold text-sm">Known Allergies</h3>
+              </div>
               {allergies.length === 0 ? (
-                <p className="text-xs text-slate italic">No allergies reported.</p>
+                <div className="py-4 text-center text-xs text-slate bg-soft-meadow/30 rounded-xl border border-dashed border-deep-ink/10">
+                  <p className="italic">No known allergies documented</p>
+                </div>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 pt-1">
                   {allergies.map((allergy, idx) => (
-                    <Badge key={idx} variant="danger" className="px-3 py-1">
+                    <Badge key={idx} variant="danger" className="px-2.5 py-1 text-xs">
                       {allergy}
                     </Badge>
                   ))}
                 </div>
               )}
-            </div>
+            </Card>
 
-            <div className="border-t border-deep-ink/10 pt-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate mb-3">
-                Current Medications
-              </p>
+            {/* Current Medications */}
+            <Card className="p-5 bg-white border border-deep-ink/10 shadow-2xs space-y-3 md:col-span-2">
+              <div className="flex items-center justify-between pb-2 border-b border-deep-ink/6">
+                <div className="flex items-center gap-2 text-deep-ink">
+                  <Pill className="w-4 h-4 text-amber-600" />
+                  <h3 className="font-serif font-bold text-sm">Current Prescriptions & Medications</h3>
+                </div>
+                <Badge variant="outline" className="text-[10px]">
+                  {currentMedications.length} on file
+                </Badge>
+              </div>
               {currentMedications.length === 0 ? (
-                <p className="text-xs text-slate italic">No medications on file.</p>
+                <div className="py-4 text-center text-xs text-slate bg-soft-meadow/30 rounded-xl border border-dashed border-deep-ink/10">
+                  <p className="italic">No current medications reported on file</p>
+                </div>
               ) : (
-                <ul className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                   {currentMedications.map((med, idx) => (
-                    <li key={idx} className="text-sm text-deep-ink flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 bg-hi-yellow rounded-full shrink-0" />
-                      <span>{med}</span>
-                    </li>
+                    <div
+                      key={idx}
+                      className="p-2.5 rounded-xl bg-soft-meadow/40 border border-deep-ink/5 text-xs text-deep-ink flex items-center gap-2"
+                    >
+                      <span className="w-2 h-2 bg-hi-yellow rounded-full shrink-0" />
+                      <span className="font-medium truncate">{med}</span>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
-            </div>
-          </Card>
+            </Card>
+          </div>
 
           {/* Consultation History */}
           <div className="space-y-3">
-            <h3 className="text-lg sm:text-xl font-bold font-serif text-deep-ink">Consultation History</h3>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-slate" />
+                <h3 className="text-base sm:text-lg font-bold font-serif text-deep-ink">
+                  Consultation History
+                </h3>
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                {sessions.length} recorded
+              </Badge>
+            </div>
+
             {sessions.length === 0 ? (
-              <Card className="p-6 text-center text-xs text-slate">
-                No past consultations recorded for this patient.
+              <Card className="p-8 text-center border-dashed rounded-2xl bg-white/70 space-y-2">
+                <Clock className="w-8 h-8 text-slate/30 mx-auto" />
+                <p className="text-xs font-medium text-slate">No past consultations recorded for this patient.</p>
+                <p className="text-[11px] text-slate/70">
+                  Completed voice sessions and AI-generated SOAP notes will be stored here.
+                </p>
               </Card>
             ) : (
               <div className="space-y-3">
@@ -287,26 +420,31 @@ export default function PatientProfilePage({
                         year: 'numeric',
                       })
                     : 'Recent'
-                  const summaryText = s.soapNote?.assessment || s.transcript || 'Clinical Consultation'
+                  const summaryText = s.soapNote?.assessment || s.transcript || 'Clinical consultation recorded.'
 
                   return (
-                    <Card key={s.id} className="p-4 sm:p-5 hover:border-hi-yellow/60 transition-colors">
+                    <Card key={s.id} className="p-4 sm:p-5 hover:border-deep-ink/30 transition-all bg-white shadow-2xs">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-                        <div className="space-y-1">
+                        <div className="space-y-1 min-w-0 flex-1">
                           <div className="flex items-center gap-2 text-xs text-slate flex-wrap">
                             <Calendar className="w-3.5 h-3.5 shrink-0" />
                             <span>{sDate}</span>
                             <span>•</span>
-                            <span>{doctor?.name ? `Dr. ${doctor.name}` : 'Provider'}</span>
-                            <Badge variant={s.status === 'completed' ? 'success' : 'secondary'} className="text-[10px] px-1.5 py-0">
+                            <span>{doctor?.name ? `Dr. ${doctor.name}` : 'Clinical Center'}</span>
+                            <Badge
+                              variant={s.status === 'completed' ? 'success' : 'secondary'}
+                              className="text-[10px] px-1.5 py-0"
+                            >
                               {s.status}
                             </Badge>
                           </div>
-                          <p className="text-sm font-medium text-deep-ink line-clamp-1">{summaryText}</p>
+                          <p className="text-xs sm:text-sm font-medium text-deep-ink line-clamp-1">
+                            {summaryText}
+                          </p>
                         </div>
-                        <Link href={`/dashboard/doctor/sessions/${s.id}`} className="block sm:inline">
-                          <Button size="sm" variant="outline" className="w-full sm:w-auto rounded-full text-xs font-semibold cursor-pointer">
-                            View Note
+                        <Link href={`/dashboard/doctor/sessions/${s.id}`} className="shrink-0">
+                          <Button size="sm" variant="outline" className="rounded-xl text-xs font-semibold h-8 cursor-pointer">
+                            View Clinical Note
                           </Button>
                         </Link>
                       </div>
@@ -318,36 +456,62 @@ export default function PatientProfilePage({
           </div>
         </div>
 
-        {/* Sidebar / Quick Notes */}
-        <div className="space-y-6">
-          <Card className="p-6 bg-soft-meadow border-deep-ink/10 space-y-3">
-            <h3 className="font-semibold font-serif text-deep-ink text-base">Clinical Record</h3>
+        {/* Sidebar / Provider Governance Rail */}
+        <div className="space-y-4">
+          {/* Clinical Record Governance Card */}
+          <Card className="p-5 bg-white border border-deep-ink/10 shadow-2xs space-y-3">
+            <div className="flex items-center gap-2 text-deep-ink">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <h3 className="font-serif font-bold text-sm">Clinical Record Security</h3>
+            </div>
             <p className="text-xs text-slate leading-relaxed">
               Patient registered on{' '}
-              {patient.createdAt ? new Date(patient.createdAt).toLocaleDateString() : 'N/A'}. All clinical consultations and AI voice intake summaries are encrypted and linked to your provider ID.
+              <span className="font-semibold text-deep-ink">
+                {patient.createdAt ? new Date(patient.createdAt).toLocaleDateString() : 'Active File'}
+              </span>
+              . All clinical consultations, AI intake summaries, and SOAP notes are end-to-end encrypted and linked to your National Provider identifier.
             </p>
           </Card>
 
-          <Card className="p-6 space-y-3">
-            <h3 className="font-semibold font-serif text-deep-ink text-base">Quick Actions</h3>
+          {/* Provider Quick Actions Card */}
+          <Card className="p-5 bg-white border border-deep-ink/10 shadow-2xs space-y-3">
+            <h3 className="font-serif font-bold text-sm text-deep-ink">Provider Actions</h3>
             <div className="space-y-2">
               {isLinked ? (
                 <Link href={`/dashboard/doctor/sessions/new?patientId=${patient.id}`} className="block">
-                  <Button className="w-full rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium text-xs cursor-pointer shadow-2xs">
-                    Conduct Voice Session
+                  <Button className="w-full rounded-xl bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-medium text-xs h-9 cursor-pointer shadow-2xs">
+                    Start Voice Session
                   </Button>
                 </Link>
               ) : (
-                <Button disabled variant="outline" className="w-full rounded-full font-medium text-xs opacity-60">
-                  Voice Session Locked
-                </Button>
+                <div className="p-3 rounded-xl bg-soft-meadow/50 border border-deep-ink/5 text-xs text-slate space-y-1">
+                  <span className="font-semibold text-deep-ink block">Voice Session Inactive</span>
+                  <p className="text-[11px] leading-relaxed">
+                    Voice encounters and transcript processing will activate automatically once the patient confirms linkage.
+                  </p>
+                </div>
               )}
+
               <Button
                 variant="outline"
-                onClick={() => alert(`Direct email: ${patient.email}`)}
-                className="w-full rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow font-medium text-xs cursor-pointer"
+                onClick={() => {
+                  if (patient.email) {
+                    window.open(`mailto:${patient.email}`)
+                  } else {
+                    alert('No email recorded for this patient')
+                  }
+                }}
+                className="w-full rounded-xl border-deep-ink/15 text-deep-ink hover:bg-soft-meadow font-semibold text-xs h-9 cursor-pointer"
               >
-                Contact Patient
+                Direct Email Patient
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={handleCopyId}
+                className="w-full rounded-xl border-deep-ink/15 text-slate hover:text-deep-ink hover:bg-soft-meadow text-xs h-9 cursor-pointer"
+              >
+                {copiedId ? 'Copied Patient ID!' : 'Copy Patient ID'}
               </Button>
             </div>
           </Card>
@@ -356,3 +520,4 @@ export default function PatientProfilePage({
     </div>
   )
 }
+

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { nanoid } from 'nanoid'
 import {
   getDoctorById,
   getPatientByEmail,
@@ -79,6 +80,7 @@ export async function POST(request: NextRequest) {
       // Patient has not yet signed up: create preliminary record with pending approval (NOT linked!)
       isNew = true
       patient = await createPatient({
+        id: `patient-${nanoid()}`,
         email: cleanEmail,
         firstName: firstName?.trim() || 'Pending',
         lastName: lastName?.trim() || 'Patient',
