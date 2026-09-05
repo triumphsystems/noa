@@ -3,22 +3,24 @@
  * Bootstraps registry with all tools, resources, and prompts.
  */
 
-import { registry, WebMCPRegistry } from '../core/registry'
-import { registerAllTools } from '../tools'
-import { registerAllResources } from '../resources'
-import { registerAllPrompts } from '../prompts'
+import { registry, WebMCPRegistry } from '../core/registry';
+import { registerAllTools } from '../tools';
+import { registerAllResources } from '../resources';
+import { registerAllPrompts } from '../prompts';
 
-let isInitialized = false
+let isInitialized = false;
 
-export function initWebMCPServer(targetRegistry: WebMCPRegistry = registry): WebMCPRegistry {
+export function initWebMCPServer(
+  targetRegistry: WebMCPRegistry = registry
+): WebMCPRegistry {
   if (isInitialized) {
-    return targetRegistry
+    return targetRegistry;
   }
 
-  registerAllTools(targetRegistry)
-  registerAllResources(targetRegistry)
-  registerAllPrompts(targetRegistry)
+  registerAllTools(targetRegistry);
+  registerAllResources(targetRegistry);
+  registerAllPrompts(targetRegistry);
 
-  isInitialized = true
-  return targetRegistry
+  isInitialized = true;
+  return targetRegistry;
 }

@@ -1,71 +1,86 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useMemo } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { EmptyState } from '@/components/ui/empty-state'
-import { Calendar, FileText, ArrowRight, User, Loader2 } from 'lucide-react'
-import { useDoctorStore } from '@/lib/stores/doctor.store'
-import type { Session, Patient } from '@/lib/db'
+import { useEffect, useState, useMemo } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Calendar, FileText, ArrowRight, User, Loader2 } from 'lucide-react';
+import { useDoctorStore } from '@/lib/stores/doctor.store';
+import type { Session, Patient } from '@/lib/db';
 
 export default function SummariesPage() {
-  const doctorId = useDoctorStore(state => state.doctorId)
-  const sessions = useDoctorStore(state => state.sessions)
-  const patients = useDoctorStore(state => state.patients)
-  const isLoading = useDoctorStore(state => state.isLoading)
-  const loadDashboard = useDoctorStore(state => state.loadDashboard)
+  const doctorId = useDoctorStore((state) => state.doctorId);
+  const sessions = useDoctorStore((state) => state.sessions);
+  const patients = useDoctorStore((state) => state.patients);
+  const isLoading = useDoctorStore((state) => state.isLoading);
+  const loadDashboard = useDoctorStore((state) => state.loadDashboard);
 
-  const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'active'>('all')
+  const [filterStatus, setFilterStatus] = useState<
+    'all' | 'completed' | 'active'
+  >('all');
 
   useEffect(() => {
-    let resolvedDoctorId = doctorId
+    let resolvedDoctorId = doctorId;
     if (!resolvedDoctorId && typeof window !== 'undefined') {
-      const stored = window.localStorage.getItem('doctorId')
+      const stored = window.localStorage.getItem('doctorId');
       if (stored) {
-        resolvedDoctorId = stored
-        useDoctorStore.getState().setDoctorId(stored)
+        resolvedDoctorId = stored;
+        useDoctorStore.getState().setDoctorId(stored);
       }
     }
 
     if (resolvedDoctorId && sessions.length === 0 && !isLoading) {
-      void loadDashboard(resolvedDoctorId)
+      void loadDashboard(resolvedDoctorId);
     }
-  }, [doctorId, sessions.length, isLoading, loadDashboard])
+  }, [doctorId, sessions.length, isLoading, loadDashboard]);
 
   // Map patientId -> Patient
   const patientMap = useMemo(() => {
-    const map = new Map<string, Patient>()
-    patients.forEach(p => map.set(p.id, p))
-    return map
-  }, [patients])
+    const map = new Map<string, Patient>();
+    patients.forEach((p) => map.set(p.id, p));
+    return map;
+  }, [patients]);
 
   // Filter sessions that have SOAP notes or completed consultations
   const sessionsWithSummaries = useMemo(() => {
-    return sessions.filter(s => Boolean(s.soapNote) || s.status === 'completed')
-  }, [sessions])
+    return sessions.filter(
+      (s) => Boolean(s.soapNote) || s.status === 'completed'
+    );
+  }, [sessions]);
 
   const filteredSessions = useMemo(() => {
-    if (filterStatus === 'all') return sessionsWithSummaries
-    return sessionsWithSummaries.filter(s => s.status === filterStatus)
-  }, [sessionsWithSummaries, filterStatus])
+    if (filterStatus === 'all') return sessionsWithSummaries;
+    return sessionsWithSummaries.filter((s) => s.status === filterStatus);
+  }, [sessionsWithSummaries, filterStatus]);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold font-serif mb-1 text-deep-ink">Clinical Summaries</h1>
-        <p className="text-slate text-xs sm:text-sm">Review, verify, and export live consultation notes and SOAP assessments</p>
+        <h1 className="text-deep-ink mb-1 font-serif text-2xl font-bold sm:text-3xl">
+          Clinical Summaries
+        </h1>
+        <p className="text-slate text-xs sm:text-sm">
+          Review, verify, and export live consultation notes and SOAP
+          assessments
+        </p>
       </div>
 
       {/* Filters */}
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {(['all', 'completed', 'active'] as const).map(status => (
+        {(['all', 'completed', 'active'] as const).map((status) => (
           <button
             key={status}
             onClick={() => setFilterStatus(status)}
-            className={`px-4 sm:px-5 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors shrink-0 cursor-pointer ${
+            className={`shrink-0 cursor-pointer rounded-full px-4 py-1.5 text-xs font-semibold capitalize transition-colors sm:px-5 ${
               filterStatus === status
                 ? 'bg-hi-yellow text-deep-ink shadow-2xs'
                 : 'bg-soft-meadow text-deep-ink/80 hover:bg-soft-meadow/80'
@@ -78,13 +93,13 @@ export default function SummariesPage() {
 
       {/* Summaries Grid */}
       {isLoading ? (
-        <div className="p-12 text-center text-slate text-sm max-w-5xl mx-auto flex flex-col items-center gap-3">
-          <Loader2 className="w-6 h-6 animate-spin text-deep-ink/50" />
+        <div className="text-slate mx-auto flex max-w-5xl flex-col items-center gap-3 p-12 text-center text-sm">
+          <Loader2 className="text-deep-ink/50 h-6 w-6 animate-spin" />
           <span>Loading clinical summaries...</span>
         </div>
       ) : filteredSessions.length === 0 ? (
         <EmptyState
-          icon={<FileText className="h-8 w-8 text-slate/40" />}
+          icon={<FileText className="text-slate/40 h-8 w-8" />}
           title="No clinical summaries found"
           description={
             sessions.length === 0
@@ -93,39 +108,62 @@ export default function SummariesPage() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-          {filteredSessions.map(session => {
-            const patient = session.patientId ? patientMap.get(session.patientId) : null
-            const patientNameParts = patient ? [patient.firstName, patient.lastName].filter(Boolean) : []
-            const patientName = patientNameParts.length > 0 ? patientNameParts.join(' ').trim() : ((patient as any)?.name || patient?.email || (session.patientId ? `Patient #${session.patientId.slice(-6)}` : 'Patient'))
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
+          {filteredSessions.map((session) => {
+            const patient = session.patientId
+              ? patientMap.get(session.patientId)
+              : null;
+            const patientNameParts = patient
+              ? [patient.firstName, patient.lastName].filter(Boolean)
+              : [];
+            const patientName =
+              patientNameParts.length > 0
+                ? patientNameParts.join(' ').trim()
+                : (patient as any)?.name ||
+                  patient?.email ||
+                  (session.patientId
+                    ? `Patient #${session.patientId.slice(-6)}`
+                    : 'Patient');
             const formattedDate = session.startedAt
               ? new Date(session.startedAt).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric',
                 })
-              : 'Recent Session'
+              : 'Recent Session';
 
             return (
               <Card
                 key={session.id}
-                className="flex flex-col justify-between hover:border-hi-yellow/60 transition-colors"
+                className="hover:border-hi-yellow/60 flex flex-col justify-between transition-colors"
               >
                 <div>
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <CardTitle className="text-lg font-serif">{patientName}</CardTitle>
-                        <p className="text-xs text-slate mt-0.5">Clinical Consultation</p>
+                        <CardTitle className="font-serif text-lg">
+                          {patientName}
+                        </CardTitle>
+                        <p className="text-slate mt-0.5 text-xs">
+                          Clinical Consultation
+                        </p>
                       </div>
-                      <Badge variant={session.status === 'completed' ? 'success' : 'secondary'}>
-                        {session.status === 'completed' ? 'Completed' : 'Active'}
+                      <Badge
+                        variant={
+                          session.status === 'completed'
+                            ? 'success'
+                            : 'secondary'
+                        }
+                      >
+                        {session.status === 'completed'
+                          ? 'Completed'
+                          : 'Active'}
                       </Badge>
                     </div>
                   </CardHeader>
 
                   <CardContent className="space-y-4">
-                    <div className="flex items-center gap-1.5 text-xs text-slate">
+                    <div className="text-slate flex items-center gap-1.5 text-xs">
                       <Calendar className="h-3.5 w-3.5" />
                       <span>{formattedDate}</span>
                     </div>
@@ -134,49 +172,54 @@ export default function SummariesPage() {
                       <div className="space-y-2">
                         {session.soapNote.assessment && (
                           <div>
-                            <p className="text-[11px] font-semibold text-deep-ink uppercase tracking-wider mb-1">
+                            <p className="text-deep-ink mb-1 text-[11px] font-semibold tracking-wider uppercase">
                               Assessment
                             </p>
-                            <p className="text-xs text-slate line-clamp-2 leading-relaxed">
+                            <p className="text-slate line-clamp-2 text-xs leading-relaxed">
                               {session.soapNote.assessment}
                             </p>
                           </div>
                         )}
                         {session.soapNote.plan && (
                           <div>
-                            <p className="text-[11px] font-semibold text-deep-ink uppercase tracking-wider mb-1">
+                            <p className="text-deep-ink mb-1 text-[11px] font-semibold tracking-wider uppercase">
                               Plan
                             </p>
-                            <p className="text-xs text-slate line-clamp-2 leading-relaxed">
+                            <p className="text-slate line-clamp-2 text-xs leading-relaxed">
                               {session.soapNote.plan}
                             </p>
                           </div>
                         )}
                       </div>
                     ) : (
-                      <p className="text-xs text-slate italic">
-                        {session.transcript ? 'Transcript recorded; SOAP note pending completion.' : 'Session recorded.'}
+                      <p className="text-slate text-xs italic">
+                        {session.transcript
+                          ? 'Transcript recorded; SOAP note pending completion.'
+                          : 'Session recorded.'}
                       </p>
                     )}
                   </CardContent>
                 </div>
 
                 <CardFooter className="pt-2">
-                  <Link href={`/dashboard/doctor/summaries/${session.id}`} className="w-full">
+                  <Link
+                    href={`/dashboard/doctor/summaries/${session.id}`}
+                    className="w-full"
+                  >
                     <Button
                       variant="outline"
-                      className="w-full rounded-full border-deep-ink/15 text-deep-ink hover:bg-hi-yellow hover:border-hi-yellow font-medium transition-all group justify-between px-5 cursor-pointer"
+                      className="border-deep-ink/15 text-deep-ink hover:bg-hi-yellow hover:border-hi-yellow group w-full cursor-pointer justify-between rounded-full px-5 font-medium transition-all"
                     >
                       <span>View Summary & Note</span>
-                      <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                     </Button>
                   </Link>
                 </CardFooter>
               </Card>
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useTransition } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
+import { useState, useEffect, useTransition } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   Home,
   CalendarDays,
@@ -25,35 +25,39 @@ import {
   Shield,
   Activity,
   Calendar,
-} from 'lucide-react'
-import { usePatientStore } from '@/lib/stores/patient.store'
-import { WelcomeBanner } from '@/components/patient/welcome-banner'
-import { PatientStatsGrid } from '@/components/patient/patient-stats-grid'
-import { ConsultationsList } from '@/components/patient/consultations-list'
-import { HealthInfoCard } from '@/components/patient/health-info-card'
-import { PrivacyNoticeCard } from '@/components/patient/privacy-notice-card'
-import { DoctorConnectCard } from '@/components/patient/doctor-connect-card'
-import { BottomNav } from '@/components/navigation/bottom-nav'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { ErrorAlert } from '@/components/ui/error-alert'
-import { cn } from '@/lib/utils'
+} from 'lucide-react';
+import { usePatientStore } from '@/lib/stores/patient.store';
+import { WelcomeBanner } from '@/components/patient/welcome-banner';
+import { PatientStatsGrid } from '@/components/patient/patient-stats-grid';
+import { ConsultationsList } from '@/components/patient/consultations-list';
+import { HealthInfoCard } from '@/components/patient/health-info-card';
+import { PrivacyNoticeCard } from '@/components/patient/privacy-notice-card';
+import { DoctorConnectCard } from '@/components/patient/doctor-connect-card';
+import { BottomNav } from '@/components/navigation/bottom-nav';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ErrorAlert } from '@/components/ui/error-alert';
+import { cn } from '@/lib/utils';
 
-export type PatientScreenTab = 'home' | 'visits' | 'care-team' | 'records'
+export type PatientScreenTab = 'home' | 'visits' | 'care-team' | 'records';
 
 export default function PatientDashboardPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const initialTab = (searchParams.get('tab') as PatientScreenTab) || 'home'
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get('tab') as PatientScreenTab) || 'home';
 
   const [activeTab, setActiveTab] = useState<PatientScreenTab>(
-    ['home', 'visits', 'care-team', 'records'].includes(initialTab) ? initialTab : 'home'
-  )
-  const [copiedCode, setCopiedCode] = useState(false)
-  const [isChangingDoctor, setIsChangingDoctor] = useState(false)
-  const [visitFilter, setVisitFilter] = useState<'all' | 'completed' | 'active'>('all')
-  const [, startTransition] = useTransition()
+    ['home', 'visits', 'care-team', 'records'].includes(initialTab)
+      ? initialTab
+      : 'home'
+  );
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [isChangingDoctor, setIsChangingDoctor] = useState(false);
+  const [visitFilter, setVisitFilter] = useState<
+    'all' | 'completed' | 'active'
+  >('all');
+  const [, startTransition] = useTransition();
 
   const {
     patientId,
@@ -67,113 +71,119 @@ export default function PatientDashboardPage() {
     error,
     setPatientId,
     loadDashboard,
-  } = usePatientStore()
+  } = usePatientStore();
 
   // Sync tab with URL search parameter if user deep-links or uses back button
   useEffect(() => {
-    const tabParam = searchParams.get('tab') as PatientScreenTab
-    if (tabParam && ['home', 'visits', 'care-team', 'records'].includes(tabParam) && tabParam !== activeTab) {
-      setActiveTab(tabParam)
+    const tabParam = searchParams.get('tab') as PatientScreenTab;
+    if (
+      tabParam &&
+      ['home', 'visits', 'care-team', 'records'].includes(tabParam) &&
+      tabParam !== activeTab
+    ) {
+      setActiveTab(tabParam);
     }
-  }, [searchParams])
+  }, [searchParams]);
 
   const handleTabChange = (newTab: string) => {
-    const tab = newTab as PatientScreenTab
-    setActiveTab(tab)
+    const tab = newTab as PatientScreenTab;
+    setActiveTab(tab);
     startTransition(() => {
-      const url = new URL(window.location.href)
-      url.searchParams.set('tab', tab)
-      window.history.replaceState({}, '', url.toString())
-    })
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState({}, '', url.toString());
+    });
     // Scroll smoothly to top on tab switch like a native app
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   useEffect(() => {
-    let resolvedId = patientId
+    let resolvedId = patientId;
     if (!resolvedId && typeof window !== 'undefined') {
-      const stored = window.localStorage.getItem('patientId')
+      const stored = window.localStorage.getItem('patientId');
       if (stored) {
-        resolvedId = stored
-        setPatientId(stored)
+        resolvedId = stored;
+        setPatientId(stored);
       }
     }
 
     if (resolvedId && !patient) {
-      void loadDashboard(resolvedId)
+      void loadDashboard(resolvedId);
     }
-  }, [patientId, patient, setPatientId, loadDashboard])
+  }, [patientId, patient, setPatientId, loadDashboard]);
 
   const handleRefresh = async () => {
     if (patientId) {
-      await loadDashboard(patientId)
+      await loadDashboard(patientId);
     }
-  }
+  };
 
   const handleCopy = (text: string) => {
-    if (!navigator.clipboard) return
-    navigator.clipboard.writeText(text)
-    setCopiedCode(true)
-    setTimeout(() => setCopiedCode(false), 2000)
-  }
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(text);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' })
+      await fetch('/api/auth/logout', { method: 'POST' });
     } finally {
       if (typeof window !== 'undefined') {
-        window.localStorage.clear()
+        window.localStorage.clear();
       }
-      router.push('/auth/login')
+      router.push('/auth/login');
     }
-  }
+  };
 
-  const fullName = patient ? `${patient.firstName} ${patient.lastName}`.trim() : ''
-  const hasDoctor = Boolean(patient?.doctorId && doctor)
-  const isPendingApproval = patient?.linkStatus === 'pending_patient_approval'
+  const fullName = patient
+    ? `${patient.firstName} ${patient.lastName}`.trim()
+    : '';
+  const hasDoctor = Boolean(patient?.doctorId && doctor);
+  const isPendingApproval = patient?.linkStatus === 'pending_patient_approval';
 
   // Time-aware greeting
   const getGreeting = () => {
-    const hour = new Date().getHours()
-    if (hour < 12) return 'Good morning'
-    if (hour < 17) return 'Good afternoon'
-    return 'Good evening'
-  }
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
 
-  const filteredSessions = sessions.filter(session => {
-    if (visitFilter === 'completed') return session.status === 'completed'
-    if (visitFilter === 'active') return session.status !== 'completed'
-    return true
-  })
+  const filteredSessions = sessions.filter((session) => {
+    if (visitFilter === 'completed') return session.status === 'completed';
+    if (visitFilter === 'active') return session.status !== 'completed';
+    return true;
+  });
 
   // Skeleton loading state
   if (isLoading && !patient) {
     return (
       <div className="min-h-screen bg-[#f9fbf2] pb-24">
         {/* App bar skeleton */}
-        <div className="bg-white/80 backdrop-blur-md border-b border-deep-ink/5 p-4 w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          <div className="h-6 w-28 bg-deep-ink/10 rounded-full animate-pulse" />
-          <div className="w-9 h-9 bg-deep-ink/10 rounded-full animate-pulse" />
+        <div className="border-deep-ink/5 flex w-full items-center justify-between border-b bg-white/80 p-4 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+          <div className="bg-deep-ink/10 h-6 w-28 animate-pulse rounded-full" />
+          <div className="bg-deep-ink/10 h-9 w-9 animate-pulse rounded-full" />
         </div>
-        <div className="p-4 sm:p-6 lg:p-8 w-full space-y-4 pt-4 animate-pulse">
-          <div className="h-32 bg-white rounded-2xl shadow-2xs border border-deep-ink/5" />
+        <div className="w-full animate-pulse space-y-4 p-4 pt-4 sm:p-6 lg:p-8">
+          <div className="border-deep-ink/5 h-32 rounded-2xl border bg-white shadow-2xs" />
           <div className="grid grid-cols-3 gap-2.5">
-            <div className="h-20 bg-white rounded-xl shadow-2xs border border-deep-ink/5" />
-            <div className="h-20 bg-white rounded-xl shadow-2xs border border-deep-ink/5" />
-            <div className="h-20 bg-white rounded-xl shadow-2xs border border-deep-ink/5" />
+            <div className="border-deep-ink/5 h-20 rounded-xl border bg-white shadow-2xs" />
+            <div className="border-deep-ink/5 h-20 rounded-xl border bg-white shadow-2xs" />
+            <div className="border-deep-ink/5 h-20 rounded-xl border bg-white shadow-2xs" />
           </div>
-          <div className="h-44 bg-white rounded-2xl shadow-2xs border border-deep-ink/5" />
-          <div className="h-36 bg-white rounded-2xl shadow-2xs border border-deep-ink/5" />
+          <div className="border-deep-ink/5 h-44 rounded-2xl border bg-white shadow-2xs" />
+          <div className="border-deep-ink/5 h-36 rounded-2xl border bg-white shadow-2xs" />
         </div>
       </div>
-    )
+    );
   }
 
   // Error state
   if (error && !patient) {
     return (
-      <div className="min-h-screen bg-[#f9fbf2] p-4 flex flex-col items-center justify-center">
-        <div className="max-w-md w-full space-y-4">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#f9fbf2] p-4">
+        <div className="w-full max-w-md space-y-4">
           <ErrorAlert
             variant="card"
             title="Unable to Load Health Portal"
@@ -182,7 +192,7 @@ export default function PatientDashboardPage() {
           <div className="text-center">
             <Button
               variant="outline"
-              className="rounded-full text-xs font-semibold px-6"
+              className="rounded-full px-6 text-xs font-semibold"
               onClick={() => patientId && void loadDashboard(patientId)}
             >
               Retry Loading
@@ -190,55 +200,64 @@ export default function PatientDashboardPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-[#f9fbf2] text-deep-ink font-sans antialiased pb-28 select-none-headers">
+    <div className="text-deep-ink select-none-headers min-h-screen bg-[#f9fbf2] pb-28 font-sans antialiased">
       {/* ============================================================ */}
       {/* Active Screen Content Container (Full width on desktop)      */}
       {/* ============================================================ */}
-      <main className="w-full px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 space-y-5 lg:space-y-6">
+      <main className="w-full space-y-5 px-4 pt-4 sm:px-6 sm:pt-6 lg:space-y-6 lg:px-8">
         {/* Top Page Action & Greeting Bar (Single clean header) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
+        <div className="flex flex-col justify-between gap-4 pb-1 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-hi-yellow/30 border border-hi-yellow/60 flex items-center justify-center shrink-0 shadow-2xs">
-              <Sparkles className="w-5 h-5 text-deep-ink" />
+            <div className="bg-hi-yellow/30 border-hi-yellow/60 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border shadow-2xs">
+              <Sparkles className="text-deep-ink h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-serif font-bold text-xl sm:text-2xl text-deep-ink">
-                  {getGreeting()}, <span className="text-deep-ink">{patient?.firstName || 'Patient'}</span>
+                <h1 className="text-deep-ink font-serif text-xl font-bold sm:text-2xl">
+                  {getGreeting()},{' '}
+                  <span className="text-deep-ink">
+                    {patient?.firstName || 'Patient'}
+                  </span>
                 </h1>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-800 rounded-full border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
                   Active Portal
                 </span>
               </div>
-              <p className="text-xs text-slate">
-                Your encrypted personal AI health records and consultation summaries
+              <p className="text-slate text-xs">
+                Your encrypted personal AI health records and consultation
+                summaries
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-auto">
+          <div className="flex shrink-0 items-center gap-2.5 self-end sm:self-auto">
             <button
               onClick={handleRefresh}
               disabled={isLoading}
               title="Refresh Dashboard"
               aria-label="Refresh Dashboard"
-              className="px-3 py-1.5 rounded-full border border-deep-ink/10 bg-white hover:bg-soft-meadow flex items-center gap-1.5 text-xs text-slate hover:text-deep-ink transition-colors cursor-pointer shadow-2xs"
+              className="border-deep-ink/10 hover:bg-soft-meadow text-slate hover:text-deep-ink flex cursor-pointer items-center gap-1.5 rounded-full border bg-white px-3 py-1.5 text-xs shadow-2xs transition-colors"
             >
-              <RefreshCw className={cn('w-3.5 h-3.5', isLoading && 'animate-spin text-deep-ink')} />
+              <RefreshCw
+                className={cn(
+                  'h-3.5 w-3.5',
+                  isLoading && 'text-deep-ink animate-spin'
+                )}
+              />
               <span className="hidden sm:inline">Refresh</span>
             </button>
 
             <Link href="/intake">
               <Button
                 size="sm"
-                className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-semibold text-xs px-4 py-2 h-9 gap-2 shadow-2xs cursor-pointer"
+                className="bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 h-9 cursor-pointer gap-2 rounded-full px-4 py-2 text-xs font-semibold shadow-2xs"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="h-3.5 w-3.5" />
                 <span>New Intake</span>
               </Button>
             </Link>
@@ -246,40 +265,52 @@ export default function PatientDashboardPage() {
         </div>
 
         {/* Desktop Top Navigation Tabs (Hidden on mobile where bottom nav is active) */}
-        <div className="hidden sm:flex items-center gap-1.5 p-1.5 bg-white/80 backdrop-blur-md rounded-2xl border border-deep-ink/8 shadow-2xs">
+        <div className="border-deep-ink/8 hidden items-center gap-1.5 rounded-2xl border bg-white/80 p-1.5 shadow-2xs backdrop-blur-md sm:flex">
           {[
             { id: 'home', label: 'Overview', icon: Home },
-            { id: 'visits', label: 'Consultations', icon: CalendarDays, badge: sessions.length || null },
-            { id: 'care-team', label: 'Care Team', icon: Stethoscope, badge: isPendingApproval ? '1' : null },
+            {
+              id: 'visits',
+              label: 'Consultations',
+              icon: CalendarDays,
+              badge: sessions.length || null,
+            },
+            {
+              id: 'care-team',
+              label: 'Care Team',
+              icon: Stethoscope,
+              badge: isPendingApproval ? '1' : null,
+            },
             { id: 'records', label: 'Health Records', icon: ShieldCheck },
-          ].map(tab => {
-            const Icon = tab.icon
-            const isActive = activeTab === tab.id
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
                 className={cn(
-                  'flex-1 py-2 px-3.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer',
+                  'flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all',
                   isActive
                     ? 'bg-deep-ink text-canvas shadow-xs'
                     : 'text-slate hover:text-deep-ink hover:bg-soft-meadow/60'
                 )}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="h-4 w-4" />
                 <span>{tab.label}</span>
                 {tab.badge && (
                   <span
                     className={cn(
-                      'px-1.5 py-0.2 rounded-full text-[10px] font-bold',
-                      isActive ? 'bg-hi-yellow text-deep-ink' : 'bg-amber-100 text-amber-900'
+                      'py-0.2 rounded-full px-1.5 text-[10px] font-bold',
+                      isActive
+                        ? 'bg-hi-yellow text-deep-ink'
+                        : 'bg-amber-100 text-amber-900'
                     )}
                   >
                     {tab.badge}
                   </span>
                 )}
               </button>
-            )
+            );
           })}
         </div>
 
@@ -287,26 +318,27 @@ export default function PatientDashboardPage() {
         {/* SCREEN 1: HOME / OVERVIEW                                    */}
         {/* ============================================================ */}
         {activeTab === 'home' && (
-          <div className="space-y-5 animate-in fade-in duration-200">
+          <div className="animate-in fade-in space-y-5 duration-200">
             {/* Pending Doctor Invitation Card - Priority Banner */}
             {isPendingApproval && pendingDoctor && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/90 border border-amber-300/80 shadow-xs space-y-3">
+              <div className="space-y-3 rounded-2xl border border-amber-300/80 bg-amber-50/90 p-4 shadow-xs sm:p-5">
                 <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center shrink-0 mt-0.5">
-                    <UserCheck className="w-5 h-5" />
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-200 text-amber-900">
+                    <UserCheck className="h-5 w-5" />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-amber-900 uppercase tracking-wider">
+                      <span className="text-xs font-bold tracking-wider text-amber-900 uppercase">
                         Doctor Invitation
                       </span>
-                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                      <span className="h-2 w-2 animate-ping rounded-full bg-amber-500" />
                     </div>
-                    <h4 className="text-sm sm:text-base font-bold text-deep-ink mt-0.5">
+                    <h4 className="text-deep-ink mt-0.5 text-sm font-bold sm:text-base">
                       Dr. {pendingDoctor.name} invited you to connect
                     </h4>
-                    <p className="text-xs text-slate mt-0.5 leading-relaxed">
-                      Accept to share your AI intake summaries and consultation notes with your clinician.
+                    <p className="text-slate mt-0.5 text-xs leading-relaxed">
+                      Accept to share your AI intake summaries and consultation
+                      notes with your clinician.
                     </p>
                   </div>
                 </div>
@@ -314,7 +346,7 @@ export default function PatientDashboardPage() {
                   <Button
                     size="sm"
                     onClick={() => setActiveTab('care-team')}
-                    className="flex-1 rounded-xl bg-deep-ink text-white hover:bg-deep-ink/90 font-semibold text-xs h-8 shadow-xs cursor-pointer"
+                    className="bg-deep-ink hover:bg-deep-ink/90 h-8 flex-1 cursor-pointer rounded-xl text-xs font-semibold text-white shadow-xs"
                   >
                     Review Invitation
                   </Button>
@@ -322,7 +354,7 @@ export default function PatientDashboardPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => setActiveTab('care-team')}
-                    className="rounded-xl border-amber-300 text-slate hover:text-deep-ink text-xs h-8 cursor-pointer"
+                    className="text-slate hover:text-deep-ink h-8 cursor-pointer rounded-xl border-amber-300 text-xs"
                   >
                     View Details
                   </Button>
@@ -338,127 +370,163 @@ export default function PatientDashboardPage() {
             />
 
             {/* Desktop 2-Column Responsive Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+            <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-3">
               {/* Left Column (2 cols): Metrics & Consultation History */}
-              <div className="lg:col-span-2 space-y-5">
+              <div className="space-y-5 lg:col-span-2">
                 {/* Quick Metrics Grid */}
                 <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
                   <button
                     onClick={() => setActiveTab('visits')}
-                    className="p-3.5 sm:p-4 bg-white rounded-2xl border border-deep-ink/10 shadow-2xs text-left hover:border-deep-ink/30 transition-all cursor-pointer group"
+                    className="border-deep-ink/10 hover:border-deep-ink/30 group cursor-pointer rounded-2xl border bg-white p-3.5 text-left shadow-2xs transition-all sm:p-4"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] sm:text-xs font-bold text-slate uppercase tracking-wider">Visits</span>
-                      <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate group-hover:text-deep-ink transition-colors" />
+                      <span className="text-slate text-[10px] font-bold tracking-wider uppercase sm:text-xs">
+                        Visits
+                      </span>
+                      <CalendarDays className="text-slate group-hover:text-deep-ink h-3.5 w-3.5 transition-colors sm:h-4 sm:w-4" />
                     </div>
-                    <div className="text-2xl sm:text-3xl font-bold font-serif text-deep-ink mt-1.5">
+                    <div className="text-deep-ink mt-1.5 font-serif text-2xl font-bold sm:text-3xl">
                       {stats?.totalConsultations ?? sessions.length}
                     </div>
-                    <span className="text-[10px] sm:text-xs text-slate block truncate">Recorded visits</span>
+                    <span className="text-slate block truncate text-[10px] sm:text-xs">
+                      Recorded visits
+                    </span>
                   </button>
 
                   <button
                     onClick={() => setActiveTab('visits')}
-                    className="p-3.5 sm:p-4 bg-white rounded-2xl border border-deep-ink/10 shadow-2xs text-left hover:border-deep-ink/30 transition-all cursor-pointer group"
+                    className="border-deep-ink/10 hover:border-deep-ink/30 group cursor-pointer rounded-2xl border bg-white p-3.5 text-left shadow-2xs transition-all sm:p-4"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] sm:text-xs font-bold text-slate uppercase tracking-wider">Status</span>
-                      <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
+                      <span className="text-slate text-[10px] font-bold tracking-wider uppercase sm:text-xs">
+                        Status
+                      </span>
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 sm:h-4 sm:w-4" />
                     </div>
-                    <div className="text-2xl sm:text-3xl font-bold font-serif text-emerald-700 mt-1.5">
-                      {stats?.completedConsultations ?? sessions.filter(s => s.status === 'completed').length}
+                    <div className="mt-1.5 font-serif text-2xl font-bold text-emerald-700 sm:text-3xl">
+                      {stats?.completedConsultations ??
+                        sessions.filter((s) => s.status === 'completed').length}
                     </div>
-                    <span className="text-[10px] sm:text-xs text-slate block truncate">Completed visits</span>
+                    <span className="text-slate block truncate text-[10px] sm:text-xs">
+                      Completed visits
+                    </span>
                   </button>
 
                   <button
                     onClick={() => setActiveTab('records')}
-                    className="p-3.5 sm:p-4 bg-white rounded-2xl border border-deep-ink/10 shadow-2xs text-left hover:border-deep-ink/30 transition-all cursor-pointer group"
+                    className="border-deep-ink/10 hover:border-deep-ink/30 group cursor-pointer rounded-2xl border bg-white p-3.5 text-left shadow-2xs transition-all sm:p-4"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] sm:text-xs font-bold text-slate uppercase tracking-wider">Intake</span>
-                      <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate group-hover:text-deep-ink transition-colors" />
+                      <span className="text-slate text-[10px] font-bold tracking-wider uppercase sm:text-xs">
+                        Intake
+                      </span>
+                      <Activity className="text-slate group-hover:text-deep-ink h-3.5 w-3.5 transition-colors sm:h-4 sm:w-4" />
                     </div>
-                    <div className="text-base sm:text-lg font-bold font-serif text-deep-ink mt-2 truncate">
+                    <div className="text-deep-ink mt-2 truncate font-serif text-base font-bold sm:text-lg">
                       {stats?.hasIntake || intake ? 'Active' : 'Pending'}
                     </div>
-                    <span className="text-[10px] sm:text-xs text-slate block truncate">Health profile</span>
+                    <span className="text-slate block truncate text-[10px] sm:text-xs">
+                      Health profile
+                    </span>
                   </button>
                 </div>
 
                 {/* Recent Visit Preview */}
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between px-1">
-                    <h3 className="font-serif font-bold text-sm sm:text-base text-deep-ink">Recent Visit Summary</h3>
+                    <h3 className="text-deep-ink font-serif text-sm font-bold sm:text-base">
+                      Recent Visit Summary
+                    </h3>
                     {sessions.length > 0 && (
                       <button
                         onClick={() => setActiveTab('visits')}
-                        className="text-xs font-semibold text-slate hover:text-deep-ink flex items-center gap-0.5 cursor-pointer"
+                        className="text-slate hover:text-deep-ink flex cursor-pointer items-center gap-0.5 text-xs font-semibold"
                       >
                         <span>View all ({sessions.length})</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
+                        <ChevronRight className="h-3.5 w-3.5" />
                       </button>
                     )}
                   </div>
 
                   {sessions.length === 0 ? (
-                    <Card className="p-6 sm:p-8 text-center border-dashed rounded-2xl bg-white/70">
-                      <Clock className="w-8 h-8 text-slate/40 mx-auto mb-2" />
-                      <p className="text-xs font-medium text-slate">No consultation visits recorded yet.</p>
-                      <p className="text-[11px] text-slate/70 mt-1 mb-3">
-                        Your summaries and AI care plans will appear here after consultations.
+                    <Card className="rounded-2xl border-dashed bg-white/70 p-6 text-center sm:p-8">
+                      <Clock className="text-slate/40 mx-auto mb-2 h-8 w-8" />
+                      <p className="text-slate text-xs font-medium">
+                        No consultation visits recorded yet.
+                      </p>
+                      <p className="text-slate/70 mt-1 mb-3 text-[11px]">
+                        Your summaries and AI care plans will appear here after
+                        consultations.
                       </p>
                       <Link href="/intake">
-                        <Button variant="outline" className="rounded-full text-xs font-semibold px-4 h-8 cursor-pointer">
+                        <Button
+                          variant="outline"
+                          className="h-8 cursor-pointer rounded-full px-4 text-xs font-semibold"
+                        >
                           Start First Intake
                         </Button>
                       </Link>
                     </Card>
                   ) : (
                     (() => {
-                      const recent = sessions[0]
+                      const recent = sessions[0];
                       const dateStr = recent.startedAt
-                        ? new Date(recent.startedAt).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })
-                        : 'Recent'
+                        ? new Date(recent.startedAt).toLocaleDateString(
+                            undefined,
+                            {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            }
+                          )
+                        : 'Recent';
                       const summarySnippet =
                         recent.soapNote?.assessment ||
                         recent.soapNote?.plan ||
                         recent.transcript?.slice(0, 120) ||
-                        'Clinical consultation recorded.'
+                        'Clinical consultation recorded.';
 
                       return (
-                        <Card className="p-4 sm:p-5 rounded-2xl bg-white border border-deep-ink/10 shadow-2xs space-y-3">
+                        <Card className="border-deep-ink/10 space-y-3 rounded-2xl border bg-white p-4 shadow-2xs sm:p-5">
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <span className="text-[11px] font-semibold text-slate flex items-center gap-1">
-                                <Calendar className="w-3 h-3 text-slate/60" />
+                              <span className="text-slate flex items-center gap-1 text-[11px] font-semibold">
+                                <Calendar className="text-slate/60 h-3 w-3" />
                                 {dateStr}
                               </span>
-                              <h4 className="font-serif font-bold text-base text-deep-ink mt-0.5">
+                              <h4 className="text-deep-ink mt-0.5 font-serif text-base font-bold">
                                 Consultation Summary
                               </h4>
                             </div>
-                            <Badge variant={recent.status === 'completed' ? 'success' : 'default'} className="text-[10px]">
-                              {recent.status === 'completed' ? 'Completed' : 'Active'}
+                            <Badge
+                              variant={
+                                recent.status === 'completed'
+                                  ? 'success'
+                                  : 'default'
+                              }
+                              className="text-[10px]"
+                            >
+                              {recent.status === 'completed'
+                                ? 'Completed'
+                                : 'Active'}
                             </Badge>
                           </div>
 
-                          <p className="text-xs sm:text-sm text-slate line-clamp-2 leading-relaxed bg-soft-meadow/40 p-3 rounded-xl border border-deep-ink/5">
+                          <p className="text-slate bg-soft-meadow/40 border-deep-ink/5 line-clamp-2 rounded-xl border p-3 text-xs leading-relaxed sm:text-sm">
                             {summarySnippet}
                           </p>
 
-                          <Link href={`/dashboard/patient/consultations/${recent.id}`} className="block">
-                            <Button className="w-full rounded-xl bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-semibold text-xs h-9 gap-1.5 shadow-2xs cursor-pointer">
+                          <Link
+                            href={`/dashboard/patient/consultations/${recent.id}`}
+                            className="block"
+                          >
+                            <Button className="bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 h-9 w-full cursor-pointer gap-1.5 rounded-xl text-xs font-semibold shadow-2xs">
                               <span>View Full Clinical Report</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
+                              <ChevronRight className="h-3.5 w-3.5" />
                             </Button>
                           </Link>
                         </Card>
-                      )
+                      );
                     })()
                   )}
                 </div>
@@ -467,43 +535,52 @@ export default function PatientDashboardPage() {
               {/* Right Column (1 col): Care Team & Records Snapshot */}
               <div className="space-y-5">
                 {/* Care Team Glance Card */}
-                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-deep-ink/10 shadow-2xs space-y-3">
+                <div className="border-deep-ink/10 space-y-3 rounded-2xl border bg-white p-4 shadow-2xs sm:p-5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Stethoscope className="w-4 h-4 text-deep-ink" />
-                      <h3 className="font-serif font-bold text-sm text-deep-ink">Your Physician</h3>
+                      <Stethoscope className="text-deep-ink h-4 w-4" />
+                      <h3 className="text-deep-ink font-serif text-sm font-bold">
+                        Your Physician
+                      </h3>
                     </div>
                     <button
                       onClick={() => setActiveTab('care-team')}
-                      className="text-xs font-semibold text-slate hover:text-deep-ink flex items-center gap-0.5 cursor-pointer"
+                      className="text-slate hover:text-deep-ink flex cursor-pointer items-center gap-0.5 text-xs font-semibold"
                     >
                       <span>Manage</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
+                      <ChevronRight className="h-3.5 w-3.5" />
                     </button>
                   </div>
 
                   {hasDoctor ? (
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-soft-meadow/50 border border-deep-ink/5">
+                    <div className="bg-soft-meadow/50 border-deep-ink/5 flex items-center justify-between rounded-xl border p-3">
                       <div className="min-w-0">
-                        <p className="font-bold text-sm text-deep-ink truncate">Dr. {doctor?.name}</p>
-                        <p className="text-xs text-slate truncate">
-                          {doctor?.specialty || 'General Practice'} • {doctor?.clinic || 'Clinical Center'}
+                        <p className="text-deep-ink truncate text-sm font-bold">
+                          Dr. {doctor?.name}
+                        </p>
+                        <p className="text-slate truncate text-xs">
+                          {doctor?.specialty || 'General Practice'} •{' '}
+                          {doctor?.clinic || 'Clinical Center'}
                         </p>
                       </div>
-                      <Badge variant="success" className="text-[10px] shrink-0">
+                      <Badge variant="success" className="shrink-0 text-[10px]">
                         Linked
                       </Badge>
                     </div>
                   ) : (
-                    <div className="p-3 rounded-xl bg-amber-50/60 border border-amber-200/60 flex items-center justify-between gap-3">
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200/60 bg-amber-50/60 p-3">
                       <div>
-                        <p className="font-semibold text-xs text-amber-900">No Doctor Linked</p>
-                        <p className="text-[11px] text-slate">Connect with your physician using their Care Code.</p>
+                        <p className="text-xs font-semibold text-amber-900">
+                          No Doctor Linked
+                        </p>
+                        <p className="text-slate text-[11px]">
+                          Connect with your physician using their Care Code.
+                        </p>
                       </div>
                       <Button
                         size="sm"
                         onClick={() => setActiveTab('care-team')}
-                        className="rounded-xl bg-deep-ink text-canvas hover:bg-deep-ink/90 text-xs px-3 h-7 shrink-0 cursor-pointer"
+                        className="bg-deep-ink text-canvas hover:bg-deep-ink/90 h-7 shrink-0 cursor-pointer rounded-xl px-3 text-xs"
                       >
                         Connect
                       </Button>
@@ -516,21 +593,29 @@ export default function PatientDashboardPage() {
                   onClick={() => setActiveTab('records')}
                   role="button"
                   tabIndex={0}
-                  className="p-4 sm:p-5 rounded-2xl bg-white border border-deep-ink/10 shadow-2xs flex items-center justify-between cursor-pointer hover:border-deep-ink/30 transition-all"
+                  className="border-deep-ink/10 hover:border-deep-ink/30 flex cursor-pointer items-center justify-between rounded-2xl border bg-white p-4 shadow-2xs transition-all sm:p-5"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-soft-meadow flex items-center justify-center text-deep-ink shrink-0">
-                      <ShieldCheck className="w-5 h-5" />
+                    <div className="bg-soft-meadow text-deep-ink flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+                      <ShieldCheck className="h-5 w-5" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-deep-ink">Medical Information & Medications</h4>
-                      <p className="text-[11px] text-slate mt-0.5">
-                        {intake?.medications?.length || patient?.medications?.length || 0} meds •{' '}
-                        {intake?.allergies?.length || patient?.allergies?.length || 0} allergies documented
+                      <h4 className="text-deep-ink text-xs font-bold">
+                        Medical Information & Medications
+                      </h4>
+                      <p className="text-slate mt-0.5 text-[11px]">
+                        {intake?.medications?.length ||
+                          patient?.medications?.length ||
+                          0}{' '}
+                        meds •{' '}
+                        {intake?.allergies?.length ||
+                          patient?.allergies?.length ||
+                          0}{' '}
+                        allergies documented
                       </p>
                     </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate shrink-0" />
+                  <ChevronRight className="text-slate h-4 w-4 shrink-0" />
                 </div>
               </div>
             </div>
@@ -541,37 +626,43 @@ export default function PatientDashboardPage() {
         {/* SCREEN 2: VISITS / CONSULTATIONS                             */}
         {/* ============================================================ */}
         {activeTab === 'visits' && (
-          <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="animate-in fade-in space-y-4 duration-200">
             {/* Screen Header */}
-            <div className="bg-white p-4 rounded-2xl border border-deep-ink/10 shadow-2xs space-y-3">
+            <div className="border-deep-ink/10 space-y-3 rounded-2xl border bg-white p-4 shadow-2xs">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-serif font-bold text-lg text-deep-ink">Your Consultations</h2>
-                  <p className="text-xs text-slate">
-                    Summaries, assessment findings, and treatment plans from your clinical visits.
+                  <h2 className="text-deep-ink font-serif text-lg font-bold">
+                    Your Consultations
+                  </h2>
+                  <p className="text-slate text-xs">
+                    Summaries, assessment findings, and treatment plans from
+                    your clinical visits.
                   </p>
                 </div>
-                <Badge variant="secondary" className="text-xs font-semibold px-2 py-0.5">
+                <Badge
+                  variant="secondary"
+                  className="px-2 py-0.5 text-xs font-semibold"
+                >
                   {sessions.length} total
                 </Badge>
               </div>
 
               {/* Status Filter Tabs */}
-              <div className="flex gap-1.5 p-1 bg-soft-meadow/60 rounded-xl border border-deep-ink/5">
+              <div className="bg-soft-meadow/60 border-deep-ink/5 flex gap-1.5 rounded-xl border p-1">
                 {(
                   [
                     { id: 'all', label: 'All Visits' },
                     { id: 'completed', label: 'Completed' },
                     { id: 'active', label: 'In Progress' },
                   ] as const
-                ).map(tab => (
+                ).map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setVisitFilter(tab.id)}
                     className={cn(
-                      'flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center',
+                      'flex-1 cursor-pointer rounded-lg py-1.5 text-center text-xs font-semibold transition-all',
                       visitFilter === tab.id
-                        ? 'bg-white text-deep-ink shadow-2xs'
+                        ? 'text-deep-ink bg-white shadow-2xs'
                         : 'text-slate hover:text-deep-ink'
                     )}
                   >
@@ -583,17 +674,19 @@ export default function PatientDashboardPage() {
 
             {/* Consultations List */}
             {filteredSessions.length === 0 ? (
-              <Card className="p-8 text-center border-dashed rounded-2xl bg-white space-y-3">
-                <Clock className="w-10 h-10 text-slate/30 mx-auto" />
-                <h4 className="font-serif font-bold text-deep-ink text-base">No visits found</h4>
-                <p className="text-xs text-slate max-w-xs mx-auto">
+              <Card className="space-y-3 rounded-2xl border-dashed bg-white p-8 text-center">
+                <Clock className="text-slate/30 mx-auto h-10 w-10" />
+                <h4 className="text-deep-ink font-serif text-base font-bold">
+                  No visits found
+                </h4>
+                <p className="text-slate mx-auto max-w-xs text-xs">
                   {visitFilter !== 'all'
                     ? `You don't have any visits with status "${visitFilter}".`
                     : 'You haven’t completed any clinical consultations yet.'}
                 </p>
                 <div className="pt-2">
                   <Link href="/intake">
-                    <Button className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 text-xs font-semibold px-5 shadow-2xs">
+                    <Button className="bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 rounded-full px-5 text-xs font-semibold shadow-2xs">
                       Start Health Intake
                     </Button>
                   </Link>
@@ -601,42 +694,54 @@ export default function PatientDashboardPage() {
               </Card>
             ) : (
               <div className="space-y-3">
-                {filteredSessions.map(session => {
+                {filteredSessions.map((session) => {
                   const dateStr = session.startedAt
                     ? new Date(session.startedAt).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric',
                       })
-                    : 'Recent'
+                    : 'Recent';
                   const summary =
                     session.soapNote?.assessment ||
                     session.soapNote?.plan ||
-                    (session.transcript ? `${session.transcript.slice(0, 140)}...` : 'Clinical encounter recorded.')
+                    (session.transcript
+                      ? `${session.transcript.slice(0, 140)}...`
+                      : 'Clinical encounter recorded.');
 
                   return (
                     <Card
                       key={session.id}
-                      className="p-4 rounded-2xl bg-white border border-deep-ink/10 shadow-2xs hover:border-deep-ink/30 transition-all space-y-3"
+                      className="border-deep-ink/10 hover:border-deep-ink/30 space-y-3 rounded-2xl border bg-white p-4 shadow-2xs transition-all"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="font-semibold font-serif text-deep-ink text-base">
-                              Consultation {doctor?.name ? `with Dr. ${doctor.name}` : ''}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="text-deep-ink font-serif text-base font-semibold">
+                              Consultation{' '}
+                              {doctor?.name ? `with Dr. ${doctor.name}` : ''}
                             </h4>
-                            <Badge variant={session.status === 'completed' ? 'success' : 'default'} className="text-[10px]">
-                              {session.status === 'completed' ? 'Completed' : 'Active'}
+                            <Badge
+                              variant={
+                                session.status === 'completed'
+                                  ? 'success'
+                                  : 'default'
+                              }
+                              className="text-[10px]"
+                            >
+                              {session.status === 'completed'
+                                ? 'Completed'
+                                : 'Active'}
                             </Badge>
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-slate mt-1 flex-wrap">
+                          <div className="text-slate mt-1 flex flex-wrap items-center gap-3 text-xs">
                             <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3 text-slate/60" />
+                              <Calendar className="text-slate/60 h-3 w-3" />
                               {dateStr}
                             </span>
                             {doctor?.specialty && (
                               <span className="flex items-center gap-1">
-                                <UserCheck className="h-3 w-3 text-slate/60" />
+                                <UserCheck className="text-slate/60 h-3 w-3" />
                                 {doctor.specialty}
                               </span>
                             )}
@@ -644,20 +749,23 @@ export default function PatientDashboardPage() {
                         </div>
                       </div>
 
-                      <div className="bg-soft-meadow/40 p-3 rounded-xl border border-deep-ink/5">
-                        <p className="text-xs text-deep-ink/90 leading-relaxed line-clamp-3">
+                      <div className="bg-soft-meadow/40 border-deep-ink/5 rounded-xl border p-3">
+                        <p className="text-deep-ink/90 line-clamp-3 text-xs leading-relaxed">
                           {summary}
                         </p>
                       </div>
 
-                      <Link href={`/dashboard/patient/consultations/${session.id}`} className="block">
-                        <Button className="w-full rounded-xl bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 font-semibold text-xs h-9 gap-1.5 shadow-2xs cursor-pointer">
+                      <Link
+                        href={`/dashboard/patient/consultations/${session.id}`}
+                        className="block"
+                      >
+                        <Button className="bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 h-9 w-full cursor-pointer gap-1.5 rounded-xl text-xs font-semibold shadow-2xs">
                           <span>View Full Clinical Summary & Care Plan</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
+                          <ChevronRight className="h-3.5 w-3.5" />
                         </Button>
                       </Link>
                     </Card>
-                  )
+                  );
                 })}
               </div>
             )}
@@ -668,26 +776,28 @@ export default function PatientDashboardPage() {
         {/* SCREEN 3: CARE TEAM / DOCTOR CONNECTION                      */}
         {/* ============================================================ */}
         {activeTab === 'care-team' && (
-          <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="animate-in fade-in space-y-4 duration-200">
             {/* Connected Doctor Dossier View */}
             {hasDoctor && !isChangingDoctor && (
               <div className="space-y-4">
-                <Card className="p-5 rounded-2xl bg-white border border-deep-ink/10 shadow-2xs space-y-4">
+                <Card className="border-deep-ink/10 space-y-4 rounded-2xl border bg-white p-5 shadow-2xs">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3.5">
-                      <div className="w-12 h-12 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center font-bold font-serif text-lg shrink-0 border border-teal-200">
-                        {doctor?.name ? doctor.name.slice(0, 2).toUpperCase() : 'DR'}
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-teal-200 bg-teal-100 font-serif text-lg font-bold text-teal-800">
+                        {doctor?.name
+                          ? doctor.name.slice(0, 2).toUpperCase()
+                          : 'DR'}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-serif font-bold text-lg text-deep-ink">
+                          <h3 className="text-deep-ink font-serif text-lg font-bold">
                             Dr. {doctor?.name}
                           </h3>
                           <Badge variant="success" className="text-[10px]">
                             Connected
                           </Badge>
                         </div>
-                        <p className="text-xs text-slate font-medium">
+                        <p className="text-slate text-xs font-medium">
                           {doctor?.specialty || 'General Practice'}
                         </p>
                       </div>
@@ -695,43 +805,53 @@ export default function PatientDashboardPage() {
                   </div>
 
                   {/* Doctor practice info grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-3.5 sm:p-4 rounded-xl bg-soft-meadow/50 border border-deep-ink/5 text-xs">
+                  <div className="bg-soft-meadow/50 border-deep-ink/5 grid grid-cols-1 gap-3 rounded-xl border p-3.5 text-xs sm:grid-cols-2 sm:p-4 lg:grid-cols-3">
                     <div>
-                      <span className="text-slate text-[11px] block">Clinic / Hospital</span>
-                      <span className="font-semibold text-deep-ink truncate block">
+                      <span className="text-slate block text-[11px]">
+                        Clinic / Hospital
+                      </span>
+                      <span className="text-deep-ink block truncate font-semibold">
                         {doctor?.clinic || 'Independent Practice'}
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-slate text-[11px] block">Care Code</span>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="font-mono font-bold text-deep-ink bg-white px-2 py-0.5 rounded border border-deep-ink/10">
+                      <span className="text-slate block text-[11px]">
+                        Care Code
+                      </span>
+                      <div className="mt-0.5 flex items-center gap-1.5">
+                        <span className="text-deep-ink border-deep-ink/10 rounded border bg-white px-2 py-0.5 font-mono font-bold">
                           {doctor?.careCode || 'NOA-CARE'}
                         </span>
                         <button
                           onClick={() => handleCopy(doctor?.careCode || '')}
-                          className="text-slate hover:text-deep-ink p-1 cursor-pointer"
+                          className="text-slate hover:text-deep-ink cursor-pointer p-1"
                           title="Copy Care Code"
                         >
-                          {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                          {copiedCode ? (
+                            <Check className="h-3.5 w-3.5 text-emerald-600" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
                         </button>
                       </div>
                     </div>
 
                     {doctor?.email && (
-                      <div className="sm:col-span-2 lg:col-span-1 flex items-center gap-1.5 text-slate pt-1 sm:pt-0 border-t sm:border-t-0 lg:border-t-0 border-deep-ink/5">
-                        <Mail className="w-3.5 h-3.5 text-slate/70" />
+                      <div className="text-slate border-deep-ink/5 flex items-center gap-1.5 border-t pt-1 sm:col-span-2 sm:border-t-0 sm:pt-0 lg:col-span-1 lg:border-t-0">
+                        <Mail className="text-slate/70 h-3.5 w-3.5" />
                         <span className="truncate">{doctor.email}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Clinical Link Benefit Notice */}
-                  <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-900 flex items-start gap-2">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-900">
+                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                     <p className="leading-relaxed">
-                      Dr. {doctor?.name} has authorized access to review your AI intake submissions, session transcripts, and SOAP clinical care plans.
+                      Dr. {doctor?.name} has authorized access to review your AI
+                      intake submissions, session transcripts, and SOAP clinical
+                      care plans.
                     </p>
                   </div>
 
@@ -741,7 +861,7 @@ export default function PatientDashboardPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => setIsChangingDoctor(true)}
-                      className="w-full rounded-xl text-xs text-slate hover:text-deep-ink border-deep-ink/15 font-semibold h-9"
+                      className="text-slate hover:text-deep-ink border-deep-ink/15 h-9 w-full rounded-xl text-xs font-semibold"
                     >
                       Connect with Different Doctor
                     </Button>
@@ -755,10 +875,12 @@ export default function PatientDashboardPage() {
               <div className="space-y-3">
                 {isChangingDoctor && (
                   <div className="flex items-center justify-between px-1">
-                    <span className="text-xs text-slate">Connect with new healthcare provider</span>
+                    <span className="text-slate text-xs">
+                      Connect with new healthcare provider
+                    </span>
                     <button
                       onClick={() => setIsChangingDoctor(false)}
-                      className="text-xs font-semibold text-deep-ink hover:underline cursor-pointer"
+                      className="text-deep-ink cursor-pointer text-xs font-semibold hover:underline"
                     >
                       Cancel
                     </button>
@@ -769,8 +891,8 @@ export default function PatientDashboardPage() {
                   pendingDoctor={pendingDoctor}
                   linkStatus={patient?.linkStatus}
                   onRefresh={async () => {
-                    if (patientId) await loadDashboard(patientId)
-                    setIsChangingDoctor(false)
+                    if (patientId) await loadDashboard(patientId);
+                    setIsChangingDoctor(false);
                   }}
                 />
               </div>
@@ -782,15 +904,22 @@ export default function PatientDashboardPage() {
         {/* SCREEN 4: HEALTH RECORDS & SECURITY                          */}
         {/* ============================================================ */}
         {activeTab === 'records' && (
-          <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="animate-in fade-in space-y-4 duration-200">
             {/* Screen Header */}
-            <div className="bg-white p-4 rounded-2xl border border-deep-ink/10 shadow-2xs flex items-center justify-between">
+            <div className="border-deep-ink/10 flex items-center justify-between rounded-2xl border bg-white p-4 shadow-2xs">
               <div>
-                <h2 className="font-serif font-bold text-lg text-deep-ink">Health Records</h2>
-                <p className="text-xs text-slate">Your verified medical baseline and security rights.</p>
+                <h2 className="text-deep-ink font-serif text-lg font-bold">
+                  Health Records
+                </h2>
+                <p className="text-slate text-xs">
+                  Your verified medical baseline and security rights.
+                </p>
               </div>
               <Link href="/intake">
-                <Button size="sm" className="rounded-full bg-hi-yellow text-deep-ink font-semibold text-xs h-8">
+                <Button
+                  size="sm"
+                  className="bg-hi-yellow text-deep-ink h-8 rounded-full text-xs font-semibold"
+                >
                   Update Intake
                 </Button>
               </Link>
@@ -800,29 +929,36 @@ export default function PatientDashboardPage() {
             <HealthInfoCard patient={patient} intake={intake} />
 
             {/* Intake Profile Card */}
-            <Card className="p-5 rounded-2xl bg-white border border-deep-ink/10 shadow-2xs space-y-3">
+            <Card className="border-deep-ink/10 space-y-3 rounded-2xl border bg-white p-5 shadow-2xs">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-soft-meadow flex items-center justify-center text-deep-ink">
-                    <Activity className="w-4 h-4" />
+                  <div className="bg-soft-meadow text-deep-ink flex h-8 w-8 items-center justify-center rounded-lg">
+                    <Activity className="h-4 w-4" />
                   </div>
                   <div>
-                    <h3 className="font-serif font-bold text-sm text-deep-ink">Clinical Intake Status</h3>
-                    <p className="text-[11px] text-slate">
+                    <h3 className="text-deep-ink font-serif text-sm font-bold">
+                      Clinical Intake Status
+                    </h3>
+                    <p className="text-slate text-[11px]">
                       {intake?.updatedAt
                         ? `Last updated on ${new Date(intake.updatedAt).toLocaleDateString()}`
                         : 'Preliminary baseline intake recorded'}
                     </p>
                   </div>
                 </div>
-                <Badge variant={intake ? 'success' : 'default'} className="text-[10px]">
+                <Badge
+                  variant={intake ? 'success' : 'default'}
+                  className="text-[10px]"
+                >
                   {intake ? 'Completed' : 'Pending'}
                 </Badge>
               </div>
 
               {intake?.chiefComplaint && (
-                <div className="p-3 rounded-xl bg-soft-meadow/50 border border-deep-ink/5 text-xs text-deep-ink space-y-1">
-                  <span className="font-semibold text-slate block text-[11px]">Primary Chief Complaint:</span>
+                <div className="bg-soft-meadow/50 border-deep-ink/5 text-deep-ink space-y-1 rounded-xl border p-3 text-xs">
+                  <span className="text-slate block text-[11px] font-semibold">
+                    Primary Chief Complaint:
+                  </span>
                   <p className="leading-relaxed">{intake.chiefComplaint}</p>
                 </div>
               )}
@@ -836,9 +972,9 @@ export default function PatientDashboardPage() {
               <Button
                 variant="outline"
                 onClick={handleLogout}
-                className="w-full rounded-2xl border-rose-200 text-rose-700 hover:bg-rose-50 hover:border-rose-300 font-semibold text-xs h-10 gap-2 cursor-pointer"
+                className="h-10 w-full cursor-pointer gap-2 rounded-2xl border-rose-200 text-xs font-semibold text-rose-700 hover:border-rose-300 hover:bg-rose-50"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="h-4 w-4" />
                 <span>Sign Out of Patient Portal</span>
               </Button>
             </div>
@@ -862,6 +998,5 @@ export default function PatientDashboardPage() {
         />
       </div>
     </div>
-  )
+  );
 }
-

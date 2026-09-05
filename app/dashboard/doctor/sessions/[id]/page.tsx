@@ -1,60 +1,81 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { StatCard } from '@/components/ui/stat-card'
-import { ArrowLeft, Clock, Download, Edit3, FileText, Mic, Save, User, X, Loader2, AlertCircle } from 'lucide-react'
-import { useDoctorStore } from '@/lib/stores/doctor.store'
-import type { Session, Patient, SoapNote } from '@/lib/db'
+import * as React from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { StatCard } from '@/components/ui/stat-card';
+import {
+  ArrowLeft,
+  Clock,
+  Download,
+  Edit3,
+  FileText,
+  Mic,
+  Save,
+  User,
+  X,
+  Loader2,
+  AlertCircle,
+} from 'lucide-react';
+import { useDoctorStore } from '@/lib/stores/doctor.store';
+import type { Session, Patient, SoapNote } from '@/lib/db';
 
 export default function SessionPage({
   params,
 }: {
-  params: Promise<{ id: string }> | { id: string }
+  params: Promise<{ id: string }> | { id: string };
 }) {
-  const unwrappedParams = React.use(params instanceof Promise ? params : Promise.resolve(params))
-  const sessionId = unwrappedParams.id
+  const unwrappedParams = React.use(
+    params instanceof Promise ? params : Promise.resolve(params)
+  );
+  const sessionId = unwrappedParams.id;
 
-  const doctor = useDoctorStore(state => state.doctor)
-  const storeSessions = useDoctorStore(state => state.sessions)
-  const storePatients = useDoctorStore(state => state.patients)
+  const doctor = useDoctorStore((state) => state.doctor);
+  const storeSessions = useDoctorStore((state) => state.sessions);
+  const storePatients = useDoctorStore((state) => state.patients);
 
-  const [session, setSession] = React.useState<Session | null>(null)
-  const [patient, setPatient] = React.useState<Patient | null>(null)
-  const [isLoading, setIsLoading] = React.useState(true)
-  const [isSaving, setIsSaving] = React.useState(false)
-  const [error, setError] = React.useState<string | null>(null)
-  const [activeTab, setActiveTab] = React.useState<'soap' | 'transcript'>('soap')
-  const [editingNote, setEditingNote] = React.useState(false)
+  const [session, setSession] = React.useState<Session | null>(null);
+  const [patient, setPatient] = React.useState<Patient | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [activeTab, setActiveTab] = React.useState<'soap' | 'transcript'>(
+    'soap'
+  );
+  const [editingNote, setEditingNote] = React.useState(false);
   const [soapNote, setSoapNote] = React.useState<SoapNote>({
     subjective: '',
     objective: '',
     assessment: '',
     plan: '',
     generatedAt: Date.now(),
-  })
+  });
 
   React.useEffect(() => {
     async function loadSession() {
-      setIsLoading(true)
-      setError(null)
+      setIsLoading(true);
+      setError(null);
       try {
-        let found = storeSessions.find(s => s.id === sessionId) || null
+        let found = storeSessions.find((s) => s.id === sessionId) || null;
         if (!found) {
-          const res = await fetch(`/api/sessions?sessionId=${encodeURIComponent(sessionId)}`)
-          const data = await res.json()
-          if (!res.ok) throw new Error(data.message || data.error || 'Failed to fetch session')
-          found = data.session || null
+          const res = await fetch(
+            `/api/sessions?sessionId=${encodeURIComponent(sessionId)}`
+          );
+          const data = await res.json();
+          if (!res.ok)
+            throw new Error(
+              data.message || data.error || 'Failed to fetch session'
+            );
+          found = data.session || null;
         }
 
-        if (!found) throw new Error('Session not found')
-        setSession(found)
+        if (!found) throw new Error('Session not found');
+        setSession(found);
 
         if (found.soapNote) {
-          setSoapNote(found.soapNote)
+          setSoapNote(found.soapNote);
         } else {
           setSoapNote({
             subjective: found.transcript || '',
@@ -62,34 +83,37 @@ export default function SessionPage({
             assessment: '',
             plan: '',
             generatedAt: Date.now(),
-          })
+          });
         }
 
         // Fetch patient
         if (found.patientId) {
-          let p = storePatients.find(item => item.id === found!.patientId) || null
+          let p =
+            storePatients.find((item) => item.id === found!.patientId) || null;
           if (!p) {
-            const pRes = await fetch(`/api/patients/${encodeURIComponent(found.patientId)}`)
-            const pData = await pRes.json()
-            if (pRes.ok && pData.patient) p = pData.patient
+            const pRes = await fetch(
+              `/api/patients/${encodeURIComponent(found.patientId)}`
+            );
+            const pData = await pRes.json();
+            if (pRes.ok && pData.patient) p = pData.patient;
           }
-          setPatient(p)
+          setPatient(p);
         }
       } catch (err: any) {
-        setError(err.message || 'Error loading session')
+        setError(err.message || 'Error loading session');
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
     if (sessionId) {
-      void loadSession()
+      void loadSession();
     }
-  }, [sessionId, storeSessions, storePatients])
+  }, [sessionId, storeSessions, storePatients]);
 
   const handleSaveSOAP = async () => {
-    if (!session) return
-    setIsSaving(true)
+    if (!session) return;
+    setIsSaving(true);
     try {
       const res = await fetch('/api/sessions', {
         method: 'POST',
@@ -101,50 +125,62 @@ export default function SessionPage({
           soapNote,
           transcript: session.transcript,
         }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || data.message || 'Failed to save clinical note')
-      setEditingNote(false)
+      });
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(
+          data.error || data.message || 'Failed to save clinical note'
+        );
+      setEditingNote(false);
       if (data.session) {
-        setSession(data.session)
+        setSession(data.session);
       }
     } catch (err: any) {
-      alert(err.message || 'Failed to save changes')
+      alert(err.message || 'Failed to save changes');
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   if (isLoading) {
     return (
-      <div className="p-12 text-center text-slate text-sm max-w-5xl mx-auto flex flex-col items-center gap-3">
-        <Loader2 className="w-6 h-6 animate-spin text-deep-ink/50" />
+      <div className="text-slate mx-auto flex max-w-5xl flex-col items-center gap-3 p-12 text-center text-sm">
+        <Loader2 className="text-deep-ink/50 h-6 w-6 animate-spin" />
         <span>Loading session consultation...</span>
       </div>
-    )
+    );
   }
 
   if (error || !session) {
     return (
-      <div className="p-6 max-w-3xl mx-auto space-y-4">
+      <div className="mx-auto max-w-3xl space-y-4 p-6">
         <Link
           href="/dashboard/doctor"
-          className="text-xs font-semibold text-slate hover:text-deep-ink flex items-center gap-1.5 transition-colors"
+          className="text-slate hover:text-deep-ink flex items-center gap-1.5 text-xs font-semibold transition-colors"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
+          <ArrowLeft className="h-3.5 w-3.5" />
           <span>Back to Dashboard</span>
         </Link>
-        <div className="p-5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex items-center gap-3 text-xs sm:text-sm">
-          <AlertCircle className="w-5 h-5 shrink-0 text-rose-600" />
+        <div className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-5 text-xs text-rose-900 sm:text-sm">
+          <AlertCircle className="h-5 w-5 shrink-0 text-rose-600" />
           <span>{error || 'Session could not be found.'}</span>
         </div>
       </div>
-    )
+    );
   }
 
-  const patientNameParts = patient ? [patient.firstName, patient.lastName].filter(Boolean) : []
-  const patientName = patientNameParts.length > 0 ? patientNameParts.join(' ').trim() : ((patient as any)?.name || patient?.email || `Patient #${session.patientId.slice(-6)}`)
-  const doctorName = doctor?.name ? `Dr. ${doctor.name}` : 'Attending Physician'
+  const patientNameParts = patient
+    ? [patient.firstName, patient.lastName].filter(Boolean)
+    : [];
+  const patientName =
+    patientNameParts.length > 0
+      ? patientNameParts.join(' ').trim()
+      : (patient as any)?.name ||
+        patient?.email ||
+        `Patient #${session.patientId.slice(-6)}`;
+  const doctorName = doctor?.name
+    ? `Dr. ${doctor.name}`
+    : 'Attending Physician';
   const sessionDate = session.startedAt
     ? new Date(session.startedAt).toLocaleDateString('en-US', {
         month: 'long',
@@ -153,37 +189,42 @@ export default function SessionPage({
         hour: 'numeric',
         minute: '2-digit',
       })
-    : 'Recent'
+    : 'Recent';
 
   // Calculate duration
-  let durationStr = 'Completed'
+  let durationStr = 'Completed';
   if (session.startedAt && session.endedAt) {
-    const mins = Math.max(1, Math.round((session.endedAt - session.startedAt) / 60000))
-    durationStr = `${mins} min${mins === 1 ? '' : 's'}`
+    const mins = Math.max(
+      1,
+      Math.round((session.endedAt - session.startedAt) / 60000)
+    );
+    durationStr = `${mins} min${mins === 1 ? '' : 's'}`;
   }
 
   // Split transcript if stored as text
   const transcriptLines = session.transcript
     ? session.transcript
         .split('\n')
-        .map(l => l.trim())
+        .map((l) => l.trim())
         .filter(Boolean)
-    : []
+    : [];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
       {/* Top Navigation & Actions */}
       <div className="space-y-1">
         <Link
           href="/dashboard/doctor"
-          className="text-xs font-semibold text-slate hover:text-deep-ink flex items-center gap-1.5 transition-colors mb-2"
+          className="text-slate hover:text-deep-ink mb-2 flex items-center gap-1.5 text-xs font-semibold transition-colors"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
+          <ArrowLeft className="h-3.5 w-3.5" />
           <span>Back to Dashboard</span>
         </Link>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold font-serif text-deep-ink">Session Consultation</h1>
+            <h1 className="text-deep-ink font-serif text-2xl font-bold sm:text-3xl">
+              Session Consultation
+            </h1>
             <p className="text-slate text-xs sm:text-sm">
               Session ID: {session.id} · {sessionDate}
             </p>
@@ -191,57 +232,57 @@ export default function SessionPage({
           <Button
             variant="outline"
             onClick={() => window.print()}
-            className="w-full sm:w-auto rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow gap-1.5 text-xs sm:text-sm cursor-pointer"
+            className="border-deep-ink/20 text-deep-ink hover:bg-soft-meadow w-full cursor-pointer gap-1.5 rounded-full text-xs sm:w-auto sm:text-sm"
           >
-            <Download className="w-4 h-4" />
+            <Download className="h-4 w-4" />
             Print Note
           </Button>
         </div>
       </div>
 
       {/* Session Metadata KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           label="Patient"
           value={patientName}
-          icon={<User className="h-5 w-5 text-slate" />}
+          icon={<User className="text-slate h-5 w-5" />}
         />
         <StatCard
           label="Provider"
           value={doctorName}
-          icon={<FileText className="h-5 w-5 text-slate" />}
+          icon={<FileText className="text-slate h-5 w-5" />}
         />
         <StatCard
           label="Duration"
           value={durationStr}
-          icon={<Clock className="h-5 w-5 text-slate" />}
+          icon={<Clock className="text-slate h-5 w-5" />}
         />
       </div>
 
       {/* Main Tabs Container */}
       <Card className="p-4 sm:p-6">
         {/* Tab Controls */}
-        <div className="flex gap-2 border-b border-deep-ink/10 pb-4 mb-6 overflow-x-auto">
+        <div className="border-deep-ink/10 mb-6 flex gap-2 overflow-x-auto border-b pb-4">
           <button
             onClick={() => setActiveTab('soap')}
-            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-semibold transition-colors flex items-center gap-2 shrink-0 cursor-pointer ${
+            className={`flex shrink-0 cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-colors sm:px-5 ${
               activeTab === 'soap'
                 ? 'bg-hi-yellow text-deep-ink shadow-2xs'
                 : 'bg-soft-meadow text-deep-ink/80 hover:bg-soft-meadow/80'
             }`}
           >
-            <FileText className="w-3.5 h-3.5" />
+            <FileText className="h-3.5 w-3.5" />
             <span>SOAP Clinical Note</span>
           </button>
           <button
             onClick={() => setActiveTab('transcript')}
-            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-semibold transition-colors flex items-center gap-2 shrink-0 cursor-pointer ${
+            className={`flex shrink-0 cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-colors sm:px-5 ${
               activeTab === 'transcript'
                 ? 'bg-hi-yellow text-deep-ink shadow-2xs'
                 : 'bg-soft-meadow text-deep-ink/80 hover:bg-soft-meadow/80'
             }`}
           >
-            <Mic className="w-3.5 h-3.5" />
+            <Mic className="h-3.5 w-3.5" />
             <span>Voice Transcript ({transcriptLines.length})</span>
           </button>
         </div>
@@ -252,49 +293,57 @@ export default function SessionPage({
             {!editingNote ? (
               <>
                 <div className="space-y-4">
-                  <div className="bg-soft-meadow/50 rounded-2xl p-4 border border-deep-ink/5">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+                  <div className="bg-soft-meadow/50 border-deep-ink/5 rounded-2xl border p-4">
+                    <span className="text-slate mb-1 block text-xs font-semibold tracking-wider uppercase">
                       Subjective
                     </span>
                     <p className="text-deep-ink text-sm leading-relaxed">
-                      {soapNote.subjective || <span className="italic text-slate">None recorded</span>}
+                      {soapNote.subjective || (
+                        <span className="text-slate italic">None recorded</span>
+                      )}
                     </p>
                   </div>
 
-                  <div className="bg-soft-meadow/50 rounded-2xl p-4 border border-deep-ink/5">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+                  <div className="bg-soft-meadow/50 border-deep-ink/5 rounded-2xl border p-4">
+                    <span className="text-slate mb-1 block text-xs font-semibold tracking-wider uppercase">
                       Objective
                     </span>
                     <p className="text-deep-ink text-sm leading-relaxed">
-                      {soapNote.objective || <span className="italic text-slate">None recorded</span>}
+                      {soapNote.objective || (
+                        <span className="text-slate italic">None recorded</span>
+                      )}
                     </p>
                   </div>
 
-                  <div className="bg-soft-meadow/50 rounded-2xl p-4 border border-deep-ink/5">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+                  <div className="bg-soft-meadow/50 border-deep-ink/5 rounded-2xl border p-4">
+                    <span className="text-slate mb-1 block text-xs font-semibold tracking-wider uppercase">
                       Assessment
                     </span>
                     <p className="text-deep-ink text-sm leading-relaxed">
-                      {soapNote.assessment || <span className="italic text-slate">None recorded</span>}
+                      {soapNote.assessment || (
+                        <span className="text-slate italic">None recorded</span>
+                      )}
                     </p>
                   </div>
 
-                  <div className="bg-soft-meadow/50 rounded-2xl p-4 border border-deep-ink/5">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-slate block mb-1">
+                  <div className="bg-soft-meadow/50 border-deep-ink/5 rounded-2xl border p-4">
+                    <span className="text-slate mb-1 block text-xs font-semibold tracking-wider uppercase">
                       Plan
                     </span>
                     <p className="text-deep-ink text-sm leading-relaxed">
-                      {soapNote.plan || <span className="italic text-slate">None recorded</span>}
+                      {soapNote.plan || (
+                        <span className="text-slate italic">None recorded</span>
+                      )}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-4 border-t border-deep-ink/10">
+                <div className="border-deep-ink/10 flex gap-3 border-t pt-4">
                   <Button
                     onClick={() => setEditingNote(true)}
-                    className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-1.5 font-medium cursor-pointer shadow-2xs text-xs"
+                    className="bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 cursor-pointer gap-1.5 rounded-full text-xs font-medium shadow-2xs"
                   >
-                    <Edit3 className="w-4 h-4" />
+                    <Edit3 className="h-4 w-4" />
                     Edit Clinical Note
                   </Button>
                 </div>
@@ -302,68 +351,80 @@ export default function SessionPage({
             ) : (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate mb-1.5">
+                  <label className="text-slate mb-1.5 block text-xs font-semibold tracking-wider uppercase">
                     Subjective
                   </label>
                   <textarea
                     value={soapNote.subjective}
-                    onChange={e => setSoapNote({ ...soapNote, subjective: e.target.value })}
-                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm bg-transparent"
+                    onChange={(e) =>
+                      setSoapNote({ ...soapNote, subjective: e.target.value })
+                    }
+                    className="border-deep-ink/20 text-deep-ink focus:ring-hi-yellow w-full rounded-2xl border bg-transparent p-3 text-base focus:ring-2 focus:outline-none sm:text-sm"
                     rows={3}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate mb-1.5">
+                  <label className="text-slate mb-1.5 block text-xs font-semibold tracking-wider uppercase">
                     Objective
                   </label>
                   <textarea
                     value={soapNote.objective}
-                    onChange={e => setSoapNote({ ...soapNote, objective: e.target.value })}
-                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm bg-transparent"
+                    onChange={(e) =>
+                      setSoapNote({ ...soapNote, objective: e.target.value })
+                    }
+                    className="border-deep-ink/20 text-deep-ink focus:ring-hi-yellow w-full rounded-2xl border bg-transparent p-3 text-base focus:ring-2 focus:outline-none sm:text-sm"
                     rows={3}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate mb-1.5">
+                  <label className="text-slate mb-1.5 block text-xs font-semibold tracking-wider uppercase">
                     Assessment
                   </label>
                   <textarea
                     value={soapNote.assessment}
-                    onChange={e => setSoapNote({ ...soapNote, assessment: e.target.value })}
-                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm bg-transparent"
+                    onChange={(e) =>
+                      setSoapNote({ ...soapNote, assessment: e.target.value })
+                    }
+                    className="border-deep-ink/20 text-deep-ink focus:ring-hi-yellow w-full rounded-2xl border bg-transparent p-3 text-base focus:ring-2 focus:outline-none sm:text-sm"
                     rows={3}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate mb-1.5">
+                  <label className="text-slate mb-1.5 block text-xs font-semibold tracking-wider uppercase">
                     Plan
                   </label>
                   <textarea
                     value={soapNote.plan}
-                    onChange={e => setSoapNote({ ...soapNote, plan: e.target.value })}
-                    className="w-full p-3 border border-deep-ink/20 rounded-2xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow text-base sm:text-sm bg-transparent"
+                    onChange={(e) =>
+                      setSoapNote({ ...soapNote, plan: e.target.value })
+                    }
+                    className="border-deep-ink/20 text-deep-ink focus:ring-hi-yellow w-full rounded-2xl border bg-transparent p-3 text-base focus:ring-2 focus:outline-none sm:text-sm"
                     rows={3}
                   />
                 </div>
 
-                <div className="flex gap-3 pt-4 border-t border-deep-ink/10">
+                <div className="border-deep-ink/10 flex gap-3 border-t pt-4">
                   <Button
                     onClick={handleSaveSOAP}
                     disabled={isSaving}
-                    className="rounded-full bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 gap-1.5 font-medium cursor-pointer shadow-2xs text-xs"
+                    className="bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 cursor-pointer gap-1.5 rounded-full text-xs font-medium shadow-2xs"
                   >
-                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {isSaving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
                     Save Changes
                   </Button>
                   <Button
                     onClick={() => setEditingNote(false)}
                     variant="outline"
-                    className="rounded-full border-deep-ink/20 text-deep-ink hover:bg-soft-meadow gap-1.5 cursor-pointer text-xs"
+                    className="border-deep-ink/20 text-deep-ink hover:bg-soft-meadow cursor-pointer gap-1.5 rounded-full text-xs"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="h-4 w-4" />
                     Cancel
                   </Button>
                 </div>
@@ -376,20 +437,25 @@ export default function SessionPage({
         {activeTab === 'transcript' && (
           <div className="space-y-3">
             {transcriptLines.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate">
+              <div className="text-slate py-8 text-center text-xs">
                 No recorded transcript available for this consultation.
               </div>
             ) : (
               transcriptLines.map((line, idx) => (
                 <div
                   key={idx}
-                  className="flex items-start gap-3 p-3 bg-soft-meadow/40 rounded-2xl border border-deep-ink/5"
+                  className="bg-soft-meadow/40 border-deep-ink/5 flex items-start gap-3 rounded-2xl border p-3"
                 >
-                  <Badge variant="secondary" className="text-[10px] px-2.5 py-0.5 shrink-0">
+                  <Badge
+                    variant="secondary"
+                    className="shrink-0 px-2.5 py-0.5 text-[10px]"
+                  >
                     Speaker
                   </Badge>
                   <div className="flex-1">
-                    <p className="text-sm text-deep-ink leading-relaxed">{line}</p>
+                    <p className="text-deep-ink text-sm leading-relaxed">
+                      {line}
+                    </p>
                   </div>
                 </div>
               ))
@@ -398,5 +464,5 @@ export default function SessionPage({
         )}
       </Card>
     </div>
-  )
+  );
 }

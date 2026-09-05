@@ -3,12 +3,12 @@
  * Extends Document, Navigator, and Window with modelContext and webmcp.
  */
 
-import type { BrowserModelContext } from '../core/types'
+import type { BrowserModelContext } from '../core/types';
 
 declare global {
   interface Document {
-    modelContext: BrowserModelContext
+    modelContext: BrowserModelContext;
   }
 }
 
-export {}
+export {};

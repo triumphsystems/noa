@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation'
+import { redirect } from 'next/navigation';
 
 export default function SessionsIndexPage() {
-  redirect('/dashboard/doctor/sessions/new')
+  redirect('/dashboard/doctor/sessions/new');
 }

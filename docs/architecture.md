@@ -37,13 +37,13 @@ Noa interfaces with AWS Bedrock via `@aws-sdk/client-bedrock-runtime` (`lib/aws-
 
 ### Model Roles
 
-| Role | Bedrock Model | Purpose | Location |
-|---|---|---|---|
-| **Nova Lite** | `amazon.nova-lite-v2:0` | Low-latency clinical documentation: SOAP notes, patient-friendly summaries, triage assessments | `lib/bedrock-nova.ts` |
-| **Nova Pro** | `amazon.nova-pro-v2:0` | Deep clinical intelligence: differential diagnoses, complex case recommendations, pattern recognition | `lib/bedrock-nova.ts` |
-| **Sonic / Voice** | `amazon.nova-lite-v2:0` | Real-time consultation suggestions, live transcript evaluation, sentiment analysis | `lib/voice-service.ts` |
+| Role              | Bedrock Model           | Purpose                                                                                               | Location               |
+| ----------------- | ----------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------- |
+| **Nova Lite**     | `amazon.nova-lite-v2:0` | Low-latency clinical documentation: SOAP notes, patient-friendly summaries, triage assessments        | `lib/bedrock-nova.ts`  |
+| **Nova Pro**      | `amazon.nova-pro-v2:0`  | Deep clinical intelligence: differential diagnoses, complex case recommendations, pattern recognition | `lib/bedrock-nova.ts`  |
+| **Sonic / Voice** | `amazon.nova-lite-v2:0` | Real-time consultation suggestions, live transcript evaluation, sentiment analysis                    | `lib/voice-service.ts` |
 
-*(Fallback model IDs such as `us.anthropic.claude-3-5-sonnet-20241022` can be configured via environment variables if desired.)*
+_(Fallback model IDs such as `us.anthropic.claude-3-5-sonnet-20241022` can be configured via environment variables if desired.)_
 
 ### Core AI Capabilities
 
@@ -71,94 +71,98 @@ Noa uses a single-table architecture named `noa-data` (configurable via `DYNAMOD
 
 All GSIs use `KEYS_ONLY` projection in Terraform for minimal storage overhead and cost:
 
-| Index Name | Hash Key | Range Key | Access Pattern |
-|---|---|---|---|
-| **`email-index`** | `email` (S) | `type` (S) | Find doctor or patient account by email address |
-| **`doctorId-index`** | `doctorId` (S) | `type` (S) | Query all patients or sessions belonging to a specific doctor |
+| Index Name            | Hash Key        | Range Key  | Access Pattern                                                |
+| --------------------- | --------------- | ---------- | ------------------------------------------------------------- |
+| **`email-index`**     | `email` (S)     | `type` (S) | Find doctor or patient account by email address               |
+| **`doctorId-index`**  | `doctorId` (S)  | `type` (S) | Query all patients or sessions belonging to a specific doctor |
 | **`patientId-index`** | `patientId` (S) | `type` (S) | Query all consultation sessions or intake forms for a patient |
 
 ### Entity Definitions
 
 #### 1. Doctor (`type: 'doctor'`)
+
 ```typescript
 interface Doctor {
-  id: string              // "doctor-{nanoid}"
-  type: 'doctor'
-  email: string           // Indexed via email-index
-  name: string
-  specialty: string
-  license: string
-  clinic: string
-  phone?: string
-  avatar?: string
-  createdAt: number
-  updatedAt: number
+  id: string; // "doctor-{nanoid}"
+  type: 'doctor';
+  email: string; // Indexed via email-index
+  name: string;
+  specialty: string;
+  license: string;
+  clinic: string;
+  phone?: string;
+  avatar?: string;
+  createdAt: number;
+  updatedAt: number;
 }
 ```
 
 #### 2. Patient (`type: 'patient'`)
+
 ```typescript
 interface Patient {
-  id: string              // "patient-{nanoid}"
-  type: 'patient'
-  doctorId: string        // Indexed via doctorId-index
-  email: string           // Indexed via email-index
-  firstName: string
-  lastName: string
-  dateOfBirth?: string
-  gender?: string
-  phone?: string
-  address?: string
-  allergies?: string[]
-  medications?: string[]
-  conditions?: string[]
-  avatar?: string
-  createdAt: number
-  updatedAt: number
+  id: string; // "patient-{nanoid}"
+  type: 'patient';
+  doctorId: string; // Indexed via doctorId-index
+  email: string; // Indexed via email-index
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string;
+  gender?: string;
+  phone?: string;
+  address?: string;
+  allergies?: string[];
+  medications?: string[];
+  conditions?: string[];
+  avatar?: string;
+  createdAt: number;
+  updatedAt: number;
 }
 ```
 
 #### 3. Session (`type: 'session'`)
+
 ```typescript
 interface Session {
-  id: string              // "session-{nanoid}"
-  type: 'session'
-  doctorId: string        // Indexed via doctorId-index
-  patientId: string       // Indexed via patientId-index
-  startedAt: number
-  endedAt?: number
-  transcript?: string
-  audioUrl?: string
-  status: 'active' | 'completed' | 'archived'
+  id: string; // "session-{nanoid}"
+  type: 'session';
+  doctorId: string; // Indexed via doctorId-index
+  patientId: string; // Indexed via patientId-index
+  startedAt: number;
+  endedAt?: number;
+  transcript?: string;
+  audioUrl?: string;
+  status: 'active' | 'completed' | 'archived';
   soapNote?: {
-    subjective: string
-    objective: string
-    assessment: string
-    plan: string
-    generatedAt: number
-  }
-  createdAt: number
-  updatedAt: number
+    subjective: string;
+    objective: string;
+    assessment: string;
+    plan: string;
+    generatedAt: number;
+  };
+  createdAt: number;
+  updatedAt: number;
 }
 ```
 
 #### 4. Patient Intake (`type: 'intake'`)
+
 ```typescript
 interface PatientIntake {
-  id: string              // "intake-{nanoid}"
-  type: 'intake'
-  patientId: string       // Indexed via patientId-index
-  doctorId: string
-  medicalHistory: string
-  medications: string[]
-  allergies: string[]
-  surgeries?: string
-  familyHistory?: string
-  socialHistory?: string
-  completed: boolean
-  completedAt?: number
-  createdAt: number
-  updatedAt: number
+  id: string; // "intake-{nanoid}"
+  type: 'intake';
+  patientId: string; // Indexed via patientId-index
+  doctorId: string;
+  medicalHistory: string;
+  medications: string[];
+  allergies: string[];
+  surgeries?: string;
+  familyHistory?: string;
+  socialHistory?: string;
+  completed: boolean;
+  completedAt?: number;
+  createdAt: number;
+  updatedAt: number;
 }
 ```
 
@@ -176,6 +180,7 @@ interface PatientIntake {
 Audio recordings and consultation reports are stored in an S3 bucket (`AWS_S3_BUCKET`).
 
 ### Key Hierarchy
+
 ```
 s3://<AWS_S3_BUCKET>/
 ├── audio/

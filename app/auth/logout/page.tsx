@@ -1,20 +1,20 @@
-'use client'
+'use client';
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-import { useDoctorStore } from '@/lib/stores/doctor.store'
-import { useSessionStore } from '@/lib/stores/session.store'
+import { useDoctorStore } from '@/lib/stores/doctor.store';
+import { useSessionStore } from '@/lib/stores/session.store';
 
 export default function LogoutPage() {
-  const router = useRouter()
+  const router = useRouter();
 
   useEffect(() => {
     async function performLogout() {
       try {
-        await fetch('/api/auth/logout', { method: 'POST' })
+        await fetch('/api/auth/logout', { method: 'POST' });
       } catch (err) {
-        console.error('Failed to clear remote auth session:', err)
+        console.error('Failed to clear remote auth session:', err);
       } finally {
         const keysToRemove = [
           'doctorId',
@@ -23,29 +23,31 @@ export default function LogoutPage() {
           'accessToken',
           'idToken',
           'refreshToken',
-        ]
+        ];
 
-        keysToRemove.forEach(key => window.localStorage.removeItem(key))
+        keysToRemove.forEach((key) => window.localStorage.removeItem(key));
 
-        useDoctorStore.getState().clearDashboard()
-        useSessionStore.getState().resetSession()
+        useDoctorStore.getState().clearDashboard();
+        useSessionStore.getState().resetSession();
 
-        router.replace('/auth/login?type=doctor')
+        router.replace('/auth/login?type=doctor');
       }
     }
 
-    performLogout()
-  }, [router])
+    performLogout();
+  }, [router]);
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-3xl border border-deep-ink/10 bg-white p-8 text-center shadow-sm space-y-3">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-deep-ink/20 border-t-deep-ink mb-1" />
-        <h1 className="text-2xl font-bold font-serif text-deep-ink">Logging you out</h1>
-        <p className="text-sm text-slate">
+    <div className="flex min-h-[60vh] items-center justify-center p-6">
+      <div className="border-deep-ink/10 w-full max-w-md space-y-3 rounded-3xl border bg-white p-8 text-center shadow-sm">
+        <div className="border-deep-ink/20 border-t-deep-ink mb-1 inline-block h-8 w-8 animate-spin rounded-full border-2" />
+        <h1 className="text-deep-ink font-serif text-2xl font-bold">
+          Logging you out
+        </h1>
+        <p className="text-slate text-sm">
           Clearing your session and returning you to the login screen.
         </p>
       </div>
     </div>
-  )
+  );
 }

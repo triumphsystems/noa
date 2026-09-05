@@ -3,11 +3,11 @@
  * Exposes conversational voice intake processing and audio transcription functions.
  */
 
-import { WebMCPRegistry } from '../core/registry'
+import { WebMCPRegistry } from '../core/registry';
 import {
   generateIntakeConversationTurn,
   transcribeAudio,
-} from '@/lib/voice-service'
+} from '@/lib/voice-service';
 
 export function registerIntakeTools(registry: WebMCPRegistry): void {
   // 1. process_intake_turn
@@ -21,44 +21,56 @@ export function registerIntakeTools(registry: WebMCPRegistry): void {
         properties: {
           transcript: {
             type: 'string',
-            description: 'The user speech transcript from the latest intake turn.',
+            description:
+              'The user speech transcript from the latest intake turn.',
           },
           language: {
             type: 'string',
-            description: 'The preferred language code or name (e.g. English, Spanish, French). Default: English.',
+            description:
+              'The preferred language code or name (e.g. English, Spanish, French). Default: English.',
           },
           history: {
             type: 'array',
             items: {
               type: 'object',
               properties: {
-                role: { type: 'string', enum: ['assistant', 'patient', 'system'] },
+                role: {
+                  type: 'string',
+                  enum: ['assistant', 'patient', 'system'],
+                },
                 content: { type: 'string' },
                 timestamp: { type: 'number' },
               },
               required: ['role', 'content'],
             },
-            description: 'Previous messages exchanged in the intake conversation.',
+            description:
+              'Previous messages exchanged in the intake conversation.',
           },
           draft: {
             type: 'object',
-            description: 'Current accumulated intake draft (demographics, medications, allergies, conditions).',
+            description:
+              'Current accumulated intake draft (demographics, medications, allergies, conditions).',
           },
         },
         required: ['transcript'],
       },
     },
     async (input) => {
-      const { transcript, language = 'English', history = [], draft = {} } = input
-      if (!transcript) throw new Error('Missing required argument: transcript')
+      const {
+        transcript,
+        language = 'English',
+        history = [],
+        draft = {},
+      } = input;
+      if (!transcript) throw new Error('Missing required argument: transcript');
       return await generateIntakeConversationTurn({
         transcript,
         language,
         history,
         draft,
-      })
+      });
     }
-  )
+  );
 
   // 2. transcribe_consultation_audio
   registry.registerTool(
@@ -71,7 +83,8 @@ export function registerIntakeTools(registry: WebMCPRegistry): void {
         properties: {
           sessionId: {
             type: 'string',
-            description: 'The consultation session ID associated with this recording.',
+            description:
+              'The consultation session ID associated with this recording.',
           },
           audioBase64: {
             type: 'string',
@@ -82,13 +95,14 @@ export function registerIntakeTools(registry: WebMCPRegistry): void {
       },
     },
     async (input) => {
-      const { sessionId, audioBase64 } = input
-      if (!sessionId) throw new Error('Missing required argument: sessionId')
-      if (!audioBase64) throw new Error('Missing required argument: audioBase64')
+      const { sessionId, audioBase64 } = input;
+      if (!sessionId) throw new Error('Missing required argument: sessionId');
+      if (!audioBase64)
+        throw new Error('Missing required argument: audioBase64');
 
-      const buffer = Buffer.from(audioBase64, 'base64')
-      const transcript = await transcribeAudio(buffer, sessionId)
-      return { sessionId, transcript }
+      const buffer = Buffer.from(audioBase64, 'base64');
+      const transcript = await transcribeAudio(buffer, sessionId);
+      return { sessionId, transcript };
     }
-  )
+  );
 }

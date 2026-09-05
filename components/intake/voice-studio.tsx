@@ -1,18 +1,18 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { Mic, MicOff, Keyboard, RotateCcw, Send, Sparkles } from 'lucide-react'
+import { useState } from 'react';
+import { Mic, MicOff, Keyboard, RotateCcw, Send, Sparkles } from 'lucide-react';
 
 type VoiceStudioProps = {
-  isRecording: boolean
-  isListening: boolean
-  isSubmitting: boolean
-  transcriptPreview: string
-  defaultPrompt: string
-  onToggleMic: () => void
-  onSubmitText: (text: string) => void
-  onReset: () => void
-}
+  isRecording: boolean;
+  isListening: boolean;
+  isSubmitting: boolean;
+  transcriptPreview: string;
+  defaultPrompt: string;
+  onToggleMic: () => void;
+  onSubmitText: (text: string) => void;
+  onReset: () => void;
+};
 
 export function VoiceStudio({
   isRecording,
@@ -24,54 +24,56 @@ export function VoiceStudio({
   onSubmitText,
   onReset,
 }: VoiceStudioProps) {
-  const [showTextInput, setShowTextInput] = useState(false)
-  const [customText, setCustomText] = useState('')
+  const [showTextInput, setShowTextInput] = useState(false);
+  const [customText, setCustomText] = useState('');
 
   const handleTextSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!customText.trim() || isSubmitting) return
-    onSubmitText(customText.trim())
-    setCustomText('')
-    setShowTextInput(false)
-  }
+    e.preventDefault();
+    if (!customText.trim() || isSubmitting) return;
+    onSubmitText(customText.trim());
+    setCustomText('');
+    setShowTextInput(false);
+  };
 
   return (
     <div
-      className={`relative flex-1 flex flex-col justify-between rounded-2xl border p-4 transition-all overflow-hidden ${
+      className={`relative flex flex-1 flex-col justify-between overflow-hidden rounded-2xl border p-4 transition-all ${
         isRecording
-          ? 'border-hi-yellow/80 bg-white ring-2 ring-hi-yellow/20 shadow-md'
+          ? 'border-hi-yellow/80 ring-hi-yellow/20 bg-white shadow-md ring-2'
           : 'border-deep-ink/10 bg-canvas/70 shadow-2xs'
       }`}
     >
       {/* Waveform & Header indicator */}
-      <div className="flex items-center justify-between pb-2 border-b border-deep-ink/5">
-        <span className="text-[10px] uppercase font-bold tracking-wider text-slate">
+      <div className="border-deep-ink/5 flex items-center justify-between border-b pb-2">
+        <span className="text-slate text-[10px] font-bold tracking-wider uppercase">
           Live Speech Stream
         </span>
 
         {isRecording ? (
           <div className="flex items-center gap-1">
-            <span className="w-1 h-3 bg-deep-ink rounded-full animate-pulse [animation-delay:0ms]" />
-            <span className="w-1 h-5 bg-hi-yellow rounded-full animate-pulse [animation-delay:150ms]" />
-            <span className="w-1 h-6 bg-deep-ink rounded-full animate-pulse [animation-delay:300ms]" />
-            <span className="w-1 h-4 bg-hi-yellow rounded-full animate-pulse [animation-delay:75ms]" />
-            <span className="w-1 h-2 bg-deep-ink rounded-full animate-pulse [animation-delay:200ms]" />
+            <span className="bg-deep-ink h-3 w-1 animate-pulse rounded-full [animation-delay:0ms]" />
+            <span className="bg-hi-yellow h-5 w-1 animate-pulse rounded-full [animation-delay:150ms]" />
+            <span className="bg-deep-ink h-6 w-1 animate-pulse rounded-full [animation-delay:300ms]" />
+            <span className="bg-hi-yellow h-4 w-1 animate-pulse rounded-full [animation-delay:75ms]" />
+            <span className="bg-deep-ink h-2 w-1 animate-pulse rounded-full [animation-delay:200ms]" />
           </div>
         ) : (
-          <span className="text-[10px] text-slate/60">Voice-ready</span>
+          <span className="text-slate/60 text-[10px]">Voice-ready</span>
         )}
       </div>
 
       {/* Transcript Text Display */}
-      <div className="flex-1 flex flex-col justify-center py-4">
+      <div className="flex flex-1 flex-col justify-center py-4">
         {transcriptPreview ? (
-          <p className="text-base sm:text-lg font-medium leading-relaxed text-deep-ink">
+          <p className="text-deep-ink text-base leading-relaxed font-medium sm:text-lg">
             "{transcriptPreview}"
-            {isRecording && <span className="inline-block w-1.5 h-4 bg-hi-yellow ml-1 animate-pulse" />}
+            {isRecording && (
+              <span className="bg-hi-yellow ml-1 inline-block h-4 w-1.5 animate-pulse" />
+            )}
           </p>
         ) : (
-          <p className="text-xs sm:text-sm text-slate/70 italic flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-slate/40" />
+          <p className="text-slate/70 flex items-center gap-2 text-xs italic sm:text-sm">
+            <Sparkles className="text-slate/40 h-3.5 w-3.5" />
             <span>{defaultPrompt}</span>
           </p>
         )}
@@ -79,26 +81,29 @@ export function VoiceStudio({
 
       {/* Inline Type Drawer */}
       {showTextInput && (
-        <form onSubmit={handleTextSubmit} className="mb-2 flex gap-1.5 bg-white p-1 rounded-xl border border-deep-ink/15 shadow-sm">
+        <form
+          onSubmit={handleTextSubmit}
+          className="border-deep-ink/15 mb-2 flex gap-1.5 rounded-xl border bg-white p-1 shadow-sm"
+        >
           <input
             type="text"
             value={customText}
             onChange={(e) => setCustomText(e.target.value)}
             placeholder="Type your response..."
             autoFocus
-            className="flex-1 px-3 py-1.5 text-xs text-deep-ink placeholder:text-slate/60 focus:outline-none"
+            className="text-deep-ink placeholder:text-slate/60 flex-1 px-3 py-1.5 text-xs focus:outline-none"
           />
           <button
             type="submit"
             disabled={!customText.trim() || isSubmitting}
-            className="px-2.5 py-1 bg-deep-ink text-white rounded-lg text-xs font-semibold hover:bg-deep-ink/90 disabled:opacity-50"
+            className="bg-deep-ink hover:bg-deep-ink/90 rounded-lg px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-50"
           >
-            <Send className="w-3 h-3" />
+            <Send className="h-3 w-3" />
           </button>
           <button
             type="button"
             onClick={() => setShowTextInput(false)}
-            className="px-2 py-1 text-slate hover:text-deep-ink text-xs"
+            className="text-slate hover:text-deep-ink px-2 py-1 text-xs"
           >
             Cancel
           </button>
@@ -106,49 +111,53 @@ export function VoiceStudio({
       )}
 
       {/* Floating Bottom Action Dock */}
-      <div className="pt-2 border-t border-deep-ink/5 flex items-center justify-between">
-        <span className="text-[10px] text-slate/70">
-          {isRecording ? (isListening ? '● Listening live...' : '● Connecting...') : '● Auto-submits on silence'}
+      <div className="border-deep-ink/5 flex items-center justify-between border-t pt-2">
+        <span className="text-slate/70 text-[10px]">
+          {isRecording
+            ? isListening
+              ? '● Listening live...'
+              : '● Connecting...'
+            : '● Auto-submits on silence'}
         </span>
 
-        <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-xs p-1 rounded-full border border-deep-ink/10 shadow-2xs">
+        <div className="border-deep-ink/10 flex items-center gap-1.5 rounded-full border bg-white/90 p-1 shadow-2xs backdrop-blur-xs">
           <button
             type="button"
             onClick={() => setShowTextInput(!showTextInput)}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate hover:text-deep-ink hover:bg-soft-meadow transition-colors"
+            className="text-slate hover:text-deep-ink hover:bg-soft-meadow flex h-8 w-8 items-center justify-center rounded-full transition-colors"
             title="Type fallback"
           >
-            <Keyboard className="w-3.5 h-3.5" />
+            <Keyboard className="h-3.5 w-3.5" />
           </button>
 
           <button
             type="button"
             onClick={onReset}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate hover:text-deep-ink hover:bg-soft-meadow transition-colors"
+            className="text-slate hover:text-deep-ink hover:bg-soft-meadow flex h-8 w-8 items-center justify-center rounded-full transition-colors"
             title="Reset conversation"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="h-3.5 w-3.5" />
           </button>
 
           <button
             type="button"
             onClick={onToggleMic}
             disabled={isSubmitting}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-xs ${
+            className={`flex h-10 w-10 items-center justify-center rounded-full shadow-xs transition-all ${
               isRecording
-                ? 'bg-deep-ink text-white ring-4 ring-hi-yellow/40 hover:bg-deep-ink/90'
+                ? 'bg-deep-ink ring-hi-yellow/40 hover:bg-deep-ink/90 text-white ring-4'
                 : 'bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 hover:scale-105'
             }`}
             title={isRecording ? 'Stop microphone' : 'Start microphone'}
           >
             {isRecording ? (
-              <MicOff className="w-4 h-4 text-red-400 animate-pulse" />
+              <MicOff className="h-4 w-4 animate-pulse text-red-400" />
             ) : (
-              <Mic className="w-4 h-4 text-deep-ink" />
+              <Mic className="text-deep-ink h-4 w-4" />
             )}
           </button>
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,6 +1,6 @@
-import type { Doctor, Patient, Session } from '@/lib/db'
+import type { Doctor, Patient, Session } from '@/lib/db';
 
-export type DoctorProfile = Doctor
+export type DoctorProfile = Doctor;
 
 export type DoctorProfileUpdateInput = Partial<
   Pick<
@@ -16,20 +16,20 @@ export type DoctorProfileUpdateInput = Partial<
     | 'verificationStatus'
     | 'rejectionReason'
   >
->
+>;
 
 export interface DoctorStats {
-  totalPatients: number
-  totalSessions: number
-  completedSessions: number
-  activeSessions: number
-  pendingNotes: number
-  todaySessions: number
+  totalPatients: number;
+  totalSessions: number;
+  completedSessions: number;
+  activeSessions: number;
+  pendingNotes: number;
+  todaySessions: number;
 }
 
 export interface DoctorDashboardPayload {
-  doctor: DoctorProfile
-  patients: Patient[]
-  sessions: Session[]
-  stats: DoctorStats
+  doctor: DoctorProfile;
+  patients: Patient[];
+  sessions: Session[];
+  stats: DoctorStats;
 }

@@ -65,6 +65,7 @@ nano terraform.tfvars
 ```
 
 **Required variables:**
+
 ```hcl
 aws_region     = "us-east-1"
 aws_account_id = "123456789012"  # Get from: aws sts get-caller-identity
@@ -98,14 +99,14 @@ Use these values to configure Vercel environment variables.
 
 ## Configuration Files
 
-| File | Purpose |
-|------|---------|
-| `provider.tf` | AWS provider configuration |
-| `variables.tf` | Input variable definitions |
-| `main.tf` | Main resource definitions |
-| `cognito.tf` | AWS Cognito User Pool, Client, and Groups |
-| `outputs.tf` | Output definitions |
-| `terraform.tfvars.example` | Example variables file |
+| File                       | Purpose                                   |
+| -------------------------- | ----------------------------------------- |
+| `provider.tf`              | AWS provider configuration                |
+| `variables.tf`             | Input variable definitions                |
+| `main.tf`                  | Main resource definitions                 |
+| `cognito.tf`               | AWS Cognito User Pool, Client, and Groups |
+| `outputs.tf`               | Output definitions                        |
+| `terraform.tfvars.example` | Example variables file                    |
 
 ## Resource Breakdown
 
@@ -118,6 +119,7 @@ resource "aws_s3_bucket" "audio_bucket"
 ```
 
 **Features:**
+
 - AES256 encryption
 - Versioning enabled
 - Public access blocked
@@ -133,11 +135,13 @@ resource "aws_dynamodb_table" "noa_data"
 ```
 
 **Cost controls:**
+
 - `PAY_PER_REQUEST` billing mode for no idle provisioned capacity
 - No streams, PITR, or backups enabled by default
 - Uses AWS-managed encryption at rest
 
 **Indexes:**
+
 - `email-index`
 - `doctorId-index`
 - `patientId-index`
@@ -151,6 +155,7 @@ resource "aws_s3_bucket" "backup_bucket"
 ```
 
 **Enable with:**
+
 ```hcl
 enable_s3_replication = true
 s3_replication_region = "us-west-2"
@@ -165,6 +170,7 @@ resource "aws_iam_role" "bedrock_role"
 ```
 
 **Permissions:**
+
 - `bedrock:InvokeModel`
 - `bedrock:InvokeModelWithResponseStream`
 - `bedrock:ListFoundationModels`
@@ -178,6 +184,7 @@ resource "aws_iam_role" "s3_role"
 ```
 
 **Permissions:**
+
 - `s3:GetObject`
 - `s3:PutObject`
 - `s3:DeleteObject`
@@ -192,6 +199,7 @@ resource "aws_cloudwatch_log_group" "noa_logs"
 ```
 
 **Enable with:**
+
 ```hcl
 enable_monitoring = true
 log_retention_days = 30
@@ -201,22 +209,22 @@ log_retention_days = 30
 
 ### Required Variables
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `aws_account_id` | string | AWS Account ID |
-| `app_url` | string | Application URL |
+| Variable         | Type   | Description     |
+| ---------------- | ------ | --------------- |
+| `aws_account_id` | string | AWS Account ID  |
+| `app_url`        | string | Application URL |
 
 ### Optional Variables
 
-| Variable | Type | Default | Description |
-|----------|------|---------|-------------|
-| `aws_region` | string | us-east-1 | AWS region |
-| `project_name` | string | noa | Project name |
-| `environment` | string | prod | Environment name |
-| `enable_bedrock` | bool | true | Enable Bedrock |
-| `enable_monitoring` | bool | true | Enable monitoring |
-| `enable_s3_replication` | bool | false | Enable S3 replication |
-| `log_retention_days` | number | 30 | Log retention days |
+| Variable                | Type   | Default   | Description           |
+| ----------------------- | ------ | --------- | --------------------- |
+| `aws_region`            | string | us-east-1 | AWS region            |
+| `project_name`          | string | noa       | Project name          |
+| `environment`           | string | prod      | Environment name      |
+| `enable_bedrock`        | bool   | true      | Enable Bedrock        |
+| `enable_monitoring`     | bool   | true      | Enable monitoring     |
+| `enable_s3_replication` | bool   | false     | Enable S3 replication |
+| `log_retention_days`    | number | 30        | Log retention days    |
 
 ## Environment Variables for Vercel
 
@@ -238,6 +246,7 @@ COGNITO_CLIENT_ID=1234567890abcdefghijklmnop
 ```
 
 **To get outputs:**
+
 ```bash
 terraform output
 
@@ -383,6 +392,7 @@ terraform state show
 **Problem:** IAM role lacks permissions
 
 **Solution:**
+
 ```bash
 # Check credentials
 aws sts get-caller-identity
@@ -399,6 +409,7 @@ aws iam simulate-principal-policy \
 **Problem:** Bedrock not enabled in region
 
 **Solution:**
+
 ```bash
 # Check Bedrock availability
 aws bedrock list-foundation-models --region us-east-1
@@ -412,6 +423,7 @@ aws bedrock enable-foundation-model --model-identifier amazon.nova-lite-v1:0
 **Problem:** S3 bucket name already taken
 
 **Solution:**
+
 ```bash
 # Change bucket name in variables
 terraform plan -var="project_name=noa-v2"
@@ -425,6 +437,7 @@ terraform destroy -target=aws_s3_bucket.audio_bucket
 **Problem:** Corrupted terraform.tfstate file
 
 **Solution:**
+
 ```bash
 # Backup current state
 cp terraform.tfstate terraform.tfstate.backup
@@ -505,6 +518,7 @@ terraform cloud
 ```
 
 **Estimated Monthly Costs:**
+
 - S3 Storage: ~$0.50/GB
 - S3 Requests: ~$5-50
 - CloudWatch Logs: ~$0.50/GB ingested
@@ -527,10 +541,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
-      
+
       - name: Terraform Plan
         run: |
           cd terraform

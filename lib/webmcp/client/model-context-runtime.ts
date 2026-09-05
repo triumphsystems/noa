@@ -13,21 +13,21 @@ import {
   GetPromptResult,
   PromptDefinition,
   JsonRpcResponse,
-} from '../core/types'
-import { useSessionStore } from '@/lib/stores/session.store'
-import { useDoctorStore } from '@/lib/stores/doctor.store'
-import { CLINICAL_SERVER_TOOL_DEFINITIONS } from '../tools/definitions'
+} from '../core/types';
+import { useSessionStore } from '@/lib/stores/session.store';
+import { useDoctorStore } from '@/lib/stores/doctor.store';
+import { CLINICAL_SERVER_TOOL_DEFINITIONS } from '../tools/definitions';
 
 export class BrowserModelContextRuntime implements BrowserModelContext {
-  public version = '1.0.0'
-  private localTools = new Map<string, BrowserToolRegistration>()
-  private cachedServerTools: ToolDefinition[] = []
-  private cachedServerResources: ResourceDefinition[] = []
-  private cachedServerPrompts: PromptDefinition[] = []
+  public version = '1.0.0';
+  private localTools = new Map<string, BrowserToolRegistration>();
+  private cachedServerTools: ToolDefinition[] = [];
+  private cachedServerResources: ResourceDefinition[] = [];
+  private cachedServerPrompts: PromptDefinition[] = [];
 
   constructor(private apiEndpoint = '/api/mcp') {
-    this.registerClientStoreTools()
-    this.registerServerProxyTools()
+    this.registerClientStoreTools();
+    this.registerServerProxyTools();
   }
 
   /**
@@ -35,21 +35,25 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
    */
   public registerTool(tool: BrowserToolRegistration): void {
     if (!tool.name) {
-      throw new Error('Tool must have a valid name')
+      throw new Error('Tool must have a valid name');
     }
-    this.localTools.set(tool.name, tool)
+    this.localTools.set(tool.name, tool);
 
     // Forward to browser native modelContext if Chrome flag is active
     if (typeof window !== 'undefined') {
-      const nativeContext = (window as any).__nativeModelContext
-      if (nativeContext && typeof nativeContext.registerTool === 'function' && nativeContext !== this) {
+      const nativeContext = (window as any).__nativeModelContext;
+      if (
+        nativeContext &&
+        typeof nativeContext.registerTool === 'function' &&
+        nativeContext !== this
+      ) {
         try {
           nativeContext.registerTool({
             name: tool.name,
             description: tool.description,
             inputSchema: tool.inputSchema,
             execute: tool.execute,
-          })
+          });
         } catch {
           // Ignore native registration conflicts
         }
@@ -61,55 +65,70 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
    * Unregister a tool
    */
   public unregisterTool(name: string): boolean {
-    return this.localTools.delete(name)
+    return this.localTools.delete(name);
   }
 
   /**
    * Retrieve a tool registration
    */
   public getTool(name: string): BrowserToolRegistration | undefined {
-    return this.localTools.get(name)
+    return this.localTools.get(name);
   }
 
   /**
    * List all available tools (local + cached server tools)
    */
   public listTools(): ToolDefinition[] {
-    const localDefs: ToolDefinition[] = Array.from(this.localTools.values()).map(tool => ({
+    const localDefs: ToolDefinition[] = Array.from(
+      this.localTools.values()
+    ).map((tool) => ({
       name: tool.name,
       description: tool.description,
-      inputSchema: (tool.inputSchema as any) || { type: 'object', properties: {} },
-    }))
+      inputSchema: (tool.inputSchema as any) || {
+        type: 'object',
+        properties: {},
+      },
+    }));
 
     // Merge unique by name
-    const map = new Map<string, ToolDefinition>()
-    this.cachedServerTools.forEach(t => map.set(t.name, t))
-    localDefs.forEach(t => map.set(t.name, t))
+    const map = new Map<string, ToolDefinition>();
+    this.cachedServerTools.forEach((t) => map.set(t.name, t));
+    localDefs.forEach((t) => map.set(t.name, t));
 
-    return Array.from(map.values())
+    return Array.from(map.values());
   }
 
   /**
    * Execute a tool by name (dispatches to local tool or delegates to /api/mcp)
    */
-  public async executeTool(name: string, input: Record<string, unknown> = {}): Promise<CallToolResult> {
+  public async executeTool(
+    name: string,
+    input: Record<string, unknown> = {}
+  ): Promise<CallToolResult> {
     // 1. Check local client-registered tools
-    const local = this.localTools.get(name)
+    const local = this.localTools.get(name);
     if (local) {
       try {
-        const raw = await local.execute(input)
+        const raw = await local.execute(input);
         if (typeof raw === 'string') {
-          return { content: [{ type: 'text', text: raw }] }
+          return { content: [{ type: 'text', text: raw }] };
         }
         if (raw && Array.isArray(raw.content)) {
-          return raw as CallToolResult
+          return raw as CallToolResult;
         }
-        return { content: [{ type: 'text', text: JSON.stringify(raw, null, 2) }] }
+        return {
+          content: [{ type: 'text', text: JSON.stringify(raw, null, 2) }],
+        };
       } catch (err: any) {
         return {
           isError: true,
-          content: [{ type: 'text', text: `Client execution error for "${name}": ${err?.message || String(err)}` }],
-        }
+          content: [
+            {
+              type: 'text',
+              text: `Client execution error for "${name}": ${err?.message || String(err)}`,
+            },
+          ],
+        };
       }
     }
 
@@ -127,22 +146,29 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
             arguments: input,
           },
         }),
-      })
+      });
 
-      const json: JsonRpcResponse<CallToolResult> = await response.json()
+      const json: JsonRpcResponse<CallToolResult> = await response.json();
       if ('error' in json) {
         return {
           isError: true,
-          content: [{ type: 'text', text: `Server error: ${json.error.message}` }],
-        }
+          content: [
+            { type: 'text', text: `Server error: ${json.error.message}` },
+          ],
+        };
       }
 
-      return json.result
+      return json.result;
     } catch (err: any) {
       return {
         isError: true,
-        content: [{ type: 'text', text: `Network error calling tool "${name}": ${err?.message || String(err)}` }],
-      }
+        content: [
+          {
+            type: 'text',
+            text: `Network error calling tool "${name}": ${err?.message || String(err)}`,
+          },
+        ],
+      };
     }
   }
 
@@ -159,24 +185,27 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
         method: 'resources/read',
         params: { uri },
       }),
-    })
+    });
 
-    const json: JsonRpcResponse<ReadResourceResult> = await response.json()
+    const json: JsonRpcResponse<ReadResourceResult> = await response.json();
     if ('error' in json) {
-      throw new Error(json.error.message)
+      throw new Error(json.error.message);
     }
 
-    return json.result
+    return json.result;
   }
 
   public listResources(): ResourceDefinition[] {
-    return this.cachedServerResources
+    return this.cachedServerResources;
   }
 
   /**
    * Get an evaluated prompt template
    */
-  public async getPrompt(name: string, args: Record<string, string> = {}): Promise<GetPromptResult> {
+  public async getPrompt(
+    name: string,
+    args: Record<string, string> = {}
+  ): Promise<GetPromptResult> {
     const response = await fetch(this.apiEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -186,18 +215,18 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
         method: 'prompts/get',
         params: { name, arguments: args },
       }),
-    })
+    });
 
-    const json: JsonRpcResponse<GetPromptResult> = await response.json()
+    const json: JsonRpcResponse<GetPromptResult> = await response.json();
     if ('error' in json) {
-      throw new Error(json.error.message)
+      throw new Error(json.error.message);
     }
 
-    return json.result
+    return json.result;
   }
 
   public listPrompts(): PromptDefinition[] {
-    return this.cachedServerPrompts
+    return this.cachedServerPrompts;
   }
 
   /**
@@ -213,13 +242,13 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
           { jsonrpc: '2.0', id: 2, method: 'resources/list' },
           { jsonrpc: '2.0', id: 3, method: 'prompts/list' },
         ]),
-      })
+      });
 
-      const results = await response.json()
+      const results = await response.json();
       if (Array.isArray(results)) {
         results.forEach((res: any) => {
           if (res.id === 1 && res.result?.tools) {
-            this.cachedServerTools = res.result.tools
+            this.cachedServerTools = res.result.tools;
             // Register server tools so Chrome DevTools discovers all clinical tools
             res.result.tools.forEach((serverTool: ToolDefinition) => {
               if (!this.localTools.has(serverTool.name)) {
@@ -227,19 +256,20 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
                   name: serverTool.name,
                   description: serverTool.description,
                   inputSchema: serverTool.inputSchema as any,
-                  execute: async (input) => this.executeTool(serverTool.name, input),
-                })
+                  execute: async (input) =>
+                    this.executeTool(serverTool.name, input),
+                });
               }
-            })
+            });
           } else if (res.id === 2 && res.result?.resources) {
-            this.cachedServerResources = res.result.resources
+            this.cachedServerResources = res.result.resources;
           } else if (res.id === 3 && res.result?.prompts) {
-            this.cachedServerPrompts = res.result.prompts
+            this.cachedServerPrompts = res.result.prompts;
           }
-        })
+        });
       }
     } catch (e) {
-      console.warn('[WebMCP] Failed to sync server definitions on startup:', e)
+      console.warn('[WebMCP] Failed to sync server definitions on startup:', e);
     }
   }
 
@@ -248,8 +278,8 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
    */
   public get clientState(): Record<string, unknown> {
     try {
-      const session = useSessionStore.getState()
-      const doctorState = useDoctorStore.getState()
+      const session = useSessionStore.getState();
+      const doctorState = useDoctorStore.getState();
       return {
         session: {
           sessionId: session.sessionId,
@@ -265,9 +295,9 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
           name: doctorState.doctor?.name,
           specialty: doctorState.doctor?.specialty,
         },
-      }
+      };
     } catch {
-      return {}
+      return {};
     }
   }
 
@@ -278,10 +308,11 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
     // 1. client_get_active_session
     this.registerTool({
       name: 'client_get_active_session',
-      description: 'Returns the current active consultation session state from browser memory.',
+      description:
+        'Returns the current active consultation session state from browser memory.',
       inputSchema: { type: 'object', properties: {} },
       execute: async () => {
-        const state = useSessionStore.getState()
+        const state = useSessionStore.getState();
         return {
           sessionId: state.sessionId,
           patientName: state.patientName,
@@ -291,9 +322,9 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
           transcriptLength: state.transcript.length,
           hasSoapNote: Boolean(state.soapNote),
           suggestions: state.suggestions,
-        }
+        };
       },
-    })
+    });
 
     // 2. client_start_recording
     this.registerTool({
@@ -301,10 +332,10 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
       description: 'Starts audio recording on the client session store.',
       inputSchema: { type: 'object', properties: {} },
       execute: async () => {
-        useSessionStore.getState().startRecording()
-        return { success: true, isRecording: true }
+        useSessionStore.getState().startRecording();
+        return { success: true, isRecording: true };
       },
-    })
+    });
 
     // 3. client_stop_recording
     this.registerTool({
@@ -312,29 +343,35 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
       description: 'Stops audio recording on the client session store.',
       inputSchema: { type: 'object', properties: {} },
       execute: async () => {
-        useSessionStore.getState().stopRecording()
-        return { success: true, isRecording: false }
+        useSessionStore.getState().stopRecording();
+        return { success: true, isRecording: false };
       },
-    })
+    });
 
     // 4. client_append_transcript
     this.registerTool({
       name: 'client_append_transcript',
-      description: 'Appends or replaces transcript text in the active client consultation session.',
+      description:
+        'Appends or replaces transcript text in the active client consultation session.',
       inputSchema: {
         type: 'object',
         properties: {
-          text: { type: 'string', description: 'Transcript text chunk to append.' },
+          text: {
+            type: 'string',
+            description: 'Transcript text chunk to append.',
+          },
         },
         required: ['text'],
       },
       execute: async (input) => {
-        const store = useSessionStore.getState()
-        const newTranscript = store.transcript ? `${store.transcript} ${input.text}` : input.text
-        store.setTranscript(newTranscript)
-        return { success: true, transcriptLength: newTranscript.length }
+        const store = useSessionStore.getState();
+        const newTranscript = store.transcript
+          ? `${store.transcript} ${input.text}`
+          : input.text;
+        store.setTranscript(newTranscript);
+        return { success: true, transcriptLength: newTranscript.length };
       },
-    })
+    });
   }
 
   /**
@@ -348,35 +385,35 @@ export class BrowserModelContextRuntime implements BrowserModelContext {
           description: toolDef.description,
           inputSchema: toolDef.inputSchema as any,
           execute: async (input) => this.executeTool(toolDef.name, input),
-        })
+        });
       }
-    })
+    });
   }
 }
-
 
 /**
  * Attaches the WebMCP runtime to document.modelContext and bridges with Chrome DevTools
  */
 export function injectBrowserModelContext(): BrowserModelContextRuntime {
   if (typeof window === 'undefined') {
-    return new BrowserModelContextRuntime()
+    return new BrowserModelContextRuntime();
   }
 
   // Preserve native browser modelContext if Chrome flag is active
-  const nativeDocContext = (document as any).modelContext
-  const nativeNavContext = (navigator as any).modelContext
-  const native = (nativeDocContext && typeof nativeDocContext.registerTool === 'function')
-    ? nativeDocContext
-    : (nativeNavContext && typeof nativeNavContext.registerTool === 'function')
-      ? nativeNavContext
-      : null
+  const nativeDocContext = (document as any).modelContext;
+  const nativeNavContext = (navigator as any).modelContext;
+  const native =
+    nativeDocContext && typeof nativeDocContext.registerTool === 'function'
+      ? nativeDocContext
+      : nativeNavContext && typeof nativeNavContext.registerTool === 'function'
+        ? nativeNavContext
+        : null;
 
   if (native) {
-    ;(window as any).__nativeModelContext = native
+    (window as any).__nativeModelContext = native;
   }
 
-  const runtime = new BrowserModelContextRuntime()
+  const runtime = new BrowserModelContextRuntime();
 
   // Standard: document.modelContext
   try {
@@ -385,9 +422,9 @@ export function injectBrowserModelContext(): BrowserModelContextRuntime {
       writable: true,
       configurable: true,
       enumerable: true,
-    })
+    });
   } catch {
-    ;(document as any).modelContext = runtime
+    (document as any).modelContext = runtime;
   }
 
   // Mirror to navigator.modelContext for Chrome DevTools InspectorWebMCPAgent compatibility
@@ -398,21 +435,26 @@ export function injectBrowserModelContext(): BrowserModelContextRuntime {
         writable: true,
         configurable: true,
         enumerable: true,
-      })
+      });
     }
   } catch {
-    ;(navigator as any).modelContext = runtime
+    (navigator as any).modelContext = runtime;
   }
 
   // Sync server definitions in background
-  runtime.syncServerDefinitions()
+  runtime.syncServerDefinitions();
 
   // Dispatch DOM readiness event for DevTools panels & browser extensions
   try {
-    document.dispatchEvent(new CustomEvent('modelcontext:ready', { detail: { version: runtime.version } }))
-    window.dispatchEvent(new CustomEvent('webmcp:ready', { detail: { version: runtime.version } }))
+    document.dispatchEvent(
+      new CustomEvent('modelcontext:ready', {
+        detail: { version: runtime.version },
+      })
+    );
+    window.dispatchEvent(
+      new CustomEvent('webmcp:ready', { detail: { version: runtime.version } })
+    );
   } catch {}
 
-  return runtime
+  return runtime;
 }
-

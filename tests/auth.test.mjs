@@ -4,8 +4,8 @@
  * Run with: node --test tests/auth.test.mjs
  */
 
-import test, { describe, it } from 'node:test'
-import assert from 'node:assert/strict'
+import test, { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
 
 describe('HIPAA-Compliant Session Cookie Suite', () => {
   const AUTH_COOKIE_NAMES = {
@@ -13,32 +13,32 @@ describe('HIPAA-Compliant Session Cookie Suite', () => {
     ID_TOKEN: 'noa_id_token',
     REFRESH_TOKEN: 'noa_refresh_token',
     SESSION_META: 'noa_session',
-  }
+  };
 
   function simulateSetAuthCookies(tokens, sessionUser, isProd = true) {
-    const cookies = new Map()
+    const cookies = new Map();
     const commonOptions = {
       httpOnly: true,
       secure: isProd,
       sameSite: 'lax',
       path: '/',
-    }
+    };
 
     cookies.set(AUTH_COOKIE_NAMES.ACCESS_TOKEN, {
       value: tokens.accessToken,
       options: { ...commonOptions, maxAge: tokens.expiresIn || 3600 },
-    })
+    });
 
     cookies.set(AUTH_COOKIE_NAMES.ID_TOKEN, {
       value: tokens.idToken,
       options: { ...commonOptions, maxAge: tokens.expiresIn || 3600 },
-    })
+    });
 
     if (tokens.refreshToken) {
       cookies.set(AUTH_COOKIE_NAMES.REFRESH_TOKEN, {
         value: tokens.refreshToken,
         options: { ...commonOptions, maxAge: 30 * 24 * 60 * 60 },
-      })
+      });
     }
 
     cookies.set(AUTH_COOKIE_NAMES.SESSION_META, {
@@ -47,8 +47,10 @@ describe('HIPAA-Compliant Session Cookie Suite', () => {
         email: sessionUser.email,
         name: sessionUser.name,
         userType: sessionUser.userType,
-        doctorId: sessionUser.userType === 'doctor' ? sessionUser.sub : undefined,
-        patientId: sessionUser.userType === 'patient' ? sessionUser.sub : undefined,
+        doctorId:
+          sessionUser.userType === 'doctor' ? sessionUser.sub : undefined,
+        patientId:
+          sessionUser.userType === 'patient' ? sessionUser.sub : undefined,
       }),
       options: {
         httpOnly: true,
@@ -57,21 +59,40 @@ describe('HIPAA-Compliant Session Cookie Suite', () => {
         path: '/',
         maxAge: tokens.expiresIn || 3600,
       },
-    })
+    });
 
-    return cookies
+    return cookies;
   }
 
   function simulateClearAuthCookies() {
-    const cookies = new Map()
-    const clearOptions = { httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 0, expires: new Date(0) }
+    const cookies = new Map();
+    const clearOptions = {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0,
+      expires: new Date(0),
+    };
 
-    cookies.set(AUTH_COOKIE_NAMES.ACCESS_TOKEN, { value: '', options: clearOptions })
-    cookies.set(AUTH_COOKIE_NAMES.ID_TOKEN, { value: '', options: clearOptions })
-    cookies.set(AUTH_COOKIE_NAMES.REFRESH_TOKEN, { value: '', options: clearOptions })
-    cookies.set(AUTH_COOKIE_NAMES.SESSION_META, { value: '', options: clearOptions })
+    cookies.set(AUTH_COOKIE_NAMES.ACCESS_TOKEN, {
+      value: '',
+      options: clearOptions,
+    });
+    cookies.set(AUTH_COOKIE_NAMES.ID_TOKEN, {
+      value: '',
+      options: clearOptions,
+    });
+    cookies.set(AUTH_COOKIE_NAMES.REFRESH_TOKEN, {
+      value: '',
+      options: clearOptions,
+    });
+    cookies.set(AUTH_COOKIE_NAMES.SESSION_META, {
+      value: '',
+      options: clearOptions,
+    });
 
-    return cookies
+    return cookies;
   }
 
   it('should set tamper-proof httpOnly and secure flags on access and id tokens', () => {
@@ -80,172 +101,196 @@ describe('HIPAA-Compliant Session Cookie Suite', () => {
       idToken: 'sample-jwt-id-token',
       refreshToken: 'sample-refresh-token',
       expiresIn: 3600,
-    }
+    };
 
     const sessionUser = {
       sub: 'doc-uuid-1234',
       email: 'dr.smith@noa.health',
       name: 'Dr. Sarah Smith',
       userType: 'doctor',
-    }
+    };
 
-    const cookies = simulateSetAuthCookies(tokens, sessionUser, true)
+    const cookies = simulateSetAuthCookies(tokens, sessionUser, true);
 
     // Verify Access Token Cookie
-    const accessCookie = cookies.get(AUTH_COOKIE_NAMES.ACCESS_TOKEN)
-    assert.equal(accessCookie.value, tokens.accessToken)
-    assert.equal(accessCookie.options.httpOnly, true, 'Access token MUST be httpOnly to prevent XSS')
-    assert.equal(accessCookie.options.secure, true, 'Access token MUST be secure in production')
-    assert.equal(accessCookie.options.sameSite, 'lax')
-    assert.equal(accessCookie.options.maxAge, 3600)
+    const accessCookie = cookies.get(AUTH_COOKIE_NAMES.ACCESS_TOKEN);
+    assert.equal(accessCookie.value, tokens.accessToken);
+    assert.equal(
+      accessCookie.options.httpOnly,
+      true,
+      'Access token MUST be httpOnly to prevent XSS'
+    );
+    assert.equal(
+      accessCookie.options.secure,
+      true,
+      'Access token MUST be secure in production'
+    );
+    assert.equal(accessCookie.options.sameSite, 'lax');
+    assert.equal(accessCookie.options.maxAge, 3600);
 
     // Verify Refresh Token Cookie
-    const refreshCookie = cookies.get(AUTH_COOKIE_NAMES.REFRESH_TOKEN)
-    assert.equal(refreshCookie.value, tokens.refreshToken)
-    assert.equal(refreshCookie.options.httpOnly, true)
-    assert.equal(refreshCookie.options.maxAge, 30 * 24 * 60 * 60)
+    const refreshCookie = cookies.get(AUTH_COOKIE_NAMES.REFRESH_TOKEN);
+    assert.equal(refreshCookie.value, tokens.refreshToken);
+    assert.equal(refreshCookie.options.httpOnly, true);
+    assert.equal(refreshCookie.options.maxAge, 30 * 24 * 60 * 60);
 
     // Verify Session Metadata Cookie
-    const metaCookie = cookies.get(AUTH_COOKIE_NAMES.SESSION_META)
-    assert.equal(metaCookie.options.httpOnly, true, 'Session meta must be httpOnly to prevent XSS & tampering')
-    const parsed = JSON.parse(metaCookie.value)
-    assert.equal(parsed.id, 'doc-uuid-1234')
-    assert.equal(parsed.email, 'dr.smith@noa.health')
-    assert.equal(parsed.userType, 'doctor')
-  })
+    const metaCookie = cookies.get(AUTH_COOKIE_NAMES.SESSION_META);
+    assert.equal(
+      metaCookie.options.httpOnly,
+      true,
+      'Session meta must be httpOnly to prevent XSS & tampering'
+    );
+    const parsed = JSON.parse(metaCookie.value);
+    assert.equal(parsed.id, 'doc-uuid-1234');
+    assert.equal(parsed.email, 'dr.smith@noa.health');
+    assert.equal(parsed.userType, 'doctor');
+  });
 
   it('should clear all authentication cookies with maxAge 0 on logout', () => {
-    const cleared = simulateClearAuthCookies()
+    const cleared = simulateClearAuthCookies();
 
     for (const [name, cookie] of cleared.entries()) {
-      assert.equal(cookie.value, '', `Cookie ${name} value must be emptied`)
-      assert.equal(cookie.options.maxAge, 0, `Cookie ${name} maxAge must be 0`)
+      assert.equal(cookie.value, '', `Cookie ${name} value must be emptied`);
+      assert.equal(cookie.options.maxAge, 0, `Cookie ${name} maxAge must be 0`);
     }
-  })
-})
+  });
+});
 
 describe('Cognito Server Configuration & Validation Suite', () => {
   it('should normalize user emails and validate password inputs', () => {
     function sanitizeAuthInput(email, password) {
       if (!email || !password) {
-        throw new Error('Email and password are required')
+        throw new Error('Email and password are required');
       }
       return {
         email: email.trim().toLowerCase(),
         password: password,
-      }
+      };
     }
 
     assert.throws(
       () => sanitizeAuthInput('', 'Password123!'),
       /Email and password are required/
-    )
+    );
 
     assert.throws(
       () => sanitizeAuthInput('test@example.com', ''),
       /Email and password are required/
-    )
+    );
 
-    const sanitized = sanitizeAuthInput('  Dr.Jones@Hospital.COM  ', 'ValidPass123#')
-    assert.equal(sanitized.email, 'dr.jones@hospital.com')
-    assert.equal(sanitized.password, 'ValidPass123#')
-  })
+    const sanitized = sanitizeAuthInput(
+      '  Dr.Jones@Hospital.COM  ',
+      'ValidPass123#'
+    );
+    assert.equal(sanitized.email, 'dr.jones@hospital.com');
+    assert.equal(sanitized.password, 'ValidPass123#');
+  });
 
   it('should properly detect configured vs unconfigured Cognito environments', () => {
     function checkCognitoConfig(userPoolId, clientId) {
-      return Boolean(userPoolId && clientId)
+      return Boolean(userPoolId && clientId);
     }
 
-    assert.equal(checkCognitoConfig('', ''), false)
-    assert.equal(checkCognitoConfig('us-east-1_abcdef123', ''), false)
-    assert.equal(checkCognitoConfig('us-east-1_abcdef123', 'appclient12345'), true)
-  })
-})
+    assert.equal(checkCognitoConfig('', ''), false);
+    assert.equal(checkCognitoConfig('us-east-1_abcdef123', ''), false);
+    assert.equal(
+      checkCognitoConfig('us-east-1_abcdef123', 'appclient12345'),
+      true
+    );
+  });
+});
 
 describe('Next.js Edge Middleware RBAC Simulation Suite', () => {
   function simulateMiddleware(pathname, cookies) {
-    const idToken = cookies.get('noa_id_token')
-    const accessToken = cookies.get('noa_access_token')
-    const hasToken = Boolean(idToken || accessToken)
+    const idToken = cookies.get('noa_id_token');
+    const accessToken = cookies.get('noa_access_token');
+    const hasToken = Boolean(idToken || accessToken);
 
     // Token must be present - session cookie alone is NOT trusted
-    let userType = null
+    let userType = null;
     if (idToken) {
       try {
-        const payload = JSON.parse(Buffer.from(idToken.split('.')[1], 'base64').toString('utf8'))
-        userType = payload['custom:user_type']
+        const payload = JSON.parse(
+          Buffer.from(idToken.split('.')[1], 'base64').toString('utf8')
+        );
+        userType = payload['custom:user_type'];
       } catch {
         // If not a JWT, fallback to dev token check
-        if (idToken.startsWith('dev-')) userType = 'doctor'
+        if (idToken.startsWith('dev-')) userType = 'doctor';
       }
     } else if (accessToken?.startsWith('dev-')) {
-      userType = 'doctor'
+      userType = 'doctor';
     }
 
-    const isAuthenticated = hasToken && Boolean(userType)
+    const isAuthenticated = hasToken && Boolean(userType);
 
     if (pathname.startsWith('/dashboard/doctor')) {
       if (!isAuthenticated) {
-        return { action: 'redirect', to: '/auth/login?userType=doctor' }
+        return { action: 'redirect', to: '/auth/login?userType=doctor' };
       }
       if (userType !== 'doctor') {
-        return { action: 'redirect', to: '/dashboard/patient' }
+        return { action: 'redirect', to: '/dashboard/patient' };
       }
-      return { action: 'next' }
+      return { action: 'next' };
     }
 
     if (pathname.startsWith('/dashboard/patient')) {
       if (!isAuthenticated) {
-        return { action: 'redirect', to: '/auth/login?userType=patient' }
+        return { action: 'redirect', to: '/auth/login?userType=patient' };
       }
       if (userType !== 'patient') {
-        return { action: 'redirect', to: '/dashboard/doctor' }
+        return { action: 'redirect', to: '/dashboard/doctor' };
       }
-      return { action: 'next' }
+      return { action: 'next' };
     }
 
-    return { action: 'next' }
+    return { action: 'next' };
   }
 
   function makeMockJwt(userType) {
-    const header = Buffer.from(JSON.stringify({ alg: 'RS256' })).toString('base64')
-    const payload = Buffer.from(JSON.stringify({
-      sub: 'user-123',
-      'custom:user_type': userType,
-      exp: Math.floor(Date.now() / 1000) + 3600,
-    })).toString('base64')
-    return `${header}.${payload}.signature`
+    const header = Buffer.from(JSON.stringify({ alg: 'RS256' })).toString(
+      'base64'
+    );
+    const payload = Buffer.from(
+      JSON.stringify({
+        sub: 'user-123',
+        'custom:user_type': userType,
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      })
+    ).toString('base64');
+    return `${header}.${payload}.signature`;
   }
 
   it('should redirect unauthenticated users away from doctor dashboard', () => {
-    const res = simulateMiddleware('/dashboard/doctor', new Map())
-    assert.equal(res.action, 'redirect')
-    assert.ok(res.to.includes('/auth/login?userType=doctor'))
-  })
+    const res = simulateMiddleware('/dashboard/doctor', new Map());
+    assert.equal(res.action, 'redirect');
+    assert.ok(res.to.includes('/auth/login?userType=doctor'));
+  });
 
   it('should REJECT forged session cookie without valid cryptographic token', () => {
-    const cookies = new Map()
-    cookies.set('noa_session', JSON.stringify({ userType: 'doctor' }))
-    const res = simulateMiddleware('/dashboard/doctor/patients', cookies)
+    const cookies = new Map();
+    cookies.set('noa_session', JSON.stringify({ userType: 'doctor' }));
+    const res = simulateMiddleware('/dashboard/doctor/patients', cookies);
 
     // Must NOT permit access without a token!
-    assert.equal(res.action, 'redirect')
-  })
+    assert.equal(res.action, 'redirect');
+  });
 
   it('should redirect patients attempting to access doctor dashboard', () => {
-    const cookies = new Map()
-    cookies.set('noa_id_token', makeMockJwt('patient'))
-    const res = simulateMiddleware('/dashboard/doctor/patients', cookies)
+    const cookies = new Map();
+    cookies.set('noa_id_token', makeMockJwt('patient'));
+    const res = simulateMiddleware('/dashboard/doctor/patients', cookies);
 
-    assert.equal(res.action, 'redirect')
-    assert.equal(res.to, '/dashboard/patient')
-  })
+    assert.equal(res.action, 'redirect');
+    assert.equal(res.to, '/dashboard/patient');
+  });
 
   it('should permit authenticated doctors to access doctor dashboard', () => {
-    const cookies = new Map()
-    cookies.set('noa_id_token', makeMockJwt('doctor'))
-    const res = simulateMiddleware('/dashboard/doctor/patients', cookies)
+    const cookies = new Map();
+    cookies.set('noa_id_token', makeMockJwt('doctor'));
+    const res = simulateMiddleware('/dashboard/doctor/patients', cookies);
 
-    assert.equal(res.action, 'next')
-  })
-})
+    assert.equal(res.action, 'next');
+  });
+});

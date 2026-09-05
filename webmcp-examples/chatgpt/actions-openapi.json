@@ -47,7 +47,10 @@
                   "params": {
                     "type": "object",
                     "properties": {
-                      "name": { "type": "string", "example": "generate_soap_note" },
+                      "name": {
+                        "type": "string",
+                        "example": "generate_soap_note"
+                      },
                       "arguments": { "type": "object" }
                     },
                     "required": ["name"]

@@ -1,39 +1,41 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { S3Client } from '@aws-sdk/client-s3'
-import { BedrockRuntimeClient } from '@aws-sdk/client-bedrock-runtime'
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { S3Client } from '@aws-sdk/client-s3';
+import { BedrockRuntimeClient } from '@aws-sdk/client-bedrock-runtime';
 
 export type AwsCredentials = {
-  accessKeyId: string
-  secretAccessKey: string
-  sessionToken?: string
-}
+  accessKeyId: string;
+  secretAccessKey: string;
+  sessionToken?: string;
+};
 
 let cachedOidcSession: {
-  credentials: AwsCredentials
-  expiresAt: number
-} | null = null
+  credentials: AwsCredentials;
+  expiresAt: number;
+} | null = null;
 
 /**
  * Exchange Vercel OIDC token with AWS STS for temporary credentials
  */
-export async function getOidcCredentials(targetRegion = 'us-east-1'): Promise<AwsCredentials | undefined> {
-  const oidcToken = process.env.VERCEL_OIDC_TOKEN
-  const roleArn = process.env.AWS_ROLE_ARN
+export async function getOidcCredentials(
+  targetRegion = 'us-east-1'
+): Promise<AwsCredentials | undefined> {
+  const oidcToken = process.env.VERCEL_OIDC_TOKEN;
+  const roleArn = process.env.AWS_ROLE_ARN;
 
   if (!oidcToken || !roleArn) {
-    return undefined
+    return undefined;
   }
 
   // Check cached credentials (buffered by 60 seconds)
-  const now = Date.now()
+  const now = Date.now();
   if (cachedOidcSession && cachedOidcSession.expiresAt > now + 60_000) {
-    return cachedOidcSession.credentials
+    return cachedOidcSession.credentials;
   }
 
   try {
     const stsEndpoint = targetRegion.startsWith('us-')
       ? 'https://sts.amazonaws.com'
-      : `https://sts.${targetRegion}.amazonaws.com`
+      : `https://sts.${targetRegion}.amazonaws.com`;
 
     const body = new URLSearchParams({
       Action: 'AssumeRoleWithWebIdentity',
@@ -42,7 +44,7 @@ export async function getOidcCredentials(targetRegion = 'us-east-1'): Promise<Aw
       RoleSessionName: 'vercel-noa-session',
       WebIdentityToken: oidcToken,
       DurationSeconds: '900', // 15-minute rotation
-    })
+    });
 
     const response = await fetch(stsEndpoint, {
       method: 'POST',
@@ -51,26 +53,37 @@ export async function getOidcCredentials(targetRegion = 'us-east-1'): Promise<Aw
         Accept: 'application/json',
       },
       body: body.toString(),
-    })
+    });
 
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error('[AWS OIDC] STS exchange failed with status', response.status, ':', errorText)
-      return undefined
+      const errorText = await response.text();
+      console.error(
+        '[AWS OIDC] STS exchange failed with status',
+        response.status,
+        ':',
+        errorText
+      );
+      return undefined;
     }
 
-    const rawText = await response.text()
-    let creds: any = null
+    const rawText = await response.text();
+    let creds: any = null;
 
     try {
-      const data = JSON.parse(rawText)
-      creds = data?.AssumeRoleWithWebIdentityResponse?.AssumeRoleWithWebIdentityResult?.Credentials
+      const data = JSON.parse(rawText);
+      creds =
+        data?.AssumeRoleWithWebIdentityResponse?.AssumeRoleWithWebIdentityResult
+          ?.Credentials;
     } catch {
       // Fallback regex parsing if AWS STS responds with XML format
-      const accessKeyMatch = rawText.match(/<AccessKeyId>(.*?)<\/AccessKeyId>/)
-      const secretKeyMatch = rawText.match(/<SecretAccessKey>(.*?)<\/SecretAccessKey>/)
-      const sessionTokenMatch = rawText.match(/<SessionToken>(.*?)<\/SessionToken>/)
-      const expirationMatch = rawText.match(/<Expiration>(.*?)<\/Expiration>/)
+      const accessKeyMatch = rawText.match(/<AccessKeyId>(.*?)<\/AccessKeyId>/);
+      const secretKeyMatch = rawText.match(
+        /<SecretAccessKey>(.*?)<\/SecretAccessKey>/
+      );
+      const sessionTokenMatch = rawText.match(
+        /<SessionToken>(.*?)<\/SessionToken>/
+      );
+      const expirationMatch = rawText.match(/<Expiration>(.*?)<\/Expiration>/);
 
       if (accessKeyMatch && secretKeyMatch) {
         creds = {
@@ -78,47 +91,57 @@ export async function getOidcCredentials(targetRegion = 'us-east-1'): Promise<Aw
           SecretAccessKey: secretKeyMatch[1],
           SessionToken: sessionTokenMatch ? sessionTokenMatch[1] : undefined,
           Expiration: expirationMatch ? expirationMatch[1] : undefined,
-        }
+        };
       }
     }
 
     if (!creds?.AccessKeyId || !creds?.SecretAccessKey) {
-      console.error('[AWS OIDC] Could not parse STS credentials from response:', rawText.slice(0, 300))
-      return undefined
+      console.error(
+        '[AWS OIDC] Could not parse STS credentials from response:',
+        rawText.slice(0, 300)
+      );
+      return undefined;
     }
 
     const result: AwsCredentials = {
       accessKeyId: creds.AccessKeyId,
       secretAccessKey: creds.SecretAccessKey,
       sessionToken: creds.SessionToken,
-    }
+    };
 
-    const expiresAt = creds.Expiration ? new Date(creds.Expiration).getTime() : now + 14 * 60_000
-    cachedOidcSession = { credentials: result, expiresAt }
-    return result
+    const expiresAt = creds.Expiration
+      ? new Date(creds.Expiration).getTime()
+      : now + 14 * 60_000;
+    cachedOidcSession = { credentials: result, expiresAt };
+    return result;
   } catch (err: any) {
-    console.error('[AWS OIDC] Error exchanging token with AWS STS:', err?.message || err)
-    return undefined
+    console.error(
+      '[AWS OIDC] Error exchanging token with AWS STS:',
+      err?.message || err
+    );
+    return undefined;
   }
 }
 
 /**
  * Synchronously retrieves static credentials if present
  */
-export function getAwsCredentials(_region?: string): AwsCredentials | undefined {
-  const accessKeyId = process.env.AWS_ACCESS_KEY_ID
-  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
-  const sessionToken = process.env.AWS_SESSION_TOKEN
+export function getAwsCredentials(
+  _region?: string
+): AwsCredentials | undefined {
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+  const sessionToken = process.env.AWS_SESSION_TOKEN;
 
   if (!accessKeyId || !secretAccessKey) {
-    return undefined
+    return undefined;
   }
 
   return {
     accessKeyId,
     secretAccessKey,
     ...(sessionToken ? { sessionToken } : {}),
-  }
+  };
 }
 
 /**
@@ -127,31 +150,31 @@ export function getAwsCredentials(_region?: string): AwsCredentials | undefined 
 export function createCredentialProvider(targetRegion: string) {
   return async (): Promise<AwsCredentials> => {
     // 1. Check static keys first (Local development or explicit env keys)
-    const staticCreds = getAwsCredentials(targetRegion)
+    const staticCreds = getAwsCredentials(targetRegion);
     if (staticCreds) {
-      return staticCreds
+      return staticCreds;
     }
 
     // 2. Check Vercel OIDC (Production zero-key federation)
     if (process.env.VERCEL_OIDC_TOKEN && process.env.AWS_ROLE_ARN) {
-      const oidcCreds = await getOidcCredentials(targetRegion)
+      const oidcCreds = await getOidcCredentials(targetRegion);
       if (oidcCreds) {
-        return oidcCreds
+        return oidcCreds;
       }
     }
 
     throw new Error(
       'No AWS credentials found. Configure VERCEL_OIDC_TOKEN + AWS_ROLE_ARN, or AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY.'
-    )
-  }
+    );
+  };
 }
 
 // ============================================
 // AWS Region Configuration
 // ============================================
 
-const region = process.env.AWS_REGION || 'us-east-1'
-const bedrockRegion = process.env.BEDROCK_REGION || region
+const region = process.env.AWS_REGION || 'us-east-1';
+const bedrockRegion = process.env.BEDROCK_REGION || region;
 
 // ============================================
 // AWS Client Initialization (Dual-Mode: OIDC + Static Keys)
@@ -160,27 +183,33 @@ const bedrockRegion = process.env.BEDROCK_REGION || region
 const hasCredentialsConfigured = Boolean(
   (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
   (process.env.VERCEL_OIDC_TOKEN && process.env.AWS_ROLE_ARN)
-)
+);
 
 // DynamoDB Client
 export const dynamodbClient = new DynamoDBClient({
   region,
-  ...(hasCredentialsConfigured ? { credentials: createCredentialProvider(region) } : {}),
-})
+  ...(hasCredentialsConfigured
+    ? { credentials: createCredentialProvider(region) }
+    : {}),
+});
 
 // S3 Client (Terraform-provisioned)
 export const s3Client = new S3Client({
   region,
-  ...(hasCredentialsConfigured ? { credentials: createCredentialProvider(region) } : {}),
-})
+  ...(hasCredentialsConfigured
+    ? { credentials: createCredentialProvider(region) }
+    : {}),
+});
 
 // Bedrock Runtime Client (for Nova & Sonic models with adaptive backoff)
 export const bedrockClient = new BedrockRuntimeClient({
   region: bedrockRegion,
   maxAttempts: 5,
   retryMode: 'adaptive',
-  ...(hasCredentialsConfigured ? { credentials: createCredentialProvider(bedrockRegion) } : {}),
-})
+  ...(hasCredentialsConfigured
+    ? { credentials: createCredentialProvider(bedrockRegion) }
+    : {}),
+});
 
 // ============================================
 // AWS Configuration Object
@@ -218,10 +247,10 @@ export const awsConfig = {
     models: {
       // Nova Lite v2 - Fast, efficient model for SOAP notes and basic tasks
       novaLite: process.env.BEDROCK_NOVA_LITE_MODEL || 'amazon.nova-lite-v2:0',
-      
+
       // Nova Pro v2 - Advanced model for clinical analysis
       novaPro: process.env.BEDROCK_NOVA_PRO_MODEL || 'amazon.nova-pro-v2:0',
-      
+
       // Sonic v2 - Voice/audio processing model
       sonic: process.env.BEDROCK_SONIC_MODEL || 'amazon.nova-sonic-v2:0',
     },
@@ -242,32 +271,28 @@ export const awsConfig = {
     userPoolId: process.env.COGNITO_USER_POOL_ID,
     clientId: process.env.COGNITO_CLIENT_ID,
   },
-}
+};
 
 // Validation function to check if AWS is properly configured
 export function validateAwsConfig(): { valid: boolean; missing: string[] } {
-  const required = [
-    'AWS_REGION',
-    'DYNAMODB_TABLE_NAME',
-    'S3_BUCKET',
-  ]
+  const required = ['AWS_REGION', 'DYNAMODB_TABLE_NAME', 'S3_BUCKET'];
 
   // Either OIDC or static keys must be present
   const hasAuth = Boolean(
     (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
     (process.env.VERCEL_OIDC_TOKEN && process.env.AWS_ROLE_ARN)
-  )
+  );
 
-  const missing = required.filter(key => !process.env[key])
+  const missing = required.filter((key) => !process.env[key]);
   if (!hasAuth) {
-    missing.push('AWS_ACCESS_KEY_ID or (VERCEL_OIDC_TOKEN + AWS_ROLE_ARN)')
+    missing.push('AWS_ACCESS_KEY_ID or (VERCEL_OIDC_TOKEN + AWS_ROLE_ARN)');
   }
 
   return {
     valid: missing.length === 0,
     missing,
-  }
+  };
 }
 
 // Export default config for convenience
-export default awsConfig
+export default awsConfig;

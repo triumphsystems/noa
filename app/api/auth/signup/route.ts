@@ -1,18 +1,44 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createDoctor, createPatient, updatePatient, migratePatientId, getDoctorByEmail, getPatientByEmail } from '@/lib/db'
-import { signUpWithCognito, getCognitoConfig } from '@/lib/auth/cognito'
-import { checkRateLimit, getClientIdentifier, rateLimitResponse } from '@/lib/ratelimit'
+import { NextRequest, NextResponse } from 'next/server';
+import {
+  createDoctor,
+  createPatient,
+  updatePatient,
+  migratePatientId,
+  getDoctorByEmail,
+  getPatientByEmail,
+} from '@/lib/db';
+import { signUpWithCognito, getCognitoConfig } from '@/lib/auth/cognito';
+import {
+  checkRateLimit,
+  getClientIdentifier,
+  rateLimitResponse,
+} from '@/lib/ratelimit';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email, password, firstName, lastName, userType, specialty, clinic, doctorId, license, issuingAuthority, licenseDocumentUrl } = body
+    const body = await request.json();
+    const {
+      email,
+      password,
+      firstName,
+      lastName,
+      userType,
+      specialty,
+      clinic,
+      doctorId,
+      license,
+      issuingAuthority,
+      licenseDocumentUrl,
+    } = body;
 
     // 1. Rate limiting: max 5 signups per minute per client
-    const clientId = getClientIdentifier(request, email)
-    const rateCheck = await checkRateLimit(`signup:${clientId}`, { limit: 5, windowSeconds: 60 })
+    const clientId = getClientIdentifier(request, email);
+    const rateCheck = await checkRateLimit(`signup:${clientId}`, {
+      limit: 5,
+      windowSeconds: 60,
+    });
     if (!rateCheck.success) {
-      return rateLimitResponse(rateCheck)
+      return rateLimitResponse(rateCheck);
     }
 
     // Validate input
@@ -20,28 +46,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { message: 'Missing required fields' },
         { status: 400 }
-      )
+      );
     }
 
     if (password.length < 6) {
       return NextResponse.json(
         { message: 'Password must be at least 6 characters long.' },
         { status: 400 }
-      )
+      );
     }
 
     if (userType !== 'doctor' && userType !== 'patient') {
       return NextResponse.json(
         { message: 'Invalid user type. Must be doctor or patient.' },
         { status: 400 }
-      )
+      );
     }
 
-    const { isConfigured } = getCognitoConfig()
+    const { isConfigured } = getCognitoConfig();
 
     // 1. AWS Cognito Registration
-    let userSub = ''
-    let isConfirmed = false
+    let userSub = '';
+    let isConfirmed = false;
 
     if (isConfigured) {
       const result = await signUpWithCognito({
@@ -50,24 +76,29 @@ export async function POST(request: NextRequest) {
         userType,
         firstName,
         lastName,
-      })
-      userSub = result.userSub
-      isConfirmed = result.isConfirmed
+      });
+      userSub = result.userSub;
+      isConfirmed = result.isConfirmed;
     } else {
       return NextResponse.json(
-        { message: 'AWS Cognito User Pool is not configured for registration.' },
+        {
+          message: 'AWS Cognito User Pool is not configured for registration.',
+        },
         { status: 503 }
-      )
+      );
     }
 
     // 2. DynamoDB Medical Profile Record
     if (userType === 'doctor') {
-      const existing = await getDoctorByEmail(email)
+      const existing = await getDoctorByEmail(email);
       if (existing) {
         return NextResponse.json(
-          { message: 'An account with this email address already exists. Please sign in or reset your password.' },
+          {
+            message:
+              'An account with this email address already exists. Please sign in or reset your password.',
+          },
           { status: 409 }
-        )
+        );
       }
 
       const doctor = await createDoctor({
@@ -80,7 +111,7 @@ export async function POST(request: NextRequest) {
         issuingAuthority: issuingAuthority?.trim(),
         licenseDocumentUrl: licenseDocumentUrl?.trim(),
         verificationStatus: 'pending',
-      })
+      });
 
       return NextResponse.json({
         success: true,
@@ -95,32 +126,42 @@ export async function POST(request: NextRequest) {
           name: doctor.name,
           verificationStatus: doctor.verificationStatus,
         },
-      })
+      });
     } else {
-      const existing = await getPatientByEmail(email)
-      let patient: any = null
+      const existing = await getPatientByEmail(email);
+      let patient: any = null;
 
       if (existing) {
         // Check if existing record was a pre-created invitation (i.e. starts with patient- and no registered user)
         // or an already-registered patient account with a Cognito sub ID
-        const isPreCreatedInvite = (existing.id.startsWith('patient-') || existing.linkStatus === 'pending_patient_approval' || existing.id !== userSub) && (!existing.firstName || existing.firstName === 'Pending' || existing.linkStatus === 'pending_patient_approval' || existing.linkStatus === 'linked')
-        
+        const isPreCreatedInvite =
+          (existing.id.startsWith('patient-') ||
+            existing.linkStatus === 'pending_patient_approval' ||
+            existing.id !== userSub) &&
+          (!existing.firstName ||
+            existing.firstName === 'Pending' ||
+            existing.linkStatus === 'pending_patient_approval' ||
+            existing.linkStatus === 'linked');
+
         if (!isPreCreatedInvite && existing.id === userSub) {
           return NextResponse.json(
-            { message: 'An account with this email address already exists. Please sign in or reset your password.' },
+            {
+              message:
+                'An account with this email address already exists. Please sign in or reset your password.',
+            },
             { status: 409 }
-          )
+          );
         }
 
         // If it was a pre-created invitation from a clinician, migrate it to the canonical Cognito Auth ID
         if (existing.id !== userSub) {
-          patient = await migratePatientId(existing.id, userSub)
+          patient = await migratePatientId(existing.id, userSub);
         }
         patient = await updatePatient(userSub, {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           ...(doctorId && !existing.doctorId ? { doctorId } : {}),
-        })
+        });
       } else {
         patient = await createPatient({
           id: userSub,
@@ -128,7 +169,7 @@ export async function POST(request: NextRequest) {
           email: email.trim().toLowerCase(),
           firstName: firstName.trim(),
           lastName: lastName.trim(),
-        })
+        });
       }
 
       return NextResponse.json({
@@ -145,13 +186,13 @@ export async function POST(request: NextRequest) {
           lastName: patient?.lastName || lastName,
           ...(patient?.doctorId ? { doctorId: patient.doctorId } : {}),
         },
-      })
+      });
     }
   } catch (error: any) {
-    console.error('[Auth] Signup error:', error?.message)
+    console.error('[Auth] Signup error:', error?.message);
     return NextResponse.json(
       { message: error?.message || 'Registration failed' },
       { status: 400 }
-    )
+    );
   }
 }

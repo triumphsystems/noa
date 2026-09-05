@@ -4,7 +4,7 @@
  * Allows instant synchronous registration without network latency or race conditions.
  */
 
-import { ToolDefinition } from '../core/types'
+import { ToolDefinition } from '../core/types';
 
 export const CLINICAL_SERVER_TOOL_DEFINITIONS: ToolDefinition[] = [
   // 1. generate_soap_note
@@ -17,11 +17,13 @@ export const CLINICAL_SERVER_TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         transcript: {
           type: 'string',
-          description: 'The raw doctor-patient consultation transcript or conversation history.',
+          description:
+            'The raw doctor-patient consultation transcript or conversation history.',
         },
         patientContext: {
           type: 'string',
-          description: 'Optional clinical context, known past medical history, or patient demographics.',
+          description:
+            'Optional clinical context, known past medical history, or patient demographics.',
         },
       },
       required: ['transcript'],
@@ -38,15 +40,18 @@ export const CLINICAL_SERVER_TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         patientHistory: {
           type: 'string',
-          description: 'Relevant past medical, surgical, family, and medication history.',
+          description:
+            'Relevant past medical, surgical, family, and medication history.',
         },
         currentPresentation: {
           type: 'string',
-          description: 'Current symptoms, chief complaint, and physical exam findings.',
+          description:
+            'Current symptoms, chief complaint, and physical exam findings.',
         },
         previousFindings: {
           type: 'string',
-          description: 'Optional previous lab results, imaging reports, or consultation notes.',
+          description:
+            'Optional previous lab results, imaging reports, or consultation notes.',
         },
       },
       required: ['patientHistory', 'currentPresentation'],
@@ -68,7 +73,8 @@ export const CLINICAL_SERVER_TOOL_DEFINITIONS: ToolDefinition[] = [
         clinicalTerms: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Optional specific medical terms to explain clearly in parentheses.',
+          description:
+            'Optional specific medical terms to explain clearly in parentheses.',
         },
       },
       required: ['soapNote'],
@@ -85,7 +91,8 @@ export const CLINICAL_SERVER_TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         chiefComplaint: {
           type: 'string',
-          description: 'The primary symptom or reason the patient is seeking care.',
+          description:
+            'The primary symptom or reason the patient is seeking care.',
         },
         symptoms: {
           type: 'string',
@@ -93,7 +100,8 @@ export const CLINICAL_SERVER_TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         vitalSigns: {
           type: 'string',
-          description: 'Optional recorded vital signs (BP, HR, RR, Temp, SpO2).',
+          description:
+            'Optional recorded vital signs (BP, HR, RR, Temp, SpO2).',
         },
       },
       required: ['chiefComplaint', 'symptoms'],
@@ -179,28 +187,35 @@ export const CLINICAL_SERVER_TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         transcript: {
           type: 'string',
-          description: 'The user speech transcript from the latest intake turn.',
+          description:
+            'The user speech transcript from the latest intake turn.',
         },
         language: {
           type: 'string',
-          description: 'The preferred language code or name (e.g. English, Spanish, French). Default: English.',
+          description:
+            'The preferred language code or name (e.g. English, Spanish, French). Default: English.',
         },
         history: {
           type: 'array',
           items: {
             type: 'object',
             properties: {
-              role: { type: 'string', enum: ['assistant', 'patient', 'system'] },
+              role: {
+                type: 'string',
+                enum: ['assistant', 'patient', 'system'],
+              },
               content: { type: 'string' },
               timestamp: { type: 'number' },
             },
             required: ['role', 'content'],
           },
-          description: 'Previous messages exchanged in the intake conversation.',
+          description:
+            'Previous messages exchanged in the intake conversation.',
         },
         draft: {
           type: 'object',
-          description: 'Current accumulated intake draft (demographics, medications, allergies, conditions).',
+          description:
+            'Current accumulated intake draft (demographics, medications, allergies, conditions).',
         },
       },
       required: ['transcript'],
@@ -215,7 +230,10 @@ export const CLINICAL_SERVER_TOOL_DEFINITIONS: ToolDefinition[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        patientId: { type: 'string', description: 'Unique identifier of the patient.' },
+        patientId: {
+          type: 'string',
+          description: 'Unique identifier of the patient.',
+        },
       },
       required: ['patientId'],
     },
@@ -224,11 +242,15 @@ export const CLINICAL_SERVER_TOOL_DEFINITIONS: ToolDefinition[] = [
   // 10. list_doctor_patients
   {
     name: 'list_doctor_patients',
-    description: 'Retrieves all registered patients associated with a specific doctor.',
+    description:
+      'Retrieves all registered patients associated with a specific doctor.',
     inputSchema: {
       type: 'object',
       properties: {
-        doctorId: { type: 'string', description: 'Unique identifier of the doctor.' },
+        doctorId: {
+          type: 'string',
+          description: 'Unique identifier of the doctor.',
+        },
       },
       required: ['doctorId'],
     },
@@ -241,7 +263,10 @@ export const CLINICAL_SERVER_TOOL_DEFINITIONS: ToolDefinition[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        doctorId: { type: 'string', description: 'Unique identifier of the doctor.' },
+        doctorId: {
+          type: 'string',
+          description: 'Unique identifier of the doctor.',
+        },
       },
       required: ['doctorId'],
     },
@@ -254,7 +279,10 @@ export const CLINICAL_SERVER_TOOL_DEFINITIONS: ToolDefinition[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        sessionId: { type: 'string', description: 'Unique identifier of the consultation session.' },
+        sessionId: {
+          type: 'string',
+          description: 'Unique identifier of the consultation session.',
+        },
       },
       required: ['sessionId'],
     },
@@ -263,12 +291,16 @@ export const CLINICAL_SERVER_TOOL_DEFINITIONS: ToolDefinition[] = [
   // 13. list_doctor_sessions
   {
     name: 'list_doctor_sessions',
-    description: 'Lists all consultation sessions conducted by a specific doctor.',
+    description:
+      'Lists all consultation sessions conducted by a specific doctor.',
     inputSchema: {
       type: 'object',
       properties: {
         doctorId: { type: 'string', description: 'Doctor ID.' },
-        limit: { type: 'number', description: 'Maximum sessions to return (default 20).' },
+        limit: {
+          type: 'number',
+          description: 'Maximum sessions to return (default 20).',
+        },
       },
       required: ['doctorId'],
     },
@@ -277,7 +309,8 @@ export const CLINICAL_SERVER_TOOL_DEFINITIONS: ToolDefinition[] = [
   // 14. list_patient_sessions
   {
     name: 'list_patient_sessions',
-    description: 'Lists all consultation sessions associated with a specific patient.',
+    description:
+      'Lists all consultation sessions associated with a specific patient.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -299,4 +332,4 @@ export const CLINICAL_SERVER_TOOL_DEFINITIONS: ToolDefinition[] = [
       required: ['patientId'],
     },
   },
-]
+];

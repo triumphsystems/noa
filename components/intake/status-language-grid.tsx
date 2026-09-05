@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import { Globe2, Activity } from 'lucide-react'
+import { Globe2, Activity } from 'lucide-react';
 
 type StatusLanguageGridProps = {
-  detectedLanguage: string
-  isSubmitting: boolean
-  isRecording: boolean
-  isComplete: boolean
-}
+  detectedLanguage: string;
+  isSubmitting: boolean;
+  isRecording: boolean;
+  isComplete: boolean;
+};
 
 export function StatusLanguageGrid({
   detectedLanguage,
@@ -18,50 +18,52 @@ export function StatusLanguageGrid({
   const statusText = isSubmitting
     ? 'Synthesizing...'
     : isRecording
-    ? 'Listening live'
-    : isComplete
-    ? 'Complete'
-    : 'Ready for speech'
+      ? 'Listening live'
+      : isComplete
+        ? 'Complete'
+        : 'Ready for speech';
 
   return (
-    <div className="grid gap-3 sm:gap-4 grid-cols-2">
-      <div className="rounded-2xl border border-deep-ink/10 bg-canvas p-3 sm:p-4 shadow-2xs">
-        <div className="flex items-center gap-1.5 mb-1">
-          <Globe2 className="w-3.5 h-3.5 text-slate" />
-          <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-slate font-medium">
+    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+      <div className="border-deep-ink/10 bg-canvas rounded-2xl border p-3 shadow-2xs sm:p-4">
+        <div className="mb-1 flex items-center gap-1.5">
+          <Globe2 className="text-slate h-3.5 w-3.5" />
+          <p className="text-slate text-[10px] font-medium tracking-[0.2em] uppercase sm:text-xs">
             Language Auto-Detect
           </p>
         </div>
-        <p className="font-semibold text-sm sm:text-base text-deep-ink truncate flex items-center gap-2">
+        <p className="text-deep-ink flex items-center gap-2 truncate text-sm font-semibold sm:text-base">
           <span>{detectedLanguage || 'English'}</span>
-          <span className="text-[10px] font-normal text-slate bg-deep-ink/5 px-1.5 py-0.5 rounded">
+          <span className="text-slate bg-deep-ink/5 rounded px-1.5 py-0.5 text-[10px] font-normal">
             Multilingual
           </span>
         </p>
       </div>
 
-      <div className="rounded-2xl border border-deep-ink/10 bg-canvas p-3 sm:p-4 shadow-2xs">
-        <div className="flex items-center gap-1.5 mb-1">
-          <Activity className="w-3.5 h-3.5 text-slate" />
-          <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-slate font-medium">
+      <div className="border-deep-ink/10 bg-canvas rounded-2xl border p-3 shadow-2xs sm:p-4">
+        <div className="mb-1 flex items-center gap-1.5">
+          <Activity className="text-slate h-3.5 w-3.5" />
+          <p className="text-slate text-[10px] font-medium tracking-[0.2em] uppercase sm:text-xs">
             Session Status
           </p>
         </div>
         <div className="flex items-center gap-2">
           <span
-            className={`w-2 h-2 rounded-full ${
+            className={`h-2 w-2 rounded-full ${
               isRecording
-                ? 'bg-red-500 animate-ping'
+                ? 'animate-ping bg-red-500'
                 : isSubmitting
-                ? 'bg-amber-500 animate-pulse'
-                : isComplete
-                ? 'bg-emerald-500'
-                : 'bg-deep-ink/30'
+                  ? 'animate-pulse bg-amber-500'
+                  : isComplete
+                    ? 'bg-emerald-500'
+                    : 'bg-deep-ink/30'
             }`}
           />
-          <p className="font-semibold text-sm sm:text-base text-deep-ink truncate">{statusText}</p>
+          <p className="text-deep-ink truncate text-sm font-semibold sm:text-base">
+            {statusText}
+          </p>
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthenticatedUser } from '@/lib/auth/jwt'
-import { getDoctorById, getPatientById } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server';
+import { getAuthenticatedUser } from '@/lib/auth/jwt';
+import { getDoctorById, getPatientById } from '@/lib/db';
 
 /**
  * GET /api/auth/me
@@ -9,27 +9,27 @@ import { getDoctorById, getPatientById } from '@/lib/db'
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = await getAuthenticatedUser(request)
+    const auth = await getAuthenticatedUser(request);
     if (!auth.isValid || !auth.sub) {
-      return NextResponse.json({ user: null }, { status: 200 })
+      return NextResponse.json({ user: null }, { status: 200 });
     }
 
-    let name = ''
-    let email = auth.email || ''
+    let name = '';
+    let email = auth.email || '';
 
     // Fetch canonical display name from DynamoDB profile
     try {
       if (auth.userType === 'doctor') {
-        const doctor = await getDoctorById(auth.sub)
+        const doctor = await getDoctorById(auth.sub);
         if (doctor) {
-          name = doctor.name || ''
-          email = doctor.email || email
+          name = doctor.name || '';
+          email = doctor.email || email;
         }
       } else if (auth.userType === 'patient') {
-        const patient = await getPatientById(auth.sub)
+        const patient = await getPatientById(auth.sub);
         if (patient) {
-          name = `${patient.firstName || ''} ${patient.lastName || ''}`.trim()
-          email = patient.email || email
+          name = `${patient.firstName || ''} ${patient.lastName || ''}`.trim();
+          email = patient.email || email;
         }
       }
     } catch {
@@ -43,9 +43,9 @@ export async function GET(request: NextRequest) {
         name,
         userType: auth.userType,
       },
-    })
+    });
   } catch (error) {
-    console.error('[Auth/Me] Error:', error)
-    return NextResponse.json({ user: null }, { status: 200 })
+    console.error('[Auth/Me] Error:', error);
+    return NextResponse.json({ user: null }, { status: 200 });
   }
 }

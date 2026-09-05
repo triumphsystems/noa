@@ -1,10 +1,10 @@
 export interface ApiSuccess<T> {
-  success: true
-  data: T
+  success: true;
+  data: T;
 }
 
 export interface ApiError {
-  success?: false
-  message: string
-  error?: string
+  success?: false;
+  message: string;
+  error?: string;
 }

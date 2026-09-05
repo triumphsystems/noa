@@ -1,21 +1,24 @@
-import { create } from 'zustand'
-import type { PatientDashboardPayload, PatientProfile } from '@/lib/types/patient.types'
-import type { Doctor, PatientIntake, Session } from '@/lib/db'
-import { http } from '@/lib/http'
+import { create } from 'zustand';
+import type {
+  PatientDashboardPayload,
+  PatientProfile,
+} from '@/lib/types/patient.types';
+import type { Doctor, PatientIntake, Session } from '@/lib/db';
+import { http } from '@/lib/http';
 
 export interface PatientState {
-  patientId: string | null
-  patient: PatientProfile | null
-  doctor: Doctor | null
-  pendingDoctor: Doctor | null
-  sessions: Session[]
-  intake: PatientIntake | null
-  stats: PatientDashboardPayload['stats'] | null
-  isLoading: boolean
-  error: string | null
-  setPatientId: (patientId: string | null) => void
-  loadDashboard: (patientId?: string) => Promise<void>
-  clearDashboard: () => void
+  patientId: string | null;
+  patient: PatientProfile | null;
+  doctor: Doctor | null;
+  pendingDoctor: Doctor | null;
+  sessions: Session[];
+  intake: PatientIntake | null;
+  stats: PatientDashboardPayload['stats'] | null;
+  isLoading: boolean;
+  error: string | null;
+  setPatientId: (patientId: string | null) => void;
+  loadDashboard: (patientId?: string) => Promise<void>;
+  clearDashboard: () => void;
 }
 
 const initialState = {
@@ -28,31 +31,35 @@ const initialState = {
   stats: null,
   isLoading: false,
   error: null,
-}
+};
 
 export const usePatientStore = create<PatientState>((set, get) => ({
   ...initialState,
 
-  setPatientId: patientId => set({ patientId }),
+  setPatientId: (patientId) => set({ patientId }),
 
-  loadDashboard: async patientId => {
-    const activeId = patientId ?? get().patientId
+  loadDashboard: async (patientId) => {
+    const activeId = patientId ?? get().patientId;
 
     if (!activeId) {
-      set({ error: 'A patient ID is required to load patient data' })
-      return
+      set({ error: 'A patient ID is required to load patient data' });
+      return;
     }
 
-    set({ isLoading: true, error: null, patientId: activeId })
+    set({ isLoading: true, error: null, patientId: activeId });
 
     try {
       const payload = await http<PatientDashboardPayload>(
         `/api/dashboard/patient?patientId=${encodeURIComponent(activeId)}`
-      )
+      );
 
-      const canonicalId = payload.patient?.id || activeId
-      if (typeof window !== 'undefined' && canonicalId && window.localStorage.getItem('patientId') !== canonicalId) {
-        window.localStorage.setItem('patientId', canonicalId)
+      const canonicalId = payload.patient?.id || activeId;
+      if (
+        typeof window !== 'undefined' &&
+        canonicalId &&
+        window.localStorage.getItem('patientId') !== canonicalId
+      ) {
+        window.localStorage.setItem('patientId', canonicalId);
       }
 
       set({
@@ -64,14 +71,15 @@ export const usePatientStore = create<PatientState>((set, get) => ({
         stats: payload.stats,
         patientId: canonicalId,
         isLoading: false,
-      })
+      });
     } catch (err) {
       set({
         isLoading: false,
-        error: err instanceof Error ? err.message : 'Failed to load patient data',
-      })
+        error:
+          err instanceof Error ? err.message : 'Failed to load patient data',
+      });
     }
   },
 
   clearDashboard: () => set(initialState),
-}))
+}));

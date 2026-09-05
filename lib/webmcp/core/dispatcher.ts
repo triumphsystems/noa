@@ -14,14 +14,14 @@ import {
   ServerCapabilities,
   InitializeResult,
   ExecutionContext,
-} from './types'
-import { WebMCPRegistry, registry as defaultRegistry } from './registry'
+} from './types';
+import { WebMCPRegistry, registry as defaultRegistry } from './registry';
 
 const SERVER_INFO: ServerInfo = {
   name: 'noa-clinical-webmcp',
   version: '1.0.0',
   description: 'Noa Clinical AI & Ambient Medical Voice WebMCP Server',
-}
+};
 
 const SERVER_CAPABILITIES: ServerCapabilities = {
   tools: {
@@ -34,7 +34,7 @@ const SERVER_CAPABILITIES: ServerCapabilities = {
   prompts: {
     listChanged: false,
   },
-}
+};
 
 export class WebMCPDispatcher {
   constructor(private registry: WebMCPRegistry = defaultRegistry) {}
@@ -43,10 +43,18 @@ export class WebMCPDispatcher {
     request: JsonRpcRequest,
     context?: ExecutionContext
   ): Promise<JsonRpcResponse> {
-    const id = request.id ?? null
+    const id = request.id ?? null;
 
-    if (!request || request.jsonrpc !== '2.0' || typeof request.method !== 'string') {
-      return this.error(id, RPC_ERROR_CODES.INVALID_REQUEST, 'Invalid JSON-RPC 2.0 request')
+    if (
+      !request ||
+      request.jsonrpc !== '2.0' ||
+      typeof request.method !== 'string'
+    ) {
+      return this.error(
+        id,
+        RPC_ERROR_CODES.INVALID_REQUEST,
+        'Invalid JSON-RPC 2.0 request'
+      );
     }
 
     try {
@@ -58,74 +66,95 @@ export class WebMCPDispatcher {
             serverInfo: SERVER_INFO,
             instructions:
               'Noa WebMCP provides clinical AI tools, patient records, consultation sessions, SOAP note synthesis, and voice intake workflows.',
-          }
-          return this.success(id, result)
+          };
+          return this.success(id, result);
         }
 
         case 'ping': {
-          return this.success(id, {})
+          return this.success(id, {});
         }
 
         case 'tools/list': {
-          const tools = this.registry.listTools()
-          return this.success(id, { tools })
+          const tools = this.registry.listTools();
+          return this.success(id, { tools });
         }
 
         case 'tools/call': {
-          const params = request.params as { name?: string; arguments?: Record<string, any> } | undefined
+          const params = request.params as
+            { name?: string; arguments?: Record<string, any> } | undefined;
           if (!params || !params.name) {
-            return this.error(id, RPC_ERROR_CODES.INVALID_PARAMS, 'Missing tool name in tools/call')
+            return this.error(
+              id,
+              RPC_ERROR_CODES.INVALID_PARAMS,
+              'Missing tool name in tools/call'
+            );
           }
 
           const callResult = await this.registry.callTool(
             params.name,
             params.arguments || {},
             context
-          )
-          return this.success(id, callResult)
+          );
+          return this.success(id, callResult);
         }
 
         case 'resources/list': {
-          const resources = this.registry.listResources()
-          return this.success(id, { resources })
+          const resources = this.registry.listResources();
+          return this.success(id, { resources });
         }
 
         case 'resources/templates/list': {
-          const resourceTemplates = this.registry.listResourceTemplates()
-          return this.success(id, { resourceTemplates })
+          const resourceTemplates = this.registry.listResourceTemplates();
+          return this.success(id, { resourceTemplates });
         }
 
         case 'resources/read': {
-          const params = request.params as { uri?: string } | undefined
+          const params = request.params as { uri?: string } | undefined;
           if (!params || !params.uri) {
-            return this.error(id, RPC_ERROR_CODES.INVALID_PARAMS, 'Missing uri in resources/read')
+            return this.error(
+              id,
+              RPC_ERROR_CODES.INVALID_PARAMS,
+              'Missing uri in resources/read'
+            );
           }
 
-          const readResult = await this.registry.readResource(params.uri, context)
-          return this.success(id, readResult)
+          const readResult = await this.registry.readResource(
+            params.uri,
+            context
+          );
+          return this.success(id, readResult);
         }
 
         case 'prompts/list': {
-          const prompts = this.registry.listPrompts()
-          return this.success(id, { prompts })
+          const prompts = this.registry.listPrompts();
+          return this.success(id, { prompts });
         }
 
         case 'prompts/get': {
-          const params = request.params as { name?: string; arguments?: Record<string, string> } | undefined
+          const params = request.params as
+            { name?: string; arguments?: Record<string, string> } | undefined;
           if (!params || !params.name) {
-            return this.error(id, RPC_ERROR_CODES.INVALID_PARAMS, 'Missing prompt name in prompts/get')
+            return this.error(
+              id,
+              RPC_ERROR_CODES.INVALID_PARAMS,
+              'Missing prompt name in prompts/get'
+            );
           }
 
           const promptResult = await this.registry.getPrompt(
             params.name,
             params.arguments || {},
             context
-          )
-          return this.success(id, promptResult)
+          );
+          return this.success(id, promptResult);
         }
 
         default: {
-          return this.error(id, RPC_ERROR_CODES.METHOD_NOT_FOUND, `Method not found: "${request.method}"`)
+          return this.error(
+            id,
+            RPC_ERROR_CODES.METHOD_NOT_FOUND,
+            `Method not found: "${request.method}"`
+          );
         }
       }
     } catch (err: any) {
@@ -133,16 +162,19 @@ export class WebMCPDispatcher {
         id,
         RPC_ERROR_CODES.INTERNAL_ERROR,
         err?.message || 'Internal server error while processing request'
-      )
+      );
     }
   }
 
-  private success<T>(id: string | number | null, result: T): JsonRpcSuccessResponse<T> {
+  private success<T>(
+    id: string | number | null,
+    result: T
+  ): JsonRpcSuccessResponse<T> {
     return {
       jsonrpc: '2.0',
       id,
       result,
-    }
+    };
   }
 
   private error(
@@ -159,8 +191,8 @@ export class WebMCPDispatcher {
         message,
         ...(data ? { data } : {}),
       },
-    }
+    };
   }
 }
 
-export const dispatcher = new WebMCPDispatcher()
+export const dispatcher = new WebMCPDispatcher();

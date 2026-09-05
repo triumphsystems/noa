@@ -1,34 +1,34 @@
-'use client'
+'use client';
 
-import React, { useState } from 'react'
-import { CheckCircle2, Copy, ArrowRight, Database } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { RESOURCE_TEMPLATES } from '../constants'
-import type { ActivityItem } from '../types'
+import React, { useState } from 'react';
+import { CheckCircle2, Copy, ArrowRight, Database } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { RESOURCE_TEMPLATES } from '../constants';
+import type { ActivityItem } from '../types';
 
 interface ResourcesProps {
-  onReadResource: (uri: string) => Promise<any>
-  logActivity: (item: Omit<ActivityItem, 'id' | 'timestamp'>) => void
+  onReadResource: (uri: string) => Promise<any>;
+  logActivity: (item: Omit<ActivityItem, 'id' | 'timestamp'>) => void;
 }
 
 export function ResourcesTab({ onReadResource, logActivity }: ResourcesProps) {
-  const [resourceUri, setResourceUri] = useState('patient://patient-1')
-  const [resourceResult, setResourceResult] = useState<any>(null)
-  const [isReadingResource, setIsReadingResource] = useState(false)
-  const [resourceTimeMs, setResourceTimeMs] = useState<number | null>(null)
-  const [copied, setCopied] = useState(false)
+  const [resourceUri, setResourceUri] = useState('patient://patient-1');
+  const [resourceResult, setResourceResult] = useState<any>(null);
+  const [isReadingResource, setIsReadingResource] = useState(false);
+  const [resourceTimeMs, setResourceTimeMs] = useState<number | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleRead = async (uriToRead?: string) => {
-    const uri = uriToRead || resourceUri
-    setIsReadingResource(true)
-    setResourceResult(null)
-    const start = performance.now()
+    const uri = uriToRead || resourceUri;
+    setIsReadingResource(true);
+    setResourceResult(null);
+    const start = performance.now();
 
     try {
-      const result = await onReadResource(uri)
-      const duration = Math.round(performance.now() - start)
-      setResourceTimeMs(duration)
-      setResourceResult(result)
+      const result = await onReadResource(uri);
+      const duration = Math.round(performance.now() - start);
+      setResourceTimeMs(duration);
+      setResourceResult(result);
 
       logActivity({
         type: 'resource',
@@ -36,12 +36,12 @@ export function ResourcesTab({ onReadResource, logActivity }: ResourcesProps) {
         durationMs: duration,
         status: 'success',
         output: result,
-      })
+      });
     } catch (err: any) {
-      const duration = Math.round(performance.now() - start)
-      setResourceTimeMs(duration)
-      const errorObj = { error: err?.message || String(err) }
-      setResourceResult(errorObj)
+      const duration = Math.round(performance.now() - start);
+      setResourceTimeMs(duration);
+      const errorObj = { error: err?.message || String(err) };
+      setResourceResult(errorObj);
 
       logActivity({
         type: 'resource',
@@ -49,48 +49,51 @@ export function ResourcesTab({ onReadResource, logActivity }: ResourcesProps) {
         durationMs: duration,
         status: 'error',
         output: errorObj,
-      })
+      });
     } finally {
-      setIsReadingResource(false)
+      setIsReadingResource(false);
     }
-  }
+  };
 
   const handleCopy = () => {
-    if (!resourceResult) return
-    navigator.clipboard.writeText(JSON.stringify(resourceResult, null, 2))
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+    if (!resourceResult) return;
+    navigator.clipboard.writeText(JSON.stringify(resourceResult, null, 2));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
-    <div className="flex-1 p-5 md:p-6 overflow-y-auto space-y-5 bg-canvas max-w-4xl mx-auto w-full font-sans">
+    <div className="bg-canvas mx-auto w-full max-w-4xl flex-1 space-y-5 overflow-y-auto p-5 font-sans md:p-6">
       <div>
-        <h3 className="font-serif font-bold text-base text-deep-ink tracking-tight">Resource Explorer</h3>
-        <p className="text-xs text-slate mt-0.5">
-          Inspect structured clinical data records directly over Model Context Protocol URI schemes.
+        <h3 className="text-deep-ink font-serif text-base font-bold tracking-tight">
+          Resource Explorer
+        </h3>
+        <p className="text-slate mt-0.5 text-xs">
+          Inspect structured clinical data records directly over Model Context
+          Protocol URI schemes.
         </p>
       </div>
 
       {/* URI Input Bar Card */}
-      <div className="p-4 rounded-2xl bg-white border border-deep-ink/10 space-y-2 shadow-2xs">
-        <label className="text-xs font-medium text-deep-ink block">
+      <div className="border-deep-ink/10 space-y-2 rounded-2xl border bg-white p-4 shadow-2xs">
+        <label className="text-deep-ink block text-xs font-medium">
           Target Resource URI
         </label>
         <div className="flex gap-2">
           <input
             type="text"
             value={resourceUri}
-            onChange={e => setResourceUri(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleRead()}
+            onChange={(e) => setResourceUri(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleRead()}
             placeholder="patient://patient-1"
-            className="flex-1 px-3.5 py-1.5 text-xs bg-soft-meadow/50 border border-deep-ink/10 rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-deep-ink/20 text-deep-ink transition-colors"
+            className="bg-soft-meadow/50 border-deep-ink/10 focus:ring-deep-ink/20 text-deep-ink flex-1 rounded-lg border px-3.5 py-1.5 font-mono text-xs transition-colors focus:ring-1 focus:outline-none"
           />
           <Button
             variant="default"
             size="sm"
             onClick={() => handleRead()}
             disabled={isReadingResource}
-            className="rounded-lg text-xs font-semibold px-4 h-8 shadow-2xs cursor-pointer border border-deep-ink/10 transition-transform active:scale-95"
+            className="border-deep-ink/10 h-8 cursor-pointer rounded-lg border px-4 text-xs font-semibold shadow-2xs transition-transform active:scale-95"
           >
             {isReadingResource ? 'Reading...' : 'Read Resource'}
           </Button>
@@ -99,30 +102,32 @@ export function ResourcesTab({ onReadResource, logActivity }: ResourcesProps) {
 
       {/* Quick Resource Templates Grid */}
       <div className="space-y-2">
-        <span className="text-xs font-medium text-deep-ink block">
+        <span className="text-deep-ink block text-xs font-medium">
           Clinical Resource Presets
         </span>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {RESOURCE_TEMPLATES.map(item => (
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          {RESOURCE_TEMPLATES.map((item) => (
             <button
               key={item.uri}
               onClick={() => {
-                setResourceUri(item.uri)
-                handleRead(item.uri)
+                setResourceUri(item.uri);
+                handleRead(item.uri);
               }}
-              className="text-left p-3.5 rounded-xl bg-white hover:bg-soft-meadow/30 border border-deep-ink/10 hover:border-deep-ink/20 transition-all text-xs cursor-pointer group shadow-2xs"
+              className="hover:bg-soft-meadow/30 border-deep-ink/10 hover:border-deep-ink/20 group cursor-pointer rounded-xl border bg-white p-3.5 text-left text-xs shadow-2xs transition-all"
             >
-              <div className="flex items-center justify-between gap-1 mb-1">
-                <span className="font-medium text-deep-ink text-xs">{item.label}</span>
-                <span className="text-[11px] text-slate/70 group-hover:text-deep-ink flex items-center gap-1">
+              <div className="mb-1 flex items-center justify-between gap-1">
+                <span className="text-deep-ink text-xs font-medium">
+                  {item.label}
+                </span>
+                <span className="text-slate/70 group-hover:text-deep-ink flex items-center gap-1 text-[11px]">
                   <span>Read</span>
-                  <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
                 </span>
               </div>
-              <p className="font-mono text-[10px] text-deep-ink/80 truncate bg-soft-meadow px-1.5 py-0.5 rounded border border-deep-ink/5 inline-block mb-1">
+              <p className="text-deep-ink/80 bg-soft-meadow border-deep-ink/5 mb-1 inline-block truncate rounded border px-1.5 py-0.5 font-mono text-[10px]">
                 {item.uri}
               </p>
-              <p className="text-xs text-slate leading-relaxed">{item.desc}</p>
+              <p className="text-slate text-xs leading-relaxed">{item.desc}</p>
             </button>
           ))}
         </div>
@@ -130,31 +135,37 @@ export function ResourcesTab({ onReadResource, logActivity }: ResourcesProps) {
 
       {/* Resource Output Card */}
       {resourceResult && (
-        <div className="space-y-2 pt-3 border-t border-deep-ink/10">
+        <div className="border-deep-ink/10 space-y-2 border-t pt-3">
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="font-medium text-deep-ink text-xs">Resource Output Payload</span>
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+              <span className="text-deep-ink text-xs font-medium">
+                Resource Output Payload
+              </span>
               {resourceTimeMs !== null && (
-                <span className="text-[11px] font-mono border border-deep-ink/10 bg-white px-2 py-0.5 rounded-md text-slate">
+                <span className="border-deep-ink/10 text-slate rounded-md border bg-white px-2 py-0.5 font-mono text-[11px]">
                   {resourceTimeMs} ms
                 </span>
               )}
             </div>
             <button
               onClick={handleCopy}
-              className="text-slate hover:text-deep-ink text-xs flex items-center gap-1 cursor-pointer p-1 hover:bg-soft-meadow rounded-lg transition-colors"
+              className="text-slate hover:text-deep-ink hover:bg-soft-meadow flex cursor-pointer items-center gap-1 rounded-lg p-1 text-xs transition-colors"
             >
-              {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? (
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
               <span>{copied ? 'Copied' : 'Copy'}</span>
             </button>
           </div>
 
-          <pre className="bg-deep-ink text-[#eff2e5] font-mono text-xs p-4 rounded-xl overflow-auto max-h-72 leading-relaxed shadow-sm selection:bg-hi-yellow selection:text-deep-ink">
+          <pre className="bg-deep-ink selection:bg-hi-yellow selection:text-deep-ink max-h-72 overflow-auto rounded-xl p-4 font-mono text-xs leading-relaxed text-[#eff2e5] shadow-sm">
             {JSON.stringify(resourceResult, null, 2)}
           </pre>
         </div>
       )}
     </div>
-  )
+  );
 }

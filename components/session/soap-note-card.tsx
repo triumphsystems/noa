@@ -1,24 +1,38 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Check, Copy, FileCheck, Save, Edit3, Loader2, Sparkles } from 'lucide-react'
+import * as React from 'react';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  Check,
+  Copy,
+  FileCheck,
+  Save,
+  Edit3,
+  Loader2,
+  Sparkles,
+} from 'lucide-react';
 
 export interface SOAPNoteData {
-  subjective: string
-  objective: string
-  assessment: string
-  plan: string
+  subjective: string;
+  objective: string;
+  assessment: string;
+  plan: string;
 }
 
 interface SoapNoteCardProps {
-  soapNote: SOAPNoteData | null
-  isGenerating?: boolean
-  isSaving?: boolean
-  onSave?: (note?: SOAPNoteData) => void
-  onUpdateNote?: (note: SOAPNoteData) => void
-  className?: string
+  soapNote: SOAPNoteData | null;
+  isGenerating?: boolean;
+  isSaving?: boolean;
+  onSave?: (note?: SOAPNoteData) => void;
+  onUpdateNote?: (note: SOAPNoteData) => void;
+  className?: string;
 }
 
 export function SoapNoteCard({
@@ -29,44 +43,48 @@ export function SoapNoteCard({
   onUpdateNote,
   className,
 }: SoapNoteCardProps) {
-  const [copied, setCopied] = React.useState(false)
-  const [isEditing, setIsEditing] = React.useState(false)
+  const [copied, setCopied] = React.useState(false);
+  const [isEditing, setIsEditing] = React.useState(false);
   const [localNote, setLocalNote] = React.useState<SOAPNoteData>({
     subjective: '',
     objective: '',
     assessment: '',
     plan: '',
-  })
+  });
 
   React.useEffect(() => {
     if (soapNote) {
-      setLocalNote(soapNote)
+      setLocalNote(soapNote);
     }
-  }, [soapNote])
+  }, [soapNote]);
 
   const handleCopy = () => {
-    const active = soapNote || localNote
-    const text = `S (Subjective):\n${active.subjective}\n\nO (Objective):\n${active.objective}\n\nA (Assessment):\n${active.assessment}\n\nP (Plan):\n${active.plan}`
-    navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+    const active = soapNote || localNote;
+    const text = `S (Subjective):\n${active.subjective}\n\nO (Objective):\n${active.objective}\n\nA (Assessment):\n${active.assessment}\n\nP (Plan):\n${active.plan}`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleFieldChange = (field: keyof SOAPNoteData, value: string) => {
-    const updated = { ...localNote, [field]: value }
-    setLocalNote(updated)
+    const updated = { ...localNote, [field]: value };
+    setLocalNote(updated);
     if (onUpdateNote) {
-      onUpdateNote(updated)
+      onUpdateNote(updated);
     }
-  }
+  };
 
   return (
-    <Card className={`border border-deep-ink/8 bg-white shadow-editorial font-sans ${className || ''}`}>
-      <CardHeader className="pb-3 border-b border-deep-ink/5">
+    <Card
+      className={`border-deep-ink/8 shadow-editorial border bg-white font-sans ${className || ''}`}
+    >
+      <CardHeader className="border-deep-ink/5 border-b pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileCheck className="h-4 w-4 text-emerald-700" />
-            <CardTitle className="text-base">Clinical SOAP Assessment</CardTitle>
+            <CardTitle className="text-base">
+              Clinical SOAP Assessment
+            </CardTitle>
           </div>
           {soapNote && (
             <div className="flex items-center gap-1.5">
@@ -74,7 +92,7 @@ export function SoapNoteCard({
                 variant="outline"
                 size="sm"
                 onClick={() => setIsEditing(!isEditing)}
-                className="rounded-full h-7 px-2.5 gap-1 text-[11px] cursor-pointer"
+                className="h-7 cursor-pointer gap-1 rounded-full px-2.5 text-[11px]"
               >
                 <Edit3 className="h-3 w-3" />
                 {isEditing ? 'Preview' : 'Edit'}
@@ -83,9 +101,13 @@ export function SoapNoteCard({
                 variant="outline"
                 size="sm"
                 onClick={handleCopy}
-                className="rounded-full h-7 px-2.5 gap-1 text-[11px] cursor-pointer"
+                className="h-7 cursor-pointer gap-1 rounded-full px-2.5 text-[11px]"
               >
-                {copied ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
+                {copied ? (
+                  <Check className="h-3 w-3 text-emerald-600" />
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )}
                 {copied ? 'Copied' : 'Copy'}
               </Button>
             </div>
@@ -95,115 +117,140 @@ export function SoapNoteCard({
 
       <CardContent className="pt-4 font-sans">
         {isGenerating ? (
-          <div className="p-8 text-center text-slate text-xs space-y-3 bg-canvas/40 rounded-xl border border-dashed border-deep-ink/10">
-            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center mx-auto text-amber-700 animate-spin">
-              <Sparkles className="w-4 h-4" />
+          <div className="text-slate bg-canvas/40 border-deep-ink/10 space-y-3 rounded-xl border border-dashed p-8 text-center text-xs">
+            <div className="mx-auto flex h-8 w-8 animate-spin items-center justify-center rounded-full bg-amber-100 text-amber-700">
+              <Sparkles className="h-4 w-4" />
             </div>
-            <p className="font-medium text-deep-ink">Synthesizing clinical consultation...</p>
-            <p className="text-slate max-w-xs mx-auto">
-              Nova AI is parsing speech history into structured Subjective, Objective, Assessment, and Plan notes.
+            <p className="text-deep-ink font-medium">
+              Synthesizing clinical consultation...
+            </p>
+            <p className="text-slate mx-auto max-w-xs">
+              Nova AI is parsing speech history into structured Subjective,
+              Objective, Assessment, and Plan notes.
             </p>
           </div>
         ) : !soapNote ? (
-          <div className="p-6 text-center bg-canvas/40 rounded-xl border border-dashed border-deep-ink/10 text-slate space-y-2">
-            <FileCheck className="h-5 w-5 text-slate/40 mx-auto" />
-            <p className="text-xs font-semibold text-deep-ink">No SOAP Note Generated Yet</p>
-            <p className="text-xs text-slate max-w-sm mx-auto leading-relaxed">
-              When consultation recording ends, Bedrock Nova AI will automatically compile clinical documentation structured into S-O-A-P sections for physician sign-off.
+          <div className="bg-canvas/40 border-deep-ink/10 text-slate space-y-2 rounded-xl border border-dashed p-6 text-center">
+            <FileCheck className="text-slate/40 mx-auto h-5 w-5" />
+            <p className="text-deep-ink text-xs font-semibold">
+              No SOAP Note Generated Yet
+            </p>
+            <p className="text-slate mx-auto max-w-sm text-xs leading-relaxed">
+              When consultation recording ends, Bedrock Nova AI will
+              automatically compile clinical documentation structured into
+              S-O-A-P sections for physician sign-off.
             </p>
           </div>
         ) : isEditing ? (
           <div className="space-y-3 text-xs">
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-slate block mb-1">
+              <label className="text-slate mb-1 block text-[11px] font-semibold tracking-wider uppercase">
                 Subjective
               </label>
               <textarea
                 value={localNote.subjective}
-                onChange={e => handleFieldChange('subjective', e.target.value)}
+                onChange={(e) =>
+                  handleFieldChange('subjective', e.target.value)
+                }
                 rows={2}
-                className="w-full p-2.5 border border-deep-ink/15 rounded-lg text-deep-ink focus:outline-none focus:ring-1 focus:ring-deep-ink text-xs bg-white"
+                className="border-deep-ink/15 text-deep-ink focus:ring-deep-ink w-full rounded-lg border bg-white p-2.5 text-xs focus:ring-1 focus:outline-none"
               />
             </div>
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-slate block mb-1">
+              <label className="text-slate mb-1 block text-[11px] font-semibold tracking-wider uppercase">
                 Objective
               </label>
               <textarea
                 value={localNote.objective}
-                onChange={e => handleFieldChange('objective', e.target.value)}
+                onChange={(e) => handleFieldChange('objective', e.target.value)}
                 rows={2}
-                className="w-full p-2.5 border border-deep-ink/15 rounded-lg text-deep-ink focus:outline-none focus:ring-1 focus:ring-deep-ink text-xs bg-white"
+                className="border-deep-ink/15 text-deep-ink focus:ring-deep-ink w-full rounded-lg border bg-white p-2.5 text-xs focus:ring-1 focus:outline-none"
               />
             </div>
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-slate block mb-1">
+              <label className="text-slate mb-1 block text-[11px] font-semibold tracking-wider uppercase">
                 Assessment
               </label>
               <textarea
                 value={localNote.assessment}
-                onChange={e => handleFieldChange('assessment', e.target.value)}
+                onChange={(e) =>
+                  handleFieldChange('assessment', e.target.value)
+                }
                 rows={2}
-                className="w-full p-2.5 border border-deep-ink/15 rounded-lg text-deep-ink focus:outline-none focus:ring-1 focus:ring-deep-ink text-xs bg-white"
+                className="border-deep-ink/15 text-deep-ink focus:ring-deep-ink w-full rounded-lg border bg-white p-2.5 text-xs focus:ring-1 focus:outline-none"
               />
             </div>
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-slate block mb-1">
+              <label className="text-slate mb-1 block text-[11px] font-semibold tracking-wider uppercase">
                 Plan
               </label>
               <textarea
                 value={localNote.plan}
-                onChange={e => handleFieldChange('plan', e.target.value)}
+                onChange={(e) => handleFieldChange('plan', e.target.value)}
                 rows={2}
-                className="w-full p-2.5 border border-deep-ink/15 rounded-lg text-deep-ink focus:outline-none focus:ring-1 focus:ring-deep-ink text-xs bg-white"
+                className="border-deep-ink/15 text-deep-ink focus:ring-deep-ink w-full rounded-lg border bg-white p-2.5 text-xs focus:ring-1 focus:outline-none"
               />
             </div>
           </div>
         ) : (
           <div className="space-y-2.5 text-xs">
-            <div className="bg-soft-meadow/50 rounded-xl p-3 border border-deep-ink/6">
-              <span className="text-[11px] font-bold font-serif text-deep-ink uppercase tracking-wider block mb-0.5">
+            <div className="bg-soft-meadow/50 border-deep-ink/6 rounded-xl border p-3">
+              <span className="text-deep-ink mb-0.5 block font-serif text-[11px] font-bold tracking-wider uppercase">
                 Subjective
               </span>
-              <p className="text-deep-ink text-xs leading-relaxed whitespace-pre-wrap">{soapNote.subjective}</p>
+              <p className="text-deep-ink text-xs leading-relaxed whitespace-pre-wrap">
+                {soapNote.subjective}
+              </p>
             </div>
 
-            <div className="bg-soft-meadow/50 rounded-xl p-3 border border-deep-ink/6">
-              <span className="text-[11px] font-bold font-serif text-deep-ink uppercase tracking-wider block mb-0.5">
+            <div className="bg-soft-meadow/50 border-deep-ink/6 rounded-xl border p-3">
+              <span className="text-deep-ink mb-0.5 block font-serif text-[11px] font-bold tracking-wider uppercase">
                 Objective
               </span>
-              <p className="text-deep-ink text-xs leading-relaxed whitespace-pre-wrap">{soapNote.objective}</p>
+              <p className="text-deep-ink text-xs leading-relaxed whitespace-pre-wrap">
+                {soapNote.objective}
+              </p>
             </div>
 
-            <div className="bg-soft-meadow/50 rounded-xl p-3 border border-deep-ink/6">
-              <span className="text-[11px] font-bold font-serif text-deep-ink uppercase tracking-wider block mb-0.5">
+            <div className="bg-soft-meadow/50 border-deep-ink/6 rounded-xl border p-3">
+              <span className="text-deep-ink mb-0.5 block font-serif text-[11px] font-bold tracking-wider uppercase">
                 Assessment
               </span>
-              <p className="text-deep-ink text-xs leading-relaxed whitespace-pre-wrap">{soapNote.assessment}</p>
+              <p className="text-deep-ink text-xs leading-relaxed whitespace-pre-wrap">
+                {soapNote.assessment}
+              </p>
             </div>
 
-            <div className="bg-soft-meadow/50 rounded-xl p-3 border border-deep-ink/6">
-              <span className="text-[11px] font-bold font-serif text-deep-ink uppercase tracking-wider block mb-0.5">
+            <div className="bg-soft-meadow/50 border-deep-ink/6 rounded-xl border p-3">
+              <span className="text-deep-ink mb-0.5 block font-serif text-[11px] font-bold tracking-wider uppercase">
                 Plan
               </span>
-              <p className="text-deep-ink text-xs leading-relaxed whitespace-pre-wrap">{soapNote.plan}</p>
+              <p className="text-deep-ink text-xs leading-relaxed whitespace-pre-wrap">
+                {soapNote.plan}
+              </p>
             </div>
           </div>
         )}
       </CardContent>
 
       {soapNote && onSave && (
-        <CardFooter className="pt-3 border-t border-deep-ink/5">
+        <CardFooter className="border-deep-ink/5 border-t pt-3">
           <Button
             onClick={() => onSave(localNote)}
             disabled={isSaving}
-            className="w-full rounded-full font-semibold gap-2 text-xs py-2.5 h-10 shadow-2xs bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 cursor-pointer"
+            className="bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 h-10 w-full cursor-pointer gap-2 rounded-full py-2.5 text-xs font-semibold shadow-2xs"
           >
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {isSaving ? 'Saving session to patient chart...' : 'Save Consultation Record'}
+            {isSaving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            {isSaving
+              ? 'Saving session to patient chart...'
+              : 'Save Consultation Record'}
           </Button>
         </CardFooter>
       )}
     </Card>
-  )
+  );
 }

@@ -3,14 +3,15 @@
  * Exposes reusable clinical prompt templates conforming to the MCP Prompts specification.
  */
 
-import { WebMCPRegistry } from '../core/registry'
+import { WebMCPRegistry } from '../core/registry';
 
 export function registerClinicalPrompts(registry: WebMCPRegistry): void {
   // 1. soap-note-generation
   registry.registerPrompt(
     {
       name: 'soap-note-generation',
-      description: 'System and user prompt template for synthesizing structured SOAP notes from consultation audio transcripts.',
+      description:
+        'System and user prompt template for synthesizing structured SOAP notes from consultation audio transcripts.',
       arguments: [
         {
           name: 'transcript',
@@ -25,11 +26,12 @@ export function registerClinicalPrompts(registry: WebMCPRegistry): void {
       ],
     },
     async (args) => {
-      const transcript = args.transcript || ''
-      const patientContext = args.patientContext || 'N/A'
+      const transcript = args.transcript || '';
+      const patientContext = args.patientContext || 'N/A';
 
       return {
-        description: 'Generate structured SOAP note from consultation transcript',
+        description:
+          'Generate structured SOAP note from consultation transcript',
         messages: [
           {
             role: 'system',
@@ -58,19 +60,32 @@ PLAN:
             },
           },
         ],
-      }
+      };
     }
-  )
+  );
 
   // 2. clinical-insights
   registry.registerPrompt(
     {
       name: 'clinical-insights',
-      description: 'Prompt template for generating clinical decision support considerations and differential diagnoses.',
+      description:
+        'Prompt template for generating clinical decision support considerations and differential diagnoses.',
       arguments: [
-        { name: 'patientHistory', description: 'Patient past medical history', required: true },
-        { name: 'currentPresentation', description: 'Current signs and symptoms', required: true },
-        { name: 'previousFindings', description: 'Prior clinical or lab findings', required: false },
+        {
+          name: 'patientHistory',
+          description: 'Patient past medical history',
+          required: true,
+        },
+        {
+          name: 'currentPresentation',
+          description: 'Current signs and symptoms',
+          required: true,
+        },
+        {
+          name: 'previousFindings',
+          description: 'Prior clinical or lab findings',
+          required: false,
+        },
       ],
     },
     async (args) => {
@@ -105,23 +120,33 @@ Provide:
             },
           },
         ],
-      }
+      };
     }
-  )
+  );
 
   // 3. patient-summary
   registry.registerPrompt(
     {
       name: 'patient-summary',
-      description: 'Prompt template for translating clinical SOAP notes into patient-accessible health summaries.',
+      description:
+        'Prompt template for translating clinical SOAP notes into patient-accessible health summaries.',
       arguments: [
-        { name: 'soapNote', description: 'The finalized clinical SOAP note', required: true },
-        { name: 'clinicalTerms', description: 'Specific medical jargon to clarify', required: false },
+        {
+          name: 'soapNote',
+          description: 'The finalized clinical SOAP note',
+          required: true,
+        },
+        {
+          name: 'clinicalTerms',
+          description: 'Specific medical jargon to clarify',
+          required: false,
+        },
       ],
     },
     async (args) => {
       return {
-        description: 'Translate clinical SOAP note into patient-friendly language',
+        description:
+          'Translate clinical SOAP note into patient-friendly language',
         messages: [
           {
             role: 'system',
@@ -138,19 +163,32 @@ Provide:
             },
           },
         ],
-      }
+      };
     }
-  )
+  );
 
   // 4. triage-assessment
   registry.registerPrompt(
     {
       name: 'triage-assessment',
-      description: 'Prompt template for evaluating clinical urgency and assigning triage acuity.',
+      description:
+        'Prompt template for evaluating clinical urgency and assigning triage acuity.',
       arguments: [
-        { name: 'chiefComplaint', description: 'Primary symptom or complaint', required: true },
-        { name: 'symptoms', description: 'Detailed symptom description', required: true },
-        { name: 'vitalSigns', description: 'Patient vital signs', required: false },
+        {
+          name: 'chiefComplaint',
+          description: 'Primary symptom or complaint',
+          required: true,
+        },
+        {
+          name: 'symptoms',
+          description: 'Detailed symptom description',
+          required: true,
+        },
+        {
+          name: 'vitalSigns',
+          description: 'Patient vital signs',
+          required: false,
+        },
       ],
     },
     async (args) => {
@@ -172,18 +210,27 @@ Provide:
             },
           },
         ],
-      }
+      };
     }
-  )
+  );
 
   // 5. intake-conversation-turn
   registry.registerPrompt(
     {
       name: 'intake-conversation-turn',
-      description: 'Prompt template for conducting conversational medical intake interview turns.',
+      description:
+        'Prompt template for conducting conversational medical intake interview turns.',
       arguments: [
-        { name: 'transcript', description: 'User speech transcript', required: true },
-        { name: 'language', description: 'Patient preferred language', required: false },
+        {
+          name: 'transcript',
+          description: 'User speech transcript',
+          required: true,
+        },
+        {
+          name: 'language',
+          description: 'Patient preferred language',
+          required: false,
+        },
       ],
     },
     async (args) => {
@@ -205,18 +252,27 @@ Provide:
             },
           },
         ],
-      }
+      };
     }
-  )
+  );
 
   // 6. follow-up-care-plan
   registry.registerPrompt(
     {
       name: 'follow-up-care-plan',
-      description: 'Prompt template for synthesizing post-visit care plan recommendations and follow-up milestones.',
+      description:
+        'Prompt template for synthesizing post-visit care plan recommendations and follow-up milestones.',
       arguments: [
-        { name: 'assessment', description: 'Doctor clinical assessment', required: true },
-        { name: 'medications', description: 'Prescribed medications', required: true },
+        {
+          name: 'assessment',
+          description: 'Doctor clinical assessment',
+          required: true,
+        },
+        {
+          name: 'medications',
+          description: 'Prescribed medications',
+          required: true,
+        },
       ],
     },
     async (args) => {
@@ -238,7 +294,7 @@ Provide:
             },
           },
         ],
-      }
+      };
     }
-  )
+  );
 }

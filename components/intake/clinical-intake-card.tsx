@@ -1,117 +1,144 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import type { IntakeConversationDraft } from '@/lib/voice-service'
-import { CheckCircle2, Clock, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react'
+import { useState } from 'react';
+import type { IntakeConversationDraft } from '@/lib/voice-service';
+import {
+  CheckCircle2,
+  Clock,
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 
 type RightPanelProps = {
-  draft: IntakeConversationDraft
-  chatItems: Array<{ id: string; role: 'assistant' | 'patient' | 'system'; text: string }>
-}
+  draft: IntakeConversationDraft;
+  chatItems: Array<{
+    id: string;
+    role: 'assistant' | 'patient' | 'system';
+    text: string;
+  }>;
+};
 
 export function ClinicalIntakeCard({ draft, chatItems }: RightPanelProps) {
-  const [showHistory, setShowHistory] = useState(false)
+  const [showHistory, setShowHistory] = useState(false);
 
   const fields = [
-    { label: 'Full Name', value: `${draft.firstName || ''} ${draft.lastName || ''}`.trim() },
+    {
+      label: 'Full Name',
+      value: `${draft.firstName || ''} ${draft.lastName || ''}`.trim(),
+    },
     { label: 'Date of Birth', value: draft.dateOfBirth },
     { label: 'Email', value: draft.email },
     { label: 'Phone', value: draft.phone },
     { label: 'Conditions', value: draft.medicalConditions?.join(', ') },
     { label: 'Allergies', value: draft.allergies?.join(', ') },
     { label: 'Emergency Contact', value: draft.emergencyContactName },
-  ]
+  ];
 
-  const capturedCount = fields.filter((f) => Boolean(f.value && f.value.trim())).length
-  const percentComplete = Math.round((capturedCount / fields.length) * 100)
+  const capturedCount = fields.filter((f) =>
+    Boolean(f.value && f.value.trim())
+  ).length;
+  const percentComplete = Math.round((capturedCount / fields.length) * 100);
 
   return (
-    <div className="h-full flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-deep-ink/10 bg-white p-3 sm:p-4 shadow-sm">
+    <div className="border-deep-ink/10 flex h-full flex-col justify-between rounded-2xl border bg-white p-3 shadow-sm sm:rounded-3xl sm:p-4">
       {/* Header & Progress */}
       <div className="space-y-1.5 pb-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs sm:text-sm font-bold font-serif text-deep-ink">Captured Information</h2>
-          <span className="text-[10px] sm:text-[11px] font-bold text-deep-ink bg-hi-yellow/35 px-2 py-0.5 rounded-full border border-hi-yellow/60">
+          <h2 className="text-deep-ink font-serif text-xs font-bold sm:text-sm">
+            Captured Information
+          </h2>
+          <span className="text-deep-ink bg-hi-yellow/35 border-hi-yellow/60 rounded-full border px-2 py-0.5 text-[10px] font-bold sm:text-[11px]">
             {capturedCount} of {fields.length} ({percentComplete}%)
           </span>
         </div>
 
-        <div className="w-full bg-soft-meadow rounded-full h-1.5 overflow-hidden">
+        <div className="bg-soft-meadow h-1.5 w-full overflow-hidden rounded-full">
           <div
-            className="bg-deep-ink h-full transition-all duration-300 rounded-full"
+            className="bg-deep-ink h-full rounded-full transition-all duration-300"
             style={{ width: `${percentComplete}%` }}
           />
         </div>
       </div>
 
       {/* Extracted Fields Table */}
-      <div className="flex-1 space-y-1 sm:space-y-1.5 overflow-y-auto max-h-56 sm:max-h-none py-1">
+      <div className="max-h-56 flex-1 space-y-1 overflow-y-auto py-1 sm:max-h-none sm:space-y-1.5">
         {fields.map((field) => {
-          const isCaptured = Boolean(field.value && field.value.trim())
+          const isCaptured = Boolean(field.value && field.value.trim());
           return (
             <div
               key={field.label}
-              className="flex items-center justify-between gap-2 rounded-xl bg-canvas px-2.5 sm:px-3 py-1.5 text-xs transition-colors"
+              className="bg-canvas flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-colors sm:px-3"
             >
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex shrink-0 items-center gap-1.5">
                 {isCaptured ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-moss-green" />
+                  <CheckCircle2 className="text-moss-green h-3.5 w-3.5" />
                 ) : (
-                  <Clock className="w-3.5 h-3.5 text-slate/40" />
+                  <Clock className="text-slate/40 h-3.5 w-3.5" />
                 )}
-                <span className={isCaptured ? 'text-deep-ink font-medium' : 'text-slate'}>
+                <span
+                  className={
+                    isCaptured ? 'text-deep-ink font-medium' : 'text-slate'
+                  }
+                >
                   {field.label}
                 </span>
               </div>
               <span
-                className={`text-right font-medium truncate max-w-[55%] ${
+                className={`max-w-[55%] truncate text-right font-medium ${
                   isCaptured ? 'text-deep-ink' : 'text-slate/40 italic'
                 }`}
               >
                 {field.value || 'Pending'}
               </span>
             </div>
-          )
+          );
         })}
       </div>
 
       {/* History Drawer Toggle at Bottom */}
-      <div className="pt-2 border-t border-deep-ink/8 shrink-0">
+      <div className="border-deep-ink/8 shrink-0 border-t pt-2">
         <button
           type="button"
           onClick={() => setShowHistory(!showHistory)}
-          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-soft-meadow/50 hover:bg-soft-meadow text-xs text-slate hover:text-deep-ink transition-colors cursor-pointer"
+          className="bg-soft-meadow/50 hover:bg-soft-meadow text-slate hover:text-deep-ink flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-1.5 text-xs transition-colors"
         >
-          <span className="flex items-center gap-1.5 font-medium text-[11px]">
-            <MessageSquare className="w-3.5 h-3.5" />
+          <span className="flex items-center gap-1.5 text-[11px] font-medium">
+            <MessageSquare className="h-3.5 w-3.5" />
             <span>Dialogue History ({chatItems.length})</span>
           </span>
-          {showHistory ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+          {showHistory ? (
+            <ChevronDown className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronUp className="h-3.5 w-3.5" />
+          )}
         </button>
 
         {showHistory && (
-          <div className="mt-2 space-y-1.5 max-h-32 sm:max-h-40 overflow-y-auto pr-1">
+          <div className="mt-2 max-h-32 space-y-1.5 overflow-y-auto pr-1 sm:max-h-40">
             {chatItems.map((item) => (
               <div
                 key={item.id}
                 className={`rounded-lg px-2.5 py-1.5 text-[11px] leading-snug ${
                   item.role === 'assistant'
                     ? 'bg-soft-meadow/70 text-deep-ink'
-                    : 'bg-canvas text-deep-ink border border-deep-ink/10'
+                    : 'bg-canvas text-deep-ink border-deep-ink/10 border'
                 }`}
               >
-                <span className="font-semibold text-[10px] block text-slate uppercase">
+                <span className="text-slate block text-[10px] font-semibold uppercase">
                   {item.role === 'assistant' ? 'Noa' : 'You'}
                 </span>
                 <span>{item.text}</span>
               </div>
             ))}
             {chatItems.length === 0 && (
-              <p className="text-[11px] text-slate/60 text-center py-2 italic">No messages yet.</p>
+              <p className="text-slate/60 py-2 text-center text-[11px] italic">
+                No messages yet.
+              </p>
             )}
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }

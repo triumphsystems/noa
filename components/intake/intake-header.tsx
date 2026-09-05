@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { ArrowLeft, Globe2 } from 'lucide-react'
+import Link from 'next/link';
+import { ArrowLeft, Globe2 } from 'lucide-react';
 
 type IntakeHeaderProps = {
-  detectedLanguage?: string
-  isSubmitting?: boolean
-  isRecording?: boolean
-  isComplete?: boolean
-}
+  detectedLanguage?: string;
+  isSubmitting?: boolean;
+  isRecording?: boolean;
+  isComplete?: boolean;
+};
 
 export function IntakeHeader({
   detectedLanguage = 'English',
@@ -19,61 +19,65 @@ export function IntakeHeader({
   const statusLabel = isSubmitting
     ? 'Synthesizing'
     : isRecording
-    ? 'Listening'
-    : isComplete
-    ? 'Complete'
-    : 'Ready'
+      ? 'Listening'
+      : isComplete
+        ? 'Complete'
+        : 'Ready';
 
   return (
-    <header className="flex items-center justify-between gap-2 pb-2.5 border-b border-deep-ink/8 shrink-0">
+    <header className="border-deep-ink/8 flex shrink-0 items-center justify-between gap-2 border-b pb-2.5">
       {/* Brand & Title */}
-      <div className="flex items-center gap-2 min-w-0">
-        <Link href="/" className="group flex items-center gap-1.5 shrink-0">
+      <div className="flex min-w-0 items-center gap-2">
+        <Link href="/" className="group flex shrink-0 items-center gap-1.5">
           <img
             src="/logo.svg"
             alt="Noa Logo"
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-deep-ink/15 shadow-2xs group-hover:scale-105 transition-transform"
+            className="border-deep-ink/15 h-7 w-7 rounded-lg border shadow-2xs transition-transform group-hover:scale-105 sm:h-8 sm:w-8"
           />
-          <span className="font-serif font-bold text-base sm:text-lg text-deep-ink tracking-tight">Noa</span>
+          <span className="text-deep-ink font-serif text-base font-bold tracking-tight sm:text-lg">
+            Noa
+          </span>
         </Link>
 
-        <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-deep-ink/70 truncate hidden xs:inline">
+        <span className="text-deep-ink/70 xs:inline hidden truncate text-[10px] font-bold tracking-wider uppercase sm:text-xs">
           Check-in
         </span>
       </div>
 
       {/* Telemetry & Controls */}
-      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border border-deep-ink/10 text-[11px] text-deep-ink shadow-2xs">
-          <Globe2 className="w-3 h-3 text-slate shrink-0" />
-          <span className="font-medium truncate max-w-[65px] sm:max-w-none">{detectedLanguage || 'English'}</span>
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <div className="border-deep-ink/10 text-deep-ink flex items-center gap-1 rounded-full border bg-white px-2 py-0.5 text-[11px] shadow-2xs">
+          <Globe2 className="text-slate h-3 w-3 shrink-0" />
+          <span className="max-w-[65px] truncate font-medium sm:max-w-none">
+            {detectedLanguage || 'English'}
+          </span>
         </div>
 
-        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border border-deep-ink/10 text-[11px] text-deep-ink shadow-2xs">
+        <div className="border-deep-ink/10 text-deep-ink flex items-center gap-1 rounded-full border bg-white px-2 py-0.5 text-[11px] shadow-2xs">
           <span
-            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+            className={`h-1.5 w-1.5 shrink-0 rounded-full ${
               isRecording
-                ? 'bg-red-500 animate-ping'
+                ? 'animate-ping bg-red-500'
                 : isSubmitting
-                ? 'bg-amber-500 animate-pulse'
-                : isComplete
-                ? 'bg-emerald-500'
-                : 'bg-emerald-600'
+                  ? 'animate-pulse bg-amber-500'
+                  : isComplete
+                    ? 'bg-emerald-500'
+                    : 'bg-emerald-600'
             }`}
           />
-          <span className="font-medium text-[11px]">{statusLabel}</span>
+          <span className="text-[11px] font-medium">{statusLabel}</span>
         </div>
 
         <Link href="/" className="shrink-0">
           <button
             type="button"
-            className="inline-flex items-center gap-1 rounded-full border border-deep-ink/15 bg-white px-2 py-1 text-[11px] font-semibold text-deep-ink shadow-2xs hover:bg-soft-meadow transition-colors"
+            className="border-deep-ink/15 text-deep-ink hover:bg-soft-meadow inline-flex items-center gap-1 rounded-full border bg-white px-2 py-1 text-[11px] font-semibold shadow-2xs transition-colors"
           >
-            <ArrowLeft className="w-3 h-3" />
+            <ArrowLeft className="h-3 w-3" />
             <span className="hidden sm:inline">Exit</span>
           </button>
         </Link>
       </div>
     </header>
-  )
+  );
 }

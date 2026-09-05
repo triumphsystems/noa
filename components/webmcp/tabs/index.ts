@@ -1,6 +1,6 @@
-export { ToolsTab } from './tools'
-export { ResourcesTab } from './resources'
-export { PromptsTab } from './prompts'
-export { StateTab } from './state'
-export { RegisterTab } from './register'
-export { ActivityTab } from './activity'
+export { ToolsTab } from './tools';
+export { ResourcesTab } from './resources';
+export { PromptsTab } from './prompts';
+export { StateTab } from './state';
+export { RegisterTab } from './register';
+export { ActivityTab } from './activity';

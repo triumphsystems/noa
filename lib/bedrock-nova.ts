@@ -4,16 +4,19 @@
  * Backed by the unified invokeClinicalAI provider engine.
  */
 
-import { invokeClinicalAI } from '@/lib/ai/provider'
+import { invokeClinicalAI } from '@/lib/ai/provider';
 
 /**
  * Generate SOAP notes from clinical transcript using Nova Lite (or Local LLM)
  */
-export async function generateSOAPWithNova(transcript: string, patientContext?: string): Promise<{
-  subjective: string
-  objective: string
-  assessment: string
-  plan: string
+export async function generateSOAPWithNova(
+  transcript: string,
+  patientContext?: string
+): Promise<{
+  subjective: string;
+  objective: string;
+  assessment: string;
+  plan: string;
 }> {
   const systemPrompt = `You are a clinical documentation expert. Convert the following medical consultation transcript into a structured SOAP note.
   
@@ -30,9 +33,9 @@ ASSESSMENT:
 [Clinical impressions and diagnoses]
 
 PLAN:
-[Treatment plan, medications, follow-up]`
+[Treatment plan, medications, follow-up]`;
 
-  const prompt = `Consultation Transcript:\n${transcript}`
+  const prompt = `Consultation Transcript:\n${transcript}`;
 
   const { text } = await invokeClinicalAI({
     prompt,
@@ -40,7 +43,7 @@ PLAN:
     maxTokens: 2000,
     temperature: 0.3,
     modelTier: 'fast',
-  })
+  });
 
   // Parse the response into SOAP sections
   return {
@@ -48,7 +51,7 @@ PLAN:
     objective: extractSection(text, 'OBJECTIVE'),
     assessment: extractSection(text, 'ASSESSMENT'),
     plan: extractSection(text, 'PLAN'),
-  }
+  };
 }
 
 /**
@@ -76,22 +79,25 @@ Provide:
 4. Clinical decision support recommendations
 5. Patient education points
 
-Format the response in clear, actionable clinical language.`
+Format the response in clear, actionable clinical language.`;
 
   const { text } = await invokeClinicalAI({
     prompt,
     maxTokens: 1500,
     temperature: 0.5,
     modelTier: 'reasoning',
-  })
+  });
 
-  return text
+  return text;
 }
 
 /**
  * Generate patient-friendly summary from clinical notes
  */
-export async function generatePatientSummary(soapNote: string, clinicalTerms?: string[]): Promise<string> {
+export async function generatePatientSummary(
+  soapNote: string,
+  clinicalTerms?: string[]
+): Promise<string> {
   const prompt = `Convert the following clinical SOAP note into a patient-friendly summary. 
   
 Use simple, clear language. Avoid medical jargon or explain it in parentheses.
@@ -102,25 +108,28 @@ ${soapNote}
 
 ${clinicalTerms ? `Important terms to explain: ${clinicalTerms.join(', ')}` : ''}
 
-Write a warm, reassuring summary that a patient can easily understand.`
+Write a warm, reassuring summary that a patient can easily understand.`;
 
   const { text } = await invokeClinicalAI({
     prompt,
     maxTokens: 1000,
     temperature: 0.7,
     modelTier: 'fast',
-  })
+  });
 
-  return text
+  return text;
 }
 
 /**
  * Extract specific section from SOAP text
  */
 function extractSection(text: string, section: string): string {
-  const regex = new RegExp(`${section}:\\s*(.+?)(?=(?:SUBJECTIVE|OBJECTIVE|ASSESSMENT|PLAN):|$)`, 'is')
-  const match = text.match(regex)
-  return match ? match[1].trim() : ''
+  const regex = new RegExp(
+    `${section}:\\s*(.+?)(?=(?:SUBJECTIVE|OBJECTIVE|ASSESSMENT|PLAN):|$)`,
+    'is'
+  );
+  const match = text.match(regex);
+  return match ? match[1].trim() : '';
 }
 
 /**
@@ -131,9 +140,9 @@ export async function generateTriagePriority(
   symptoms: string,
   vitalSigns?: string
 ): Promise<{
-  priority: 'emergent' | 'urgent' | 'routine'
-  reason: string
-  recommendations: string[]
+  priority: 'emergent' | 'urgent' | 'routine';
+  reason: string;
+  recommendations: string[];
 }> {
   const prompt = `As a clinical triage nurse, evaluate this patient presentation and assign a triage priority.
 
@@ -151,20 +160,20 @@ Respond in JSON format:
 Base priority on:
 - EMERGENT: Life-threatening, immediate risk, severe symptoms
 - URGENT: Significant symptoms, needs prompt evaluation, risk of deterioration
-- ROUTINE: Stable, mild-moderate symptoms, can wait for scheduled appointment`
+- ROUTINE: Stable, mild-moderate symptoms, can wait for scheduled appointment`;
 
   const { text } = await invokeClinicalAI({
     prompt,
     maxTokens: 500,
     temperature: 0.2,
     modelTier: 'fast',
-  })
+  });
 
   // Extract JSON from response
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     try {
-      return JSON.parse(jsonMatch[0])
+      return JSON.parse(jsonMatch[0]);
     } catch {
       // Fall through to default structure
     }
@@ -174,7 +183,7 @@ Base priority on:
     priority: 'routine',
     reason: 'Clinical priority evaluated',
     recommendations: [],
-  }
+  };
 }
 
 /**
@@ -199,14 +208,14 @@ Create a follow-up plan that includes:
 5. Lifestyle modifications
 6. Patient education topics
 
-Format as a clear, actionable plan.`
+Format as a clear, actionable plan.`;
 
   const { text } = await invokeClinicalAI({
     prompt,
     maxTokens: 1200,
     temperature: 0.5,
     modelTier: 'fast',
-  })
+  });
 
-  return text
+  return text;
 }

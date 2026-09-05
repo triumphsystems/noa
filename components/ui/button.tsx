@@ -1,7 +1,7 @@
-import { Button as ButtonPrimitive } from '@base-ui/react/button'
-import { cva, type VariantProps } from 'class-variance-authority'
+import { Button as ButtonPrimitive } from '@base-ui/react/button';
+import { cva, type VariantProps } from 'class-variance-authority';
 
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent text-sm font-medium whitespace-nowrap transition-all duration-150 outline-none select-none focus-visible:ring-2 focus-visible:ring-deep-ink/20 active:translate-y-px disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer",
@@ -11,13 +11,13 @@ const buttonVariants = cva(
         // Claude filled primary action: Dark carbon fill on light surfaces
         dark: 'bg-deep-ink text-canvas hover:bg-deep-ink/90 shadow-2xs border-transparent',
         // Signature brand chromatic action: Radiant Hi-Yellow
-        default: 'bg-hi-yellow text-deep-ink hover:bg-[#ebd020] border-deep-ink/10 shadow-2xs font-semibold',
+        default:
+          'bg-hi-yellow text-deep-ink hover:bg-[#ebd020] border-deep-ink/10 shadow-2xs font-semibold',
         outline:
           'border-deep-ink/15 bg-transparent text-deep-ink hover:bg-soft-meadow hover:border-deep-ink/25',
         secondary:
           'bg-soft-meadow text-deep-ink hover:bg-[#e4e8d8] border-deep-ink/8',
-        ghost:
-          'hover:bg-soft-meadow text-deep-ink/80 hover:text-deep-ink',
+        ghost: 'hover:bg-soft-meadow text-deep-ink/80 hover:text-deep-ink',
         destructive:
           'bg-red-50/90 text-red-800 hover:bg-red-100 border-red-200/80 shadow-2xs font-medium',
         link: 'text-deep-ink underline-offset-4 hover:underline p-0 h-auto',
@@ -37,8 +37,8 @@ const buttonVariants = cva(
       variant: 'default',
       size: 'default',
     },
-  },
-)
+  }
+);
 
 function Button({
   className,
@@ -52,7 +52,7 @@ function Button({
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />
-  )
+  );
 }
 
-export { Button, buttonVariants }
+export { Button, buttonVariants };

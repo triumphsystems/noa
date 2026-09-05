@@ -1,14 +1,14 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { getAuthenticatedUserSync } from '@/lib/auth/jwt'
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getAuthenticatedUserSync } from '@/lib/auth/jwt';
 
-type Role = 'doctor' | 'patient' | 'admin'
+type Role = 'doctor' | 'patient' | 'admin';
 
 interface RouteGuard {
-  prefix: string
-  allowedRoles: Role[]
-  loginType: 'doctor' | 'patient'
-  defaultDashboard: string
+  prefix: string;
+  allowedRoles: Role[];
+  loginType: 'doctor' | 'patient';
+  defaultDashboard: string;
 }
 
 const ROUTE_GUARDS: RouteGuard[] = [
@@ -30,18 +30,18 @@ const ROUTE_GUARDS: RouteGuard[] = [
     loginType: 'doctor',
     defaultDashboard: '/dashboard/admin',
   },
-]
+];
 
 function getHomeForRole(role: Role | null): string {
   switch (role) {
     case 'doctor':
-      return '/dashboard/doctor'
+      return '/dashboard/doctor';
     case 'patient':
-      return '/dashboard/patient'
+      return '/dashboard/patient';
     case 'admin':
-      return '/dashboard/admin'
+      return '/dashboard/admin';
     default:
-      return '/auth/login'
+      return '/auth/login';
   }
 }
 
@@ -53,45 +53,47 @@ function getHomeForRole(role: Role | null): string {
  * Full RS256 signature verification happens in each API route via getAuthenticatedUser.
  */
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  const { pathname } = request.nextUrl;
 
   // Find matching protected route guard
-  const guard = ROUTE_GUARDS.find(g => pathname.startsWith(g.prefix))
+  const guard = ROUTE_GUARDS.find((g) => pathname.startsWith(g.prefix));
   if (!guard) {
-    return NextResponse.next()
+    return NextResponse.next();
   }
 
-  const auth = getAuthenticatedUserSync(request)
-  const hasRefreshToken = Boolean(request.cookies.get('noa_refresh_token')?.value)
+  const auth = getAuthenticatedUserSync(request);
+  const hasRefreshToken = Boolean(
+    request.cookies.get('noa_refresh_token')?.value
+  );
 
   // 1. Unauthenticated Check
   if (!auth.isValid) {
     // If client has an active 30-day refresh token, allow page load so
     // the client-side http interceptor can refresh silently
     if (hasRefreshToken) {
-      return NextResponse.next()
+      return NextResponse.next();
     }
 
-    const loginUrl = new URL('/auth/login', request.url)
-    loginUrl.searchParams.set('userType', guard.loginType)
-    loginUrl.searchParams.set('from', pathname)
-    return NextResponse.redirect(loginUrl)
+    const loginUrl = new URL('/auth/login', request.url);
+    loginUrl.searchParams.set('userType', guard.loginType);
+    loginUrl.searchParams.set('from', pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   // 2. Strict Role Segregation
-  const userRole = (auth.userType as Role) || null
+  const userRole = (auth.userType as Role) || null;
 
   if (!userRole || !guard.allowedRoles.includes(userRole)) {
-    const destination = getHomeForRole(userRole)
+    const destination = getHomeForRole(userRole);
     if (destination === '/auth/login') {
-      const loginUrl = new URL('/auth/login', request.url)
-      loginUrl.searchParams.set('from', pathname)
-      return NextResponse.redirect(loginUrl)
+      const loginUrl = new URL('/auth/login', request.url);
+      loginUrl.searchParams.set('from', pathname);
+      return NextResponse.redirect(loginUrl);
     }
-    return NextResponse.redirect(new URL(destination, request.url))
+    return NextResponse.redirect(new URL(destination, request.url));
   }
 
-  return NextResponse.next()
+  return NextResponse.next();
 }
 
 export const config = {
@@ -100,4 +102,4 @@ export const config = {
     '/dashboard/patient/:path*',
     '/dashboard/admin/:path*',
   ],
-}
+};

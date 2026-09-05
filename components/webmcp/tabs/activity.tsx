@@ -1,23 +1,26 @@
-'use client'
+'use client';
 
-import React from 'react'
-import { Clock } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import type { ActivityItem } from '../types'
+import React from 'react';
+import { Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import type { ActivityItem } from '../types';
 
 interface ActivityProps {
-  activityLog: ActivityItem[]
-  onClearLog: () => void
+  activityLog: ActivityItem[];
+  onClearLog: () => void;
 }
 
 export function ActivityTab({ activityLog, onClearLog }: ActivityProps) {
   return (
-    <div className="flex-1 p-5 md:p-6 overflow-y-auto space-y-5 bg-canvas max-w-4xl mx-auto w-full font-sans">
+    <div className="bg-canvas mx-auto w-full max-w-4xl flex-1 space-y-5 overflow-y-auto p-5 font-sans md:p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-serif font-bold text-base text-deep-ink tracking-tight">Activity Log</h3>
-          <p className="text-xs text-slate mt-0.5">
-            Real-time telemetry of tool calls, resource reads, and prompt evaluations during this session.
+          <h3 className="text-deep-ink font-serif text-base font-bold tracking-tight">
+            Activity Log
+          </h3>
+          <p className="text-slate mt-0.5 text-xs">
+            Real-time telemetry of tool calls, resource reads, and prompt
+            evaluations during this session.
           </p>
         </div>
         {activityLog.length > 0 && (
@@ -25,7 +28,7 @@ export function ActivityTab({ activityLog, onClearLog }: ActivityProps) {
             variant="ghost"
             size="sm"
             onClick={onClearLog}
-            className="text-xs text-slate hover:text-rose-600 rounded-lg cursor-pointer px-2.5 py-1 h-auto"
+            className="text-slate h-auto cursor-pointer rounded-lg px-2.5 py-1 text-xs hover:text-rose-600"
           >
             Clear History
           </Button>
@@ -33,37 +36,42 @@ export function ActivityTab({ activityLog, onClearLog }: ActivityProps) {
       </div>
 
       {activityLog.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-12 text-center text-slate text-xs space-y-2">
-          <Clock className="w-8 h-8 text-slate/30 mb-1" />
-          <p className="font-serif font-bold text-sm text-deep-ink">No Activity Recorded</p>
-          <p className="text-xs max-w-xs leading-relaxed">
-            Invocations from the Tools playground or Resource explorer will stream live execution logs here.
+        <div className="text-slate flex flex-col items-center justify-center space-y-2 p-12 text-center text-xs">
+          <Clock className="text-slate/30 mb-1 h-8 w-8" />
+          <p className="text-deep-ink font-serif text-sm font-bold">
+            No Activity Recorded
+          </p>
+          <p className="max-w-xs text-xs leading-relaxed">
+            Invocations from the Tools playground or Resource explorer will
+            stream live execution logs here.
           </p>
         </div>
       ) : (
         <div className="space-y-2">
-          {activityLog.map(item => (
+          {activityLog.map((item) => (
             <div
               key={item.id}
-              className="p-3.5 rounded-xl bg-white border border-deep-ink/10 text-xs space-y-2 shadow-2xs"
+              className="border-deep-ink/10 space-y-2 rounded-xl border bg-white p-3.5 text-xs shadow-2xs"
             >
               <div className="flex items-center justify-between gap-2.5">
                 <div className="flex items-center gap-2">
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono ${
+                    className={`py-0.2 rounded-md px-1.5 font-mono text-[10px] ${
                       item.status === 'success'
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        ? 'border border-emerald-200 bg-emerald-50 text-emerald-700'
+                        : 'border border-rose-200 bg-rose-50 text-rose-700'
                     }`}
                   >
                     {item.type}
                   </span>
-                  <span className="font-mono font-medium text-deep-ink text-xs">{item.target}</span>
+                  <span className="text-deep-ink font-mono text-xs font-medium">
+                    {item.target}
+                  </span>
                 </div>
 
-                <div className="flex items-center gap-2 text-[11px] text-slate/70 font-mono">
+                <div className="text-slate/70 flex items-center gap-2 font-mono text-[11px]">
                   {item.durationMs !== undefined && (
-                    <span className="bg-canvas px-1.5 py-0.2 rounded border border-deep-ink/5">
+                    <span className="bg-canvas py-0.2 border-deep-ink/5 rounded border px-1.5">
                       {item.durationMs}ms
                     </span>
                   )}
@@ -72,7 +80,7 @@ export function ActivityTab({ activityLog, onClearLog }: ActivityProps) {
               </div>
 
               {item.output && (
-                <pre className="bg-deep-ink text-[#eff2e5] p-3 rounded-lg border border-deep-ink/5 text-xs font-mono overflow-x-auto max-h-36 leading-relaxed">
+                <pre className="bg-deep-ink border-deep-ink/5 max-h-36 overflow-x-auto rounded-lg border p-3 font-mono text-xs leading-relaxed text-[#eff2e5]">
                   {JSON.stringify(item.output, null, 2)}
                 </pre>
               )}
@@ -81,5 +89,5 @@ export function ActivityTab({ activityLog, onClearLog }: ActivityProps) {
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import React from 'react'
-import Link from 'next/link'
+import React from 'react';
+import Link from 'next/link';
 import {
   Home,
   CalendarDays,
@@ -15,33 +15,33 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface NavTabItem {
-  id: string
-  label: string
-  icon: React.ComponentType<{ className?: string }>
-  badge?: string | number | null
-  badgeVariant?: 'default' | 'danger' | 'warning' | 'success'
-  href?: string
-  onClick?: () => void
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string | number | null;
+  badgeVariant?: 'default' | 'danger' | 'warning' | 'success';
+  href?: string;
+  onClick?: () => void;
 }
 
-export type UserRole = 'patient' | 'doctor' | 'admin' | 'custom'
+export type UserRole = 'patient' | 'doctor' | 'admin' | 'custom';
 
 export interface BottomNavProps {
-  role?: UserRole
-  activeTab: string
-  onTabChange?: (tabId: string) => void
-  badgeCounts?: Record<string, number | string | null | undefined>
-  customTabs?: NavTabItem[]
-  className?: string
+  role?: UserRole;
+  activeTab: string;
+  onTabChange?: (tabId: string) => void;
+  badgeCounts?: Record<string, number | string | null | undefined>;
+  customTabs?: NavTabItem[];
+  className?: string;
   /**
    * If true, also shows on desktop inside a floating pill dock or stays docked.
    * Default: true
    */
-  floatingDockOnDesktop?: boolean
+  floatingDockOnDesktop?: boolean;
 }
 
 export function BottomNav({
@@ -56,7 +56,7 @@ export function BottomNav({
   // Define role-aware default tabs
   const getTabsForRole = (): NavTabItem[] => {
     if (customTabs && customTabs.length > 0) {
-      return customTabs
+      return customTabs;
     }
 
     switch (role) {
@@ -86,7 +86,7 @@ export function BottomNav({
             icon: ShieldCheck,
             badge: badgeCounts.records,
           },
-        ]
+        ];
 
       case 'doctor':
         return [
@@ -117,7 +117,7 @@ export function BottomNav({
             label: 'Settings',
             icon: Settings,
           },
-        ]
+        ];
 
       case 'admin':
         return [
@@ -147,16 +147,16 @@ export function BottomNav({
             icon: Users,
             badge: badgeCounts.all ?? badgeCounts.total,
           },
-        ]
+        ];
 
       default:
-        return []
+        return [];
     }
-  }
+  };
 
-  const tabs = getTabsForRole()
+  const tabs = getTabsForRole();
 
-  if (tabs.length === 0) return null
+  if (tabs.length === 0) return null;
 
   return (
     <nav
@@ -164,7 +164,7 @@ export function BottomNav({
       role="tablist"
       className={cn(
         // Base fixed positioning at bottom of viewport
-        'fixed bottom-0 left-0 right-0 z-40 select-none pointer-events-none transition-all',
+        'pointer-events-none fixed right-0 bottom-0 left-0 z-40 transition-all select-none',
         // Desktop handling: centered dock or standard bar
         floatingDockOnDesktop ? 'sm:bottom-4 sm:flex sm:justify-center' : '',
         className
@@ -172,18 +172,18 @@ export function BottomNav({
     >
       <div
         className={cn(
-          'pointer-events-auto w-full transition-all flex items-center justify-around',
+          'pointer-events-auto flex w-full items-center justify-around transition-all',
           // Mobile dock: full width edge-to-edge with safe area padding
-          'bg-white/95 backdrop-blur-xl border-t border-slate-200/90 shadow-[0_-6px_25px_rgba(19,14,48,0.08)] px-2 pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))]',
+          'border-t border-slate-200/90 bg-white/95 px-2 pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-[0_-6px_25px_rgba(19,14,48,0.08)] backdrop-blur-xl',
           // Desktop pill floating dock
           floatingDockOnDesktop &&
-            'sm:max-w-md sm:rounded-2xl sm:border sm:border-slate-200/80 sm:shadow-lg sm:p-1.5 sm:bg-white/90 sm:backdrop-blur-2xl'
+            'sm:max-w-md sm:rounded-2xl sm:border sm:border-slate-200/80 sm:bg-white/90 sm:p-1.5 sm:shadow-lg sm:backdrop-blur-2xl'
         )}
       >
-        {tabs.map(tab => {
-          const Icon = tab.icon
-          const isActive = activeTab === tab.id
-          const badgeValue = tab.badge
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          const badgeValue = tab.badge;
 
           const content = (
             <button
@@ -192,11 +192,11 @@ export function BottomNav({
               aria-selected={isActive}
               aria-label={tab.label}
               onClick={() => {
-                tab.onClick?.()
-                onTabChange?.(tab.id)
+                tab.onClick?.();
+                onTabChange?.(tab.id);
               }}
               className={cn(
-                'relative flex-1 py-1.5 px-2 flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-200 cursor-pointer min-h-[50px] outline-none select-none active:scale-95',
+                'relative flex min-h-[50px] flex-1 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 transition-all duration-200 outline-none select-none active:scale-95',
                 isActive
                   ? 'text-deep-ink font-semibold'
                   : 'text-slate/75 hover:text-deep-ink font-medium'
@@ -208,10 +208,10 @@ export function BottomNav({
                   className={cn(
                     'absolute inset-1 rounded-xl transition-all',
                     role === 'patient'
-                      ? 'bg-hi-yellow/25 ring-1 ring-hi-yellow/60'
+                      ? 'bg-hi-yellow/25 ring-hi-yellow/60 ring-1'
                       : role === 'admin'
-                      ? 'bg-teal-50 ring-1 ring-teal-600/30'
-                      : 'bg-soft-meadow ring-1 ring-deep-ink/10'
+                        ? 'bg-teal-50 ring-1 ring-teal-600/30'
+                        : 'bg-soft-meadow ring-deep-ink/10 ring-1'
                   )}
                   aria-hidden="true"
                 />
@@ -221,34 +221,39 @@ export function BottomNav({
               <div className="relative z-10 flex items-center justify-center">
                 <Icon
                   className={cn(
-                    'w-5 h-5 transition-transform duration-200',
-                    isActive ? 'scale-110 text-deep-ink' : 'text-slate/80'
+                    'h-5 w-5 transition-transform duration-200',
+                    isActive ? 'text-deep-ink scale-110' : 'text-slate/80'
                   )}
                 />
 
                 {/* Badge Indicator */}
-                {badgeValue !== undefined && badgeValue !== null && badgeValue !== '' && badgeValue !== 0 && (
-                  <span
-                    className={cn(
-                      'absolute -top-1.5 -right-2.5 min-w-[17px] h-[17px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center shadow-2xs border border-white',
-                      tab.badgeVariant === 'danger'
-                        ? 'bg-rose-500 text-white'
-                        : tab.badgeVariant === 'warning'
-                        ? 'bg-amber-400 text-deep-ink'
-                        : tab.badgeVariant === 'success'
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-deep-ink text-canvas'
-                    )}
-                  >
-                    {typeof badgeValue === 'number' && badgeValue > 99 ? '99+' : badgeValue}
-                  </span>
-                )}
+                {badgeValue !== undefined &&
+                  badgeValue !== null &&
+                  badgeValue !== '' &&
+                  badgeValue !== 0 && (
+                    <span
+                      className={cn(
+                        'absolute -top-1.5 -right-2.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border border-white px-1 text-[10px] font-bold shadow-2xs',
+                        tab.badgeVariant === 'danger'
+                          ? 'bg-rose-500 text-white'
+                          : tab.badgeVariant === 'warning'
+                            ? 'text-deep-ink bg-amber-400'
+                            : tab.badgeVariant === 'success'
+                              ? 'bg-emerald-500 text-white'
+                              : 'bg-deep-ink text-canvas'
+                      )}
+                    >
+                      {typeof badgeValue === 'number' && badgeValue > 99
+                        ? '99+'
+                        : badgeValue}
+                    </span>
+                  )}
               </div>
 
               {/* Label */}
               <span
                 className={cn(
-                  'relative z-10 text-[11px] tracking-tight truncate max-w-[72px] transition-colors',
+                  'relative z-10 max-w-[72px] truncate text-[11px] tracking-tight transition-colors',
                   isActive ? 'text-deep-ink font-bold' : 'text-slate/80'
                 )}
               >
@@ -259,30 +264,30 @@ export function BottomNav({
               {isActive && (
                 <span
                   className={cn(
-                    'w-1 h-1 rounded-full absolute bottom-1',
+                    'absolute bottom-1 h-1 w-1 rounded-full',
                     role === 'patient'
                       ? 'bg-deep-ink'
                       : role === 'admin'
-                      ? 'bg-teal-700'
-                      : 'bg-deep-ink'
+                        ? 'bg-teal-700'
+                        : 'bg-deep-ink'
                   )}
                   aria-hidden="true"
                 />
               )}
             </button>
-          )
+          );
 
           if (tab.href) {
             return (
               <Link key={tab.id} href={tab.href} className="flex-1">
                 {content}
               </Link>
-            )
+            );
           }
 
-          return content
+          return content;
         })}
       </div>
     </nav>
-  )
+  );
 }

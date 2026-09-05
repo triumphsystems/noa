@@ -4,9 +4,9 @@
  */
 
 export interface UpdateExpressionResult {
-  UpdateExpression: string
-  ExpressionAttributeNames: Record<string, string>
-  ExpressionAttributeValues: Record<string, unknown> | undefined
+  UpdateExpression: string;
+  ExpressionAttributeNames: Record<string, string>;
+  ExpressionAttributeValues: Record<string, unknown> | undefined;
 }
 
 /**
@@ -22,35 +22,36 @@ export function buildUpdateExpression(
   updates: Record<string, unknown>,
   extraSkipKeys: string[] = []
 ): UpdateExpressionResult {
-  const skipKeys = new Set(['id', 'type', 'createdAt', ...extraSkipKeys])
-  const setParts: string[] = []
-  const removeParts: string[] = []
-  const expressionAttributeNames: Record<string, string> = {}
-  const expressionAttributeValues: Record<string, unknown> = {}
+  const skipKeys = new Set(['id', 'type', 'createdAt', ...extraSkipKeys]);
+  const setParts: string[] = [];
+  const removeParts: string[] = [];
+  const expressionAttributeNames: Record<string, string> = {};
+  const expressionAttributeValues: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(updates)) {
-    if (skipKeys.has(key)) continue
-    if (value === undefined) continue
+    if (skipKeys.has(key)) continue;
+    if (value === undefined) continue;
 
     if (value === null) {
-      removeParts.push(`#${key}`)
-      expressionAttributeNames[`#${key}`] = key
-      continue
+      removeParts.push(`#${key}`);
+      expressionAttributeNames[`#${key}`] = key;
+      continue;
     }
 
-    setParts.push(`#${key} = :${key}`)
-    expressionAttributeNames[`#${key}`] = key
-    expressionAttributeValues[`:${key}`] = value
+    setParts.push(`#${key} = :${key}`);
+    expressionAttributeNames[`#${key}`] = key;
+    expressionAttributeValues[`:${key}`] = value;
   }
 
   // Always update the updatedAt timestamp
-  setParts.push('#updatedAt = :updatedAt')
-  expressionAttributeNames['#updatedAt'] = 'updatedAt'
-  expressionAttributeValues[':updatedAt'] = Date.now()
+  setParts.push('#updatedAt = :updatedAt');
+  expressionAttributeNames['#updatedAt'] = 'updatedAt';
+  expressionAttributeValues[':updatedAt'] = Date.now();
 
-  const expressions: string[] = []
-  if (setParts.length > 0) expressions.push(`SET ${setParts.join(', ')}`)
-  if (removeParts.length > 0) expressions.push(`REMOVE ${removeParts.join(', ')}`)
+  const expressions: string[] = [];
+  if (setParts.length > 0) expressions.push(`SET ${setParts.join(', ')}`);
+  if (removeParts.length > 0)
+    expressions.push(`REMOVE ${removeParts.join(', ')}`);
 
   return {
     UpdateExpression: expressions.join(' '),
@@ -59,5 +60,5 @@ export function buildUpdateExpression(
       Object.keys(expressionAttributeValues).length > 0
         ? expressionAttributeValues
         : undefined,
-  }
+  };
 }

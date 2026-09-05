@@ -1,21 +1,21 @@
-'use client'
+'use client';
 
-import { Suspense } from 'react'
-import { IntakeHeader } from '@/components/intake/intake-header'
-import { AssistantPromptBox } from '@/components/intake/assistant-prompt-box'
-import { VoiceStudio } from '@/components/intake/voice-studio'
-import { ClinicalIntakeCard } from '@/components/intake/clinical-intake-card'
-import { ErrorAlert } from '@/components/ui/error-alert'
-import { useIntakeVoice } from '@/lib/hooks/use-intake-voice'
+import { Suspense } from 'react';
+import { IntakeHeader } from '@/components/intake/intake-header';
+import { AssistantPromptBox } from '@/components/intake/assistant-prompt-box';
+import { VoiceStudio } from '@/components/intake/voice-studio';
+import { ClinicalIntakeCard } from '@/components/intake/clinical-intake-card';
+import { ErrorAlert } from '@/components/ui/error-alert';
+import { useIntakeVoice } from '@/lib/hooks/use-intake-voice';
 
-const defaultPrompt = 'Tap the microphone or speak in your preferred language.'
+const defaultPrompt = 'Tap the microphone or speak in your preferred language.';
 
 export default function PatientIntakePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-canvas" />}>
+    <Suspense fallback={<div className="bg-canvas min-h-screen" />}>
       <PatientIntakeContent />
     </Suspense>
-  )
+  );
 }
 
 function PatientIntakeContent() {
@@ -37,11 +37,11 @@ function PatientIntakeContent() {
     toggleMic,
     sendTranscript,
     resetConversation,
-  } = useIntakeVoice()
+  } = useIntakeVoice();
 
   return (
-    <div className="min-h-screen lg:h-screen lg:max-h-screen lg:overflow-hidden bg-canvas text-deep-ink flex flex-col justify-between p-2.5 sm:p-4 lg:p-5">
-      <div className="mx-auto w-full max-w-6xl flex-1 flex flex-col gap-2.5 sm:gap-3 min-h-0">
+    <div className="bg-canvas text-deep-ink flex min-h-screen flex-col justify-between p-2.5 sm:p-4 lg:h-screen lg:max-h-screen lg:overflow-hidden lg:p-5">
+      <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-2.5 sm:gap-3">
         {/* Compact Responsive Header */}
         <IntakeHeader
           detectedLanguage={detectedLanguage}
@@ -52,7 +52,7 @@ function PatientIntakeContent() {
 
         {/* Global Warnings / Error Banner */}
         {supportMessage && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-900 shrink-0">
+          <div className="shrink-0 rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-900">
             {supportMessage}
           </div>
         )}
@@ -60,14 +60,16 @@ function PatientIntakeContent() {
         {error && <ErrorAlert message={error} className="shrink-0" />}
 
         {/* Studio Layout: Stacked on mobile, 2-column on desktop */}
-        <main className="grid flex-1 gap-2.5 sm:gap-3.5 lg:grid-cols-[1.25fr_0.95fr] min-h-0 overflow-y-auto lg:overflow-hidden">
+        <main className="grid min-h-0 flex-1 gap-2.5 overflow-y-auto sm:gap-3.5 lg:grid-cols-[1.25fr_0.95fr] lg:overflow-hidden">
           {/* Interactive Voice Canvas */}
-          <section className="flex flex-col gap-2.5 rounded-2xl sm:rounded-3xl border border-deep-ink/10 bg-white p-3 sm:p-4 shadow-sm min-h-0">
+          <section className="border-deep-ink/10 flex min-h-0 flex-col gap-2.5 rounded-2xl border bg-white p-3 shadow-sm sm:rounded-3xl sm:p-4">
             <AssistantPromptBox
               assistantMessage={assistantMessage}
               isSpeaking={isSpeaking}
               isVoiceOutputEnabled={isVoiceOutputEnabled}
-              onToggleVoiceOutput={() => setIsVoiceOutputEnabled((prev) => !prev)}
+              onToggleVoiceOutput={() =>
+                setIsVoiceOutputEnabled((prev) => !prev)
+              }
             />
 
             <VoiceStudio
@@ -89,11 +91,15 @@ function PatientIntakeContent() {
         </main>
 
         {/* Responsive Micro Footer Bar */}
-        <footer className="shrink-0 flex items-center justify-between text-[10px] sm:text-[11px] text-slate/70 px-1 pt-1 border-t border-deep-ink/5">
+        <footer className="text-slate/70 border-deep-ink/5 flex shrink-0 items-center justify-between border-t px-1 pt-1 text-[10px] sm:text-[11px]">
           <span className="truncate">Speak naturally in any language.</span>
-          <span className="shrink-0">{isComplete ? 'Intake complete.' : 'Noa asks one question at a time.'}</span>
+          <span className="shrink-0">
+            {isComplete
+              ? 'Intake complete.'
+              : 'Noa asks one question at a time.'}
+          </span>
         </footer>
       </div>
     </div>
-  )
+  );
 }

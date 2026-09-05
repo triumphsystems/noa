@@ -1,6 +1,6 @@
-export { WebMCPInspector } from './inspector'
-export { Launcher } from './launcher'
-export { InspectorHeader } from './header'
-export * from './types'
-export * from './constants'
-export * from './tabs'
+export { WebMCPInspector } from './inspector';
+export { Launcher } from './launcher';
+export { InspectorHeader } from './header';
+export * from './types';
+export * from './constants';
+export * from './tabs';

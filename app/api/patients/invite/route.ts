@@ -1,60 +1,76 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { nanoid } from 'nanoid'
+import { NextRequest, NextResponse } from 'next/server';
+import { nanoid } from 'nanoid';
 import {
   getDoctorById,
   getPatientByEmail,
   createPatient,
   updatePatient,
-} from '@/lib/db'
-import { getAuthenticatedUser } from '@/lib/auth/jwt'
+} from '@/lib/db';
+import { getAuthenticatedUser } from '@/lib/auth/jwt';
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await getAuthenticatedUser(request)
+    const auth = await getAuthenticatedUser(request);
     if (!auth.isValid) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     if (auth.userType && auth.userType !== 'doctor') {
-      return NextResponse.json({ message: 'Forbidden: Doctor role required' }, { status: 403 })
+      return NextResponse.json(
+        { message: 'Forbidden: Doctor role required' },
+        { status: 403 }
+      );
     }
 
-    const doctorId = auth.sub
+    const doctorId = auth.sub;
     if (!doctorId) {
-      return NextResponse.json({ message: 'Doctor ID missing from auth token' }, { status: 400 })
+      return NextResponse.json(
+        { message: 'Doctor ID missing from auth token' },
+        { status: 400 }
+      );
     }
 
-    const doctor = await getDoctorById(doctorId)
+    const doctor = await getDoctorById(doctorId);
     if (!doctor) {
-      return NextResponse.json({ message: 'Doctor record not found' }, { status: 404 })
+      return NextResponse.json(
+        { message: 'Doctor record not found' },
+        { status: 404 }
+      );
     }
 
     if (doctor.verificationStatus !== 'verified') {
       return NextResponse.json(
         {
-          message: 'Your medical credentials must be verified by clinical administration before inviting patients.',
+          message:
+            'Your medical credentials must be verified by clinical administration before inviting patients.',
           verificationStatus: doctor.verificationStatus,
         },
         { status: 403 }
-      )
+      );
     }
 
-    const body = await request.json()
-    const { email, firstName, lastName, phone } = body || {}
+    const body = await request.json();
+    const { email, firstName, lastName, phone } = body || {};
 
     if (!email || !email.trim()) {
-      return NextResponse.json({ message: 'Patient email is required' }, { status: 400 })
+      return NextResponse.json(
+        { message: 'Patient email is required' },
+        { status: 400 }
+      );
     }
 
-    const cleanEmail = email.trim().toLowerCase()
-    const existingPatient = await getPatientByEmail(cleanEmail)
+    const cleanEmail = email.trim().toLowerCase();
+    const existingPatient = await getPatientByEmail(cleanEmail);
 
-    let patient
-    let isNew = false
+    let patient;
+    let isNew = false;
 
     if (existingPatient) {
       // If already fully assigned to this doctor
-      if (existingPatient.doctorId === doctorId && existingPatient.linkStatus === 'linked') {
+      if (
+        existingPatient.doctorId === doctorId &&
+        existingPatient.linkStatus === 'linked'
+      ) {
         return NextResponse.json(
           {
             success: true,
@@ -62,7 +78,7 @@ export async function POST(request: NextRequest) {
             message: 'Patient is already linked to your clinic practice.',
           },
           { status: 200 }
-        )
+        );
       }
 
       // Propose link / pending patient approval
@@ -75,10 +91,10 @@ export async function POST(request: NextRequest) {
         ...(firstName && !existingPatient.firstName ? { firstName } : {}),
         ...(lastName && !existingPatient.lastName ? { lastName } : {}),
         ...(phone && !existingPatient.phone ? { phone } : {}),
-      })
+      });
     } else {
       // Patient has not yet signed up: create preliminary record with pending approval (NOT linked!)
-      isNew = true
+      isNew = true;
       patient = await createPatient({
         id: `patient-${nanoid()}`,
         email: cleanEmail,
@@ -89,7 +105,7 @@ export async function POST(request: NextRequest) {
         linkStatus: 'pending_patient_approval',
         linkRequestedBy: 'doctor',
         linkRequestedAt: Date.now(),
-      })
+      });
     }
 
     // Never return medical history/details before the patient explicitly accepts!
@@ -100,22 +116,22 @@ export async function POST(request: NextRequest) {
       lastName: patient?.lastName,
       linkStatus: patient?.linkStatus,
       linkRequestedAt: patient?.linkRequestedAt,
-    }
+    };
 
     return NextResponse.json({
       success: true,
       data: sanitizedPatient,
       isNew,
       message: `Invitation sent to ${patient?.firstName || cleanEmail}. Awaiting patient acceptance on their portal.`,
-    })
+    });
   } catch (error) {
-    console.error('[API /patients/invite] Error inviting patient:', error)
+    console.error('[API /patients/invite] Error inviting patient:', error);
     return NextResponse.json(
       {
         message: 'Failed to invite patient',
         error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    );
   }
 }

@@ -50,18 +50,18 @@ Noa transforms medical consultations into structured clinical intelligence using
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 16 (App Router), TypeScript |
-| Styling | Tailwind CSS, shadcn/ui |
-| State | Zustand |
-| Real-time | Socket.io |
-| Data Fetching | SWR |
-| Database | AWS DynamoDB (on-demand, Terraform-provisioned) |
-| Storage | AWS S3 (Terraform-provisioned) |
-| AI / Voice | AWS Bedrock — Nova Lite, Nova Pro, Sonic |
+| Layer          | Technology                                        |
+| -------------- | ------------------------------------------------- |
+| Framework      | Next.js 16 (App Router), TypeScript               |
+| Styling        | Tailwind CSS, shadcn/ui                           |
+| State          | Zustand                                           |
+| Real-time      | Socket.io                                         |
+| Data Fetching  | SWR                                               |
+| Database       | AWS DynamoDB (on-demand, Terraform-provisioned)   |
+| Storage        | AWS S3 (Terraform-provisioned)                    |
+| AI / Voice     | AWS Bedrock — Nova Lite, Nova Pro, Sonic          |
 | Infrastructure | Terraform, Vercel, AWS CloudWatch, AWS IAM (OIDC) |
-| Audio | react-mic, wav-encoder |
+| Audio          | react-mic, wav-encoder                            |
 
 ## Prerequisites
 
@@ -113,28 +113,28 @@ See [QUICK_REFERENCE.md](./QUICK_REFERENCE.md) for full endpoint documentation a
 
 ### Auth
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/auth/signup` | Register a doctor or patient account |
-| POST | `/api/auth/login` | Authenticate and receive JWT tokens |
+| Method | Endpoint           | Description                          |
+| ------ | ------------------ | ------------------------------------ |
+| POST   | `/api/auth/signup` | Register a doctor or patient account |
+| POST   | `/api/auth/login`  | Authenticate and receive JWT tokens  |
 
 ### Clinical
 
-| Method | Endpoint | Model | Description |
-|---|---|---|---|
-| POST | `/api/clinical/soap` | Nova Lite | Generate SOAP note from transcript |
-| POST | `/api/clinical/suggestions` | Nova Lite | Real-time clinical recommendations |
-| POST | `/api/clinical/insights` | Nova Pro | Advanced analysis and differential diagnosis |
-| POST | `/api/clinical/triage` | Nova Lite | Priority triage assessment |
+| Method | Endpoint                    | Model     | Description                                  |
+| ------ | --------------------------- | --------- | -------------------------------------------- |
+| POST   | `/api/clinical/soap`        | Nova Lite | Generate SOAP note from transcript           |
+| POST   | `/api/clinical/suggestions` | Nova Lite | Real-time clinical recommendations           |
+| POST   | `/api/clinical/insights`    | Nova Pro  | Advanced analysis and differential diagnosis |
+| POST   | `/api/clinical/triage`      | Nova Lite | Priority triage assessment                   |
 
 ### Sessions & Patients
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET/POST | `/api/sessions` | Create and list consultation sessions |
-| GET/POST | `/api/sessions/voice` | WebSocket-backed voice session management |
-| GET | `/api/patients` | List patients for the authenticated doctor |
-| GET | `/api/patients/[id]` | Patient details and medical history |
+| Method   | Endpoint              | Description                                |
+| -------- | --------------------- | ------------------------------------------ |
+| GET/POST | `/api/sessions`       | Create and list consultation sessions      |
+| GET/POST | `/api/sessions/voice` | WebSocket-backed voice session management  |
+| GET      | `/api/patients`       | List patients for the authenticated doctor |
+| GET      | `/api/patients/[id]`  | Patient details and medical history        |
 
 ## Deployment
 
@@ -183,18 +183,21 @@ pnpm test:aws                          # AWS credential validation
 ## Troubleshooting
 
 **DynamoDB connection error**
+
 ```bash
 echo $DYNAMODB_TABLE_NAME && echo $AWS_REGION
 pnpm test:db
 ```
 
 **Bedrock access denied**
+
 ```bash
 aws iam get-role --role-name NoaBedrockRole
 aws bedrock list-foundation-models
 ```
 
 **S3 upload failures**
+
 ```bash
 aws s3 ls s3://your-bucket-name
 aws iam simulate-principal-policy \

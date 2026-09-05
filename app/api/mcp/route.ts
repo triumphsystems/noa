@@ -4,29 +4,30 @@
  * Implements MCP HTTP & SSE transports for remote agents, Claude Desktop, Cursor, and web clients.
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { initWebMCPServer } from '@/lib/webmcp/server/init'
-import { dispatcher } from '@/lib/webmcp/core/dispatcher'
-import { registry } from '@/lib/webmcp/core/registry'
-import { JsonRpcRequest, ExecutionContext } from '@/lib/webmcp/core/types'
-import { checkRateLimit, getClientIdentifier } from '@/lib/ratelimit'
-import { getAuthenticatedUser } from '@/lib/auth/jwt'
+import { NextRequest, NextResponse } from 'next/server';
+import { initWebMCPServer } from '@/lib/webmcp/server/init';
+import { dispatcher } from '@/lib/webmcp/core/dispatcher';
+import { registry } from '@/lib/webmcp/core/registry';
+import { JsonRpcRequest, ExecutionContext } from '@/lib/webmcp/core/types';
+import { checkRateLimit, getClientIdentifier } from '@/lib/ratelimit';
+import { getAuthenticatedUser } from '@/lib/auth/jwt';
 
 // Ensure tools, resources, and prompts are registered
-initWebMCPServer()
+initWebMCPServer();
 
 // Standard CORS headers for cross-origin agent connectivity
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-mcp-api-key, baggage, traceparent',
-}
+  'Access-Control-Allow-Headers':
+    'Content-Type, Authorization, x-mcp-api-key, baggage, traceparent',
+};
 
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
     headers: CORS_HEADERS,
-  })
+  });
 }
 
 /**
@@ -37,10 +38,16 @@ export async function OPTIONS() {
 export async function POST(req: NextRequest) {
   try {
     // Distributed Rate limiting (60 requests per minute per client)
-    const clientId = getClientIdentifier(req)
-    const rateCheck = await checkRateLimit(clientId, { limit: 60, windowSeconds: 60 })
+    const clientId = getClientIdentifier(req);
+    const rateCheck = await checkRateLimit(clientId, {
+      limit: 60,
+      windowSeconds: 60,
+    });
     if (!rateCheck.success) {
-      const retryAfter = Math.max(1, rateCheck.reset - Math.floor(Date.now() / 1000))
+      const retryAfter = Math.max(
+        1,
+        rateCheck.reset - Math.floor(Date.now() / 1000)
+      );
       return NextResponse.json(
         {
           jsonrpc: '2.0',
@@ -60,29 +67,31 @@ export async function POST(req: NextRequest) {
             'X-RateLimit-Reset': String(rateCheck.reset),
           },
         }
-      )
+      );
     }
 
-    const rawBody = await req.json()
+    const rawBody = await req.json();
 
     // Extract execution context from headers and verified session cookies
-    const authHeader = req.headers.get('authorization')
-    const apiKeyHeader = req.headers.get('x-mcp-api-key')
-    const userAuth = await getAuthenticatedUser(req)
-    const expectedApiKey = process.env.MCP_API_KEY || process.env.WEBMCP_API_KEY
+    const authHeader = req.headers.get('authorization');
+    const apiKeyHeader = req.headers.get('x-mcp-api-key');
+    const userAuth = await getAuthenticatedUser(req);
+    const expectedApiKey =
+      process.env.MCP_API_KEY || process.env.WEBMCP_API_KEY;
 
     const hasValidApiKey = Boolean(
       expectedApiKey &&
-      (apiKeyHeader === expectedApiKey || authHeader === `Bearer ${expectedApiKey}`)
-    )
+      (apiKeyHeader === expectedApiKey ||
+        authHeader === `Bearer ${expectedApiKey}`)
+    );
 
-    const isAuthorized = hasValidApiKey || userAuth.isValid
+    const isAuthorized = hasValidApiKey || userAuth.isValid;
 
     // Guard: Tools execution and resource access require authentication in production
-    const requests = Array.isArray(rawBody) ? rawBody : [rawBody]
+    const requests = Array.isArray(rawBody) ? rawBody : [rawBody];
     const requiresAuth = requests.some(
-      r => r?.method === 'tools/call' || r?.method === 'resources/read'
-    )
+      (r) => r?.method === 'tools/call' || r?.method === 'resources/read'
+    );
 
     if (requiresAuth && !isAuthorized) {
       return NextResponse.json(
@@ -91,33 +100,44 @@ export async function POST(req: NextRequest) {
           id: null,
           error: {
             code: -32001,
-            message: 'Unauthorized: A valid MCP API key or authenticated clinician session is required.',
+            message:
+              'Unauthorized: A valid MCP API key or authenticated clinician session is required.',
           },
         },
         { status: 401, headers: CORS_HEADERS }
-      )
+      );
     }
 
-    const resolvedUserId = userAuth.sub
+    const resolvedUserId = userAuth.sub;
     const context: ExecutionContext = {
       userId: resolvedUserId,
-      userType: userAuth.userType as 'doctor' | 'patient' | 'system' | undefined,
+      userType: userAuth.userType as
+        'doctor' | 'patient' | 'system' | undefined,
       doctorId: userAuth.userType === 'doctor' ? resolvedUserId : undefined,
       patientId: userAuth.userType === 'patient' ? resolvedUserId : undefined,
-      apiKey: apiKeyHeader || (authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined),
-    }
+      apiKey:
+        apiKeyHeader ||
+        (authHeader?.startsWith('Bearer ')
+          ? authHeader.substring(7)
+          : undefined),
+    };
 
     // Handle batch JSON-RPC requests
     if (Array.isArray(rawBody)) {
       const responses = await Promise.all(
-        rawBody.map(rpcReq => dispatcher.dispatch(rpcReq as JsonRpcRequest, context))
-      )
-      return NextResponse.json(responses, { headers: CORS_HEADERS })
+        rawBody.map((rpcReq) =>
+          dispatcher.dispatch(rpcReq as JsonRpcRequest, context)
+        )
+      );
+      return NextResponse.json(responses, { headers: CORS_HEADERS });
     }
 
     // Handle single JSON-RPC request
-    const response = await dispatcher.dispatch(rawBody as JsonRpcRequest, context)
-    return NextResponse.json(response, { headers: CORS_HEADERS })
+    const response = await dispatcher.dispatch(
+      rawBody as JsonRpcRequest,
+      context
+    );
+    return NextResponse.json(response, { headers: CORS_HEADERS });
   } catch (error: any) {
     return NextResponse.json(
       {
@@ -125,7 +145,8 @@ export async function POST(req: NextRequest) {
         id: null,
         error: {
           code: -32700,
-          message: 'Parse error: Request body could not be parsed as valid JSON',
+          message:
+            'Parse error: Request body could not be parsed as valid JSON',
           data: error?.message,
         },
       },
@@ -133,7 +154,7 @@ export async function POST(req: NextRequest) {
         status: 400,
         headers: CORS_HEADERS,
       }
-    )
+    );
   }
 }
 
@@ -143,59 +164,63 @@ export async function POST(req: NextRequest) {
  * - Otherwise -> Returns WebMCP service discovery metadata.
  */
 export async function GET(req: NextRequest) {
-  const acceptHeader = req.headers.get('accept') || ''
+  const acceptHeader = req.headers.get('accept') || '';
 
   // 1. Server-Sent Events (SSE) Stream
   if (acceptHeader.includes('text/event-stream')) {
     const stream = new ReadableStream({
       start(controller) {
-        const encoder = new TextEncoder()
+        const encoder = new TextEncoder();
 
         // Send initial endpoint event conforming to MCP SSE transport specification
         controller.enqueue(
-          encoder.encode(`event: endpoint\ndata: ${req.nextUrl.origin}/api/mcp\n\n`)
-        )
+          encoder.encode(
+            `event: endpoint\ndata: ${req.nextUrl.origin}/api/mcp\n\n`
+          )
+        );
 
         // Send ready message
         controller.enqueue(
-          encoder.encode(`event: message\ndata: ${JSON.stringify({
-            jsonrpc: '2.0',
-            method: 'notifications/initialized',
-            params: { server: 'noa-clinical-webmcp', version: '1.0.0' },
-          })}\n\n`)
-        )
+          encoder.encode(
+            `event: message\ndata: ${JSON.stringify({
+              jsonrpc: '2.0',
+              method: 'notifications/initialized',
+              params: { server: 'noa-clinical-webmcp', version: '1.0.0' },
+            })}\n\n`
+          )
+        );
 
         // Keep-alive heartbeat interval
         const intervalId = setInterval(() => {
           try {
-            controller.enqueue(encoder.encode(': heartbeat\n\n'))
+            controller.enqueue(encoder.encode(': heartbeat\n\n'));
           } catch {
-            clearInterval(intervalId)
+            clearInterval(intervalId);
           }
-        }, 15000)
+        }, 15000);
 
         req.signal.addEventListener('abort', () => {
-          clearInterval(intervalId)
-          controller.close()
-        })
+          clearInterval(intervalId);
+          controller.close();
+        });
       },
-    })
+    });
 
     return new NextResponse(stream, {
       headers: {
         ...CORS_HEADERS,
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache, no-transform',
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
       },
-    })
+    });
   }
 
   // 2. Service Discovery Metadata
-  const tools = registry.listTools()
-  const resources = registry.listResources()
-  const resourceTemplates = registry.listResourceTemplates()
-  const prompts = registry.listPrompts()
+  const tools = registry.listTools();
+  const resources = registry.listResources();
+  const resourceTemplates = registry.listResourceTemplates();
+  const prompts = registry.listPrompts();
 
   return NextResponse.json(
     {
@@ -212,10 +237,16 @@ export async function GET(req: NextRequest) {
         resourceTemplatesCount: resourceTemplates.length,
         promptsCount: prompts.length,
       },
-      tools: tools.map(t => ({ name: t.name, description: t.description })),
-      resourceTemplates: resourceTemplates.map(r => ({ uriTemplate: r.uriTemplate, name: r.name })),
-      prompts: prompts.map(p => ({ name: p.name, description: p.description })),
+      tools: tools.map((t) => ({ name: t.name, description: t.description })),
+      resourceTemplates: resourceTemplates.map((r) => ({
+        uriTemplate: r.uriTemplate,
+        name: r.name,
+      })),
+      prompts: prompts.map((p) => ({
+        name: p.name,
+        description: p.description,
+      })),
     },
     { headers: CORS_HEADERS }
-  )
+  );
 }
