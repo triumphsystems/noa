@@ -113,7 +113,7 @@ export async function createDoctor(
   data: Omit<Doctor, 'id' | 'type' | 'createdAt' | 'updatedAt'> & { id?: string }
 ): Promise<Doctor> {
   const doctor: Doctor = {
-    id: data.id || `doctor-${nanoid()}`,
+    id: data.id || nanoid(),
     type: 'doctor',
     ...data,
     verificationStatus: data.verificationStatus || 'pending',
@@ -140,6 +140,41 @@ export async function getDoctorById(id: string): Promise<Doctor | null> {
   )
 
   return (result.Item as Doctor) || null
+}
+
+export async function migrateDoctorId(oldId: string, newId: string): Promise<Doctor> {
+  const oldDoctor = await getDoctorById(oldId)
+  if (!oldDoctor) {
+    throw new Error(`Doctor with id ${oldId} not found for migration`)
+  }
+
+  const updatedDoctor: Doctor = {
+    ...oldDoctor,
+    id: newId,
+    updatedAt: Date.now(),
+  }
+
+  await docClient.send(
+    new PutCommand({
+      TableName: TABLE_NAME,
+      Item: updatedDoctor,
+    }),
+  )
+
+  if (oldId !== newId) {
+    try {
+      await docClient.send(
+        new DeleteCommand({
+          TableName: TABLE_NAME,
+          Key: { [PK]: oldId, [SK]: 'doctor' },
+        }),
+      )
+    } catch (err) {
+      console.warn(`[DB Migration] Failed to delete legacy doctor record ${oldId}:`, err)
+    }
+  }
+
+  return updatedDoctor
 }
 
 export async function getDoctorByEmail(email: string): Promise<Doctor | null> {
@@ -312,7 +347,7 @@ export async function createPatient(
   data: Omit<Patient, 'id' | 'type' | 'createdAt' | 'updatedAt'> & { id?: string }
 ): Promise<Patient> {
   const patient: Patient = {
-    id: data.id || `patient-${nanoid()}`,
+    id: data.id || nanoid(),
     type: 'patient',
     ...data,
     createdAt: Date.now(),
@@ -338,6 +373,41 @@ export async function getPatientById(id: string): Promise<Patient | null> {
   )
 
   return (result.Item as Patient) || null
+}
+
+export async function migratePatientId(oldId: string, newId: string): Promise<Patient> {
+  const oldPatient = await getPatientById(oldId)
+  if (!oldPatient) {
+    throw new Error(`Patient with id ${oldId} not found for migration`)
+  }
+
+  const updatedPatient: Patient = {
+    ...oldPatient,
+    id: newId,
+    updatedAt: Date.now(),
+  }
+
+  await docClient.send(
+    new PutCommand({
+      TableName: TABLE_NAME,
+      Item: updatedPatient,
+    }),
+  )
+
+  if (oldId !== newId) {
+    try {
+      await docClient.send(
+        new DeleteCommand({
+          TableName: TABLE_NAME,
+          Key: { [PK]: oldId, [SK]: 'patient' },
+        }),
+      )
+    } catch (err) {
+      console.warn(`[DB Migration] Failed to delete legacy patient record ${oldId}:`, err)
+    }
+  }
+
+  return updatedPatient
 }
 
 export async function getPatientByEmail(email: string): Promise<Patient | null> {

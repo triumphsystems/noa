@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-    const patientId = auth.dbId || auth.sub
+    const patientId = auth.sub
     if (!patientId) {
       return NextResponse.json({ message: 'Patient ID missing from auth token' }, { status: 400 })
     }

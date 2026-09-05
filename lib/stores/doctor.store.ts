@@ -52,13 +52,19 @@ export const useDoctorStore = create<DoctorState>((set, get) => ({
         `/api/dashboard/doctor?doctorId=${encodeURIComponent(activeDoctorId)}`,
       )
 
+      const canonicalId = payload.doctor?.id || activeDoctorId
+      if (typeof window !== 'undefined' && canonicalId) {
+        window.localStorage.setItem('doctorId', canonicalId)
+      }
+
       set({
         doctor: payload.doctor,
         patients: payload.patients,
         sessions: payload.sessions,
         stats: payload.stats,
+        doctorId: canonicalId,
         isLoading: false,
-        lastLoadedDoctorId: activeDoctorId,
+        lastLoadedDoctorId: canonicalId,
       })
     } catch (error) {
       // If 403 or dashboard fetch fails (e.g. pending/rejected credentials), load doctor profile directly

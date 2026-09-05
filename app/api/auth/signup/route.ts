@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createDoctor, createPatient, updatePatient, getDoctorByEmail, getPatientByEmail } from '@/lib/db'
+import { createDoctor, createPatient, updatePatient, migratePatientId, getDoctorByEmail, getPatientByEmail } from '@/lib/db'
 import { signUpWithCognito, getCognitoConfig } from '@/lib/auth/cognito'
 import { checkRateLimit, getClientIdentifier, rateLimitResponse } from '@/lib/ratelimit'
 
@@ -112,15 +112,18 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        // If it was a pre-created invitation from a clinician, bind it to this registering user
-        patient = await updatePatient(existing.id, {
+        // If it was a pre-created invitation from a clinician, migrate it to the canonical Cognito Auth ID
+        if (existing.id !== userSub) {
+          patient = await migratePatientId(existing.id, userSub)
+        }
+        patient = await updatePatient(userSub, {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           ...(doctorId && !existing.doctorId ? { doctorId } : {}),
         })
       } else {
         patient = await createPatient({
-          ...(userSub ? { id: userSub } : {}),
+          id: userSub,
           ...(doctorId ? { doctorId } : {}),
           email: email.trim().toLowerCase(),
           firstName: firstName.trim(),

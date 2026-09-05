@@ -50,6 +50,11 @@ export const usePatientStore = create<PatientState>((set, get) => ({
         `/api/dashboard/patient?patientId=${encodeURIComponent(activeId)}`
       )
 
+      const canonicalId = payload.patient?.id || activeId
+      if (typeof window !== 'undefined' && canonicalId) {
+        window.localStorage.setItem('patientId', canonicalId)
+      }
+
       set({
         patient: payload.patient,
         doctor: payload.doctor,
@@ -57,6 +62,7 @@ export const usePatientStore = create<PatientState>((set, get) => ({
         sessions: payload.sessions,
         intake: payload.intake,
         stats: payload.stats,
+        patientId: canonicalId,
         isLoading: false,
       })
     } catch (err) {

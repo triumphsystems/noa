@@ -27,14 +27,13 @@ export async function POST(request: NextRequest) {
     const tokens = await refreshCognitoTokens(refreshToken)
     const cognitoUser = await getCognitoUser(tokens.accessToken)
 
-    let userId = cognitoUser?.sub || 'user'
+    const userId = cognitoUser?.sub || 'user'
     let userName = cognitoUser?.name || 'User'
     let userType: 'doctor' | 'patient' | 'admin' = cognitoUser?.userType || 'doctor'
 
     if (sessionMeta) {
       try {
         const parsed = JSON.parse(sessionMeta)
-        if (parsed.id) userId = parsed.id
         if (parsed.name) userName = parsed.name
         if (parsed.userType) userType = parsed.userType
       } catch {}

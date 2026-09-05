@@ -42,7 +42,7 @@ export async function POST(
     }
 
     // 1. Update verification state in DynamoDB
-    const adminId = auth.dbId || auth.sub || auth.email || 'admin'
+    const adminId = auth.sub || 'admin'
     const updated = await updateDoctorVerification(id, 'rejected', adminId, reason)
 
     // 2. Remove clinician from Cognito "Doctors" group if previously present

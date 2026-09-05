@@ -9,7 +9,6 @@ import { AUTH_COOKIE_NAMES } from './cookies'
 export interface VerifiedAuthPayload {
   isValid: boolean
   sub?: string
-  dbId?: string
   email?: string
   userType?: 'doctor' | 'patient' | 'admin'
   groups?: string[]
@@ -104,16 +103,19 @@ export function getAuthenticatedUser(request: NextRequest): VerifiedAuthPayload 
     return verified
   }
 
-  // Once token is verified, extract internal database ID from server session metadata if present
+  // Canonical user ID is the Cognito Auth ID (sub)
   const sessionMeta = request.cookies.get(AUTH_COOKIE_NAMES.SESSION_META)?.value
   if (sessionMeta) {
     try {
       const parsed = JSON.parse(sessionMeta)
-      if (parsed.id) {
-        verified.dbId = parsed.id
+      if (!verified.sub && parsed.id) {
+        verified.sub = parsed.id
       }
       if (!verified.userType && parsed.userType) {
         verified.userType = parsed.userType
+      }
+      if (!verified.email && parsed.email) {
+        verified.email = parsed.email
       }
     } catch {
       // Ignore parse failure

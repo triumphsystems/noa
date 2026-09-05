@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Resolve caller patient
-    const patientId = auth.dbId || auth.sub
+    const patientId = auth.sub
     if (!patientId) {
       return NextResponse.json({ message: 'Missing patient identity in token' }, { status: 400 })
     }

@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDoctorByEmail, getPatientByEmail, getAdminByEmail } from '@/lib/db'
+import {
+  getDoctorByEmail,
+  getDoctorById,
+  migrateDoctorId,
+  getPatientByEmail,
+  getPatientById,
+  migratePatientId,
+  getAdminByEmail,
+} from '@/lib/db'
 import { signInWithCognito, getCognitoConfig, getCognitoUser } from '@/lib/auth/cognito'
 import { setAuthCookies } from '@/lib/auth/cookies'
 import { checkRateLimit, getClientIdentifier, rateLimitResponse } from '@/lib/ratelimit'
@@ -38,23 +46,35 @@ export async function POST(request: NextRequest) {
         userType: (cognitoUser?.userType || userType || 'doctor') as 'doctor' | 'patient' | 'admin',
       }
 
-      // Cross-reference DynamoDB profile to resolve exact medical or admin record ID
+      const cleanEmail = resolvedUser.email
+
+      // The canonical ID is the Cognito Auth ID (cognitoUser.sub).
+      // If a legacy doctor or patient profile exists under an old ID, migrate it.
       if (resolvedUser.userType === 'doctor') {
-        const doctor = await getDoctorByEmail(email)
+        let doctor = await getDoctorById(resolvedUser.id)
+        if (!doctor) {
+          const legacyDoctor = await getDoctorByEmail(cleanEmail)
+          if (legacyDoctor) {
+            doctor = await migrateDoctorId(legacyDoctor.id, resolvedUser.id)
+          }
+        }
         if (doctor) {
-          resolvedUser.id = doctor.id
           resolvedUser.name = doctor.name
         }
       } else if (resolvedUser.userType === 'admin') {
-        const admin = await getAdminByEmail(email)
+        const admin = await getAdminByEmail(cleanEmail)
         if (admin) {
-          resolvedUser.id = admin.id
           resolvedUser.name = admin.name
         }
       } else {
-        const patient = await getPatientByEmail(email)
+        let patient = await getPatientById(resolvedUser.id)
+        if (!patient) {
+          const legacyPatient = await getPatientByEmail(cleanEmail)
+          if (legacyPatient) {
+            patient = await migratePatientId(legacyPatient.id, resolvedUser.id)
+          }
+        }
         if (patient) {
-          resolvedUser.id = patient.id
           resolvedUser.name = `${patient.firstName} ${patient.lastName}`.trim()
         }
       }

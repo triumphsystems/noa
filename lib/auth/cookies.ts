@@ -52,7 +52,8 @@ export function setAuthCookies(
   }
 
   // 4. Session metadata (Cached user info for edge middleware/server route lookup)
-  // MaxAge matches access token expiry so UI metadata does not outlive active authentication
+  // MaxAge matches refresh token lifecycle (30 days) to prevent session metadata from vanishing after 1 hour
+  const sessionMetaMaxAge = tokens.refreshToken ? 30 * 24 * 60 * 60 : (tokens.expiresIn || 3600)
   response.cookies.set(
     AUTH_COOKIE_NAMES.SESSION_META,
     JSON.stringify({
@@ -68,7 +69,7 @@ export function setAuthCookies(
       secure: isProduction,
       sameSite: 'lax',
       path: '/',
-      maxAge: tokens.expiresIn || 3600,
+      maxAge: sessionMetaMaxAge,
     }
   )
 

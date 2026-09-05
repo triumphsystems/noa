@@ -41,7 +41,7 @@ export async function POST(
     }
 
     // 1. Update verification state in DynamoDB
-    const adminId = auth.dbId || auth.sub || auth.email || 'admin'
+    const adminId = auth.sub || 'admin'
     const updated = await updateDoctorVerification(id, 'verified', adminId)
 
     // 2. Add clinician to Cognito "Doctors" group so Cognito JWT contains group membership

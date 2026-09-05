@@ -2,33 +2,59 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import type { ApiSuccess } from '@/lib/types/api.types'
 import type { DoctorDashboardPayload } from '@/lib/types/doctor.types'
-import { getDoctorById, getPatientsByDoctor, getPendingPatientsByDoctor, getSessionsByDoctor } from '@/lib/db'
+import {
+  getDoctorById,
+  getDoctorByEmail,
+  migrateDoctorId,
+  getPatientsByDoctor,
+  getPendingPatientsByDoctor,
+  getSessionsByDoctor,
+} from '@/lib/db'
 import { getAuthenticatedUser } from '@/lib/auth/jwt'
 
 export async function GET(request: NextRequest) {
   try {
     const auth = getAuthenticatedUser(request)
-    if (!auth.isValid) {
+    if (!auth.isValid || !auth.sub) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-    if (auth.userType && auth.userType !== 'doctor') {
+    if (auth.userType && auth.userType !== 'doctor' && auth.userType !== 'admin') {
       return NextResponse.json({ message: 'Forbidden: Doctor role required' }, { status: 403 })
     }
 
-    const doctorId = request.nextUrl.searchParams.get('doctorId')
+    // Canonical doctor ID is the Cognito Auth ID
+    const requestedDoctorId = request.nextUrl.searchParams.get('doctorId')
+    const canonicalDoctorId = auth.sub
 
-    if (!doctorId) {
-      return NextResponse.json({ message: 'doctorId is required' }, { status: 400 })
+    let doctorId = canonicalDoctorId
+    if (auth.userType === 'admin' && requestedDoctorId) {
+      doctorId = requestedDoctorId
     }
 
-    const callerId = auth.dbId || auth.sub
-    if (callerId && callerId !== doctorId) {
-      return NextResponse.json({ message: 'Forbidden: Cannot access another doctor dashboard' }, { status: 403 })
+    // If a non-admin requests a specific doctorId, ensure it matches their auth ID or legacy record
+    if (auth.userType === 'doctor' && requestedDoctorId && requestedDoctorId !== canonicalDoctorId) {
+      const legacyDoc = await getDoctorById(requestedDoctorId)
+      if (legacyDoc && legacyDoc.email?.toLowerCase() === auth.email?.toLowerCase()) {
+        await migrateDoctorId(requestedDoctorId, canonicalDoctorId)
+      } else {
+        return NextResponse.json({ message: 'Forbidden: Cannot access another doctor dashboard' }, { status: 403 })
+      }
     }
 
-    const [doctor, linkedPatients, pendingPatients, sessions] = await Promise.all([
-      getDoctorById(doctorId),
+    let doctor = await getDoctorById(doctorId)
+    if (!doctor && auth.email) {
+      const legacyDoctor = await getDoctorByEmail(auth.email.trim().toLowerCase())
+      if (legacyDoctor) {
+        doctor = await migrateDoctorId(legacyDoctor.id, doctorId)
+      }
+    }
+
+    if (!doctor) {
+      return NextResponse.json({ message: 'Doctor not found' }, { status: 404 })
+    }
+
+    const [linkedPatients, pendingPatients, sessions] = await Promise.all([
       getPatientsByDoctor(doctorId),
       getPendingPatientsByDoctor(doctorId),
       getSessionsByDoctor(doctorId),
@@ -41,10 +67,6 @@ export async function GET(request: NextRequest) {
       if (!patientMap.has(p.id)) patientMap.set(p.id, p)
     })
     const patients = Array.from(patientMap.values())
-
-    if (!doctor) {
-      return NextResponse.json({ message: 'Doctor not found' }, { status: 404 })
-    }
 
     // Enforce credential verification: pending or rejected accounts cannot access clinical dashboard
     if (doctor.verificationStatus === 'pending') {
@@ -82,7 +104,7 @@ export async function GET(request: NextRequest) {
 
     const doctorWithCareCode = {
       ...doctor,
-      careCode: doctor.careCode || (doctor.id ? `NOA-${doctor.id.replace('doctor-', '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase()}` : 'NOA-DOC'),
+      careCode: doctor.careCode || (doctor.id ? `NOA-${doctor.id.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase()}` : 'NOA-DOC'),
     }
 
     const dashboard: DoctorDashboardPayload = {

@@ -19,8 +19,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const callerId = auth.dbId || auth.sub
-    if (auth.userType === 'doctor' && callerId && callerId !== doctorId) {
+    if (auth.userType === 'doctor' && doctorId !== auth.sub) {
       return NextResponse.json({ error: 'Forbidden: Cannot manage sessions for another doctor' }, { status: 403 })
     }
 
@@ -77,8 +76,6 @@ export async function GET(request: NextRequest) {
     const sessionId = request.nextUrl.searchParams.get('sessionId')
     const doctorId = request.nextUrl.searchParams.get('doctorId')
     const patientId = request.nextUrl.searchParams.get('patientId')
-    const callerId = auth.dbId || auth.sub
-
     if (sessionId) {
       const session = await getSessionById(sessionId)
       if (!session) {
@@ -86,8 +83,9 @@ export async function GET(request: NextRequest) {
       }
       // BOLA check: only the session's doctor or patient can view it
       if (
-        callerId !== session.doctorId &&
-        callerId !== session.patientId
+        auth.sub !== session.doctorId &&
+        auth.sub !== session.patientId &&
+        auth.userType !== 'admin'
       ) {
         return NextResponse.json({ error: 'Forbidden: Access denied to this session' }, { status: 403 })
       }
@@ -108,12 +106,12 @@ export async function GET(request: NextRequest) {
     let sessions: Session[] = []
 
     if (doctorId) {
-      if (auth.userType === 'doctor' && callerId !== doctorId) {
+      if (auth.userType === 'doctor' && doctorId !== auth.sub) {
         return NextResponse.json({ error: 'Forbidden: Cannot list sessions for another doctor' }, { status: 403 })
       }
       sessions = await getSessionsByDoctor(doctorId)
     } else if (patientId) {
-      if (auth.userType === 'patient' && callerId !== patientId) {
+      if (auth.userType === 'patient' && patientId !== auth.sub) {
         return NextResponse.json({ error: 'Forbidden: Cannot list sessions for another patient' }, { status: 403 })
       }
       sessions = await getSessionsByPatient(patientId)

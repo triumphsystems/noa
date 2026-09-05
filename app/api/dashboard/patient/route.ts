@@ -3,6 +3,8 @@ import type { ApiSuccess } from '@/lib/types/api.types'
 import type { PatientDashboardPayload } from '@/lib/types/patient.types'
 import {
   getPatientById,
+  getPatientByEmail,
+  migratePatientId,
   getDoctorById,
   getSessionsByPatient,
   getIntakeById,
@@ -13,26 +15,42 @@ import { getAuthenticatedUser } from '@/lib/auth/jwt'
 export async function GET(request: NextRequest) {
   try {
     const auth = getAuthenticatedUser(request)
-    if (!auth.isValid) {
+    if (!auth.isValid || !auth.sub) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-    const patientId = request.nextUrl.searchParams.get('patientId')
+    const requestedPatientId = request.nextUrl.searchParams.get('patientId')
+    const canonicalPatientId = auth.sub
+
+    let patientId = requestedPatientId || (auth.userType === 'patient' ? canonicalPatientId : null)
 
     if (!patientId) {
       return NextResponse.json({ message: 'patientId is required' }, { status: 400 })
     }
 
-    const patient = await getPatientById(patientId)
+    if (auth.userType === 'patient' && patientId !== canonicalPatientId) {
+      const legacyPatient = await getPatientById(patientId)
+      if (legacyPatient && legacyPatient.email?.toLowerCase() === auth.email?.toLowerCase()) {
+        await migratePatientId(patientId, canonicalPatientId)
+        patientId = canonicalPatientId
+      } else {
+        return NextResponse.json({ message: 'Forbidden: Cannot access another patient dashboard' }, { status: 403 })
+      }
+    }
+
+    let patient = await getPatientById(patientId)
+    if (!patient && auth.userType === 'patient' && auth.email) {
+      const legacyPatient = await getPatientByEmail(auth.email.trim().toLowerCase())
+      if (legacyPatient) {
+        patient = await migratePatientId(legacyPatient.id, canonicalPatientId)
+      }
+    }
+
     if (!patient) {
       return NextResponse.json({ message: 'Patient not found' }, { status: 404 })
     }
 
-    const callerId = auth.dbId || auth.sub
-    if (auth.userType === 'patient' && callerId && callerId !== patientId) {
-      return NextResponse.json({ message: 'Forbidden: Cannot access another patient dashboard' }, { status: 403 })
-    }
-    if (auth.userType === 'doctor' && callerId && patient.doctorId && patient.doctorId !== callerId) {
+    if (auth.userType === 'doctor' && patient.doctorId && patient.doctorId !== auth.sub) {
       return NextResponse.json({ message: 'Forbidden: Cannot access a patient assigned to another doctor' }, { status: 403 })
     }
 

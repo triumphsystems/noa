@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Forbidden: Doctor role required' }, { status: 403 })
     }
 
-    const doctorId = auth.dbId || auth.sub
+    const doctorId = auth.sub
     if (!doctorId) {
       return NextResponse.json({ message: 'Doctor ID missing from auth token' }, { status: 400 })
     }

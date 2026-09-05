@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const resolvedUserId = userAuth.dbId || userAuth.sub
+    const resolvedUserId = userAuth.sub
     const context: ExecutionContext = {
       userId: resolvedUserId,
       userType: userAuth.userType as 'doctor' | 'patient' | 'system' | undefined,

@@ -19,8 +19,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const callerId = auth.dbId || auth.sub
-    if (auth.userType === 'patient' && callerId && callerId !== patientId) {
+    if (auth.userType === 'patient' && patientId !== auth.sub) {
       return NextResponse.json({ error: 'Forbidden: Cannot submit intake for another patient' }, { status: 403 })
     }
 
@@ -68,8 +67,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const callerId = auth.dbId || auth.sub
-    if (auth.userType === 'patient' && callerId && callerId !== patientId) {
+    if (auth.userType === 'patient' && patientId !== auth.sub) {
       return NextResponse.json({ error: 'Forbidden: Cannot view another patient intake' }, { status: 403 })
     }
 

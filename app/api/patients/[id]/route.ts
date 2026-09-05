@@ -27,11 +27,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       )
     }
 
-    const callerId = auth.dbId || auth.sub
-    if (auth.userType === 'patient' && callerId && callerId !== id) {
+    if (auth.userType === 'patient' && id !== auth.sub) {
       return NextResponse.json({ error: 'Forbidden: Cannot access another patient record' }, { status: 403 })
     }
-    if (auth.userType === 'doctor' && callerId && patient.doctorId && patient.doctorId !== callerId) {
+
+    if (auth.userType === 'doctor' && patient.doctorId && patient.doctorId !== auth.sub) {
       return NextResponse.json({ error: 'Forbidden: Cannot access patient assigned to another doctor' }, { status: 403 })
     }
 
