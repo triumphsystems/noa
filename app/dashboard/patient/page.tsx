@@ -151,11 +151,11 @@ export default function PatientDashboardPage() {
     return (
       <div className="min-h-screen bg-[#f9fbf2] pb-24">
         {/* App bar skeleton */}
-        <div className="bg-white/80 backdrop-blur-md border-b border-deep-ink/5 p-4 max-w-xl mx-auto flex items-center justify-between">
+        <div className="bg-white/80 backdrop-blur-md border-b border-deep-ink/5 p-4 w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <div className="h-6 w-28 bg-deep-ink/10 rounded-full animate-pulse" />
           <div className="w-9 h-9 bg-deep-ink/10 rounded-full animate-pulse" />
         </div>
-        <div className="p-4 max-w-xl mx-auto space-y-4 pt-4 animate-pulse">
+        <div className="p-4 sm:p-6 lg:p-8 w-full space-y-4 pt-4 animate-pulse">
           <div className="h-32 bg-white rounded-2xl shadow-2xs border border-deep-ink/5" />
           <div className="grid grid-cols-3 gap-2.5">
             <div className="h-20 bg-white rounded-xl shadow-2xs border border-deep-ink/5" />
@@ -196,9 +196,9 @@ export default function PatientDashboardPage() {
   return (
     <div className="min-h-screen bg-[#f9fbf2] text-deep-ink font-sans antialiased pb-28 select-none-headers">
       {/* ============================================================ */}
-      {/* Active Screen Content Container (Responsive max-w)           */}
+      {/* Active Screen Content Container (Full width on desktop)      */}
       {/* ============================================================ */}
-      <main className="max-w-xl lg:max-w-5xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 space-y-5">
+      <main className="w-full px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 space-y-5 lg:space-y-6">
         {/* Top Page Action & Greeting Bar (Single clean header) */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
           <div className="flex items-center gap-3">
@@ -695,7 +695,7 @@ export default function PatientDashboardPage() {
                   </div>
 
                   {/* Doctor practice info grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl bg-soft-meadow/50 border border-deep-ink/5 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-3.5 sm:p-4 rounded-xl bg-soft-meadow/50 border border-deep-ink/5 text-xs">
                     <div>
                       <span className="text-slate text-[11px] block">Clinic / Hospital</span>
                       <span className="font-semibold text-deep-ink truncate block">
@@ -720,7 +720,7 @@ export default function PatientDashboardPage() {
                     </div>
 
                     {doctor?.email && (
-                      <div className="sm:col-span-2 flex items-center gap-1.5 text-slate pt-1 border-t border-deep-ink/5">
+                      <div className="sm:col-span-2 lg:col-span-1 flex items-center gap-1.5 text-slate pt-1 sm:pt-0 border-t sm:border-t-0 lg:border-t-0 border-deep-ink/5">
                         <Mail className="w-3.5 h-3.5 text-slate/70" />
                         <span className="truncate">{doctor.email}</span>
                       </div>

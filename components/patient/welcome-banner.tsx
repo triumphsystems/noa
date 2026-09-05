@@ -16,7 +16,7 @@ export function WelcomeBanner({ name, hasDoctor, doctorName }: WelcomeBannerProp
           <h2 className="text-2xl sm:text-3xl font-bold font-serif mb-2 text-deep-ink">
             Welcome back, {name || 'Patient'}
           </h2>
-          <p className="text-slate text-xs sm:text-sm max-w-xl">
+          <p className="text-slate text-xs sm:text-sm max-w-3xl">
             {hasDoctor && doctorName
               ? `Your care team is led by ${doctorName}. Review consultation summaries, care plans, and health records.`
               : 'Access your consultation summaries, review your care plans, and keep track of your prescribed medications.'}
