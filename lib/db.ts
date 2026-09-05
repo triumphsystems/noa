@@ -197,29 +197,48 @@ export async function getDoctorByEmail(email: string): Promise<Doctor | null> {
 }
 
 export async function updateDoctor(id: string, updates: Partial<Doctor>): Promise<Doctor | null> {
-  const expressionParts: string[] = []
+  const setParts: string[] = []
+  const removeParts: string[] = []
   const expressionAttributeNames: Record<string, string> = {}
   const expressionAttributeValues: Record<string, any> = {}
 
   Object.entries(updates).forEach(([key, value]) => {
-    if (key !== 'id' && key !== 'type' && key !== 'createdAt') {
-      expressionParts.push(`#${key} = :${key}`)
+    if (key === 'id' || key === 'type' || key === 'createdAt') return
+
+    // Skip undefined fields entirely
+    if (value === undefined) return
+
+    // If explicitly null, remove attribute from DynamoDB item
+    if (value === null) {
+      removeParts.push(`#${key}`)
       expressionAttributeNames[`#${key}`] = key
-      expressionAttributeValues[`:${key}`] = value
+      return
     }
+
+    setParts.push(`#${key} = :${key}`)
+    expressionAttributeNames[`#${key}`] = key
+    expressionAttributeValues[`:${key}`] = value
   })
 
-  expressionParts.push('#updatedAt = :updatedAt')
+  setParts.push('#updatedAt = :updatedAt')
   expressionAttributeNames['#updatedAt'] = 'updatedAt'
   expressionAttributeValues[':updatedAt'] = Date.now()
+
+  const updateExpressions: string[] = []
+  if (setParts.length > 0) {
+    updateExpressions.push(`SET ${setParts.join(', ')}`)
+  }
+  if (removeParts.length > 0) {
+    updateExpressions.push(`REMOVE ${removeParts.join(', ')}`)
+  }
 
   const result = await docClient.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
       Key: { [PK]: id, [SK]: 'doctor' },
-      UpdateExpression: `SET ${expressionParts.join(', ')}`,
+      UpdateExpression: updateExpressions.join(' '),
       ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
+      ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
       ReturnValues: 'ALL_NEW',
     }),
   )
@@ -333,13 +352,24 @@ export async function updateDoctorVerification(
   adminId: string,
   rejectionReason?: string
 ): Promise<Doctor | null> {
-  const updates: Partial<Doctor> = {
+  const updates: Record<string, any> = {
     verificationStatus: status,
     verifiedBy: adminId,
-    verifiedAt: status === 'verified' ? Date.now() : undefined,
-    rejectionReason: status === 'rejected' ? rejectionReason : undefined,
   }
-  return updateDoctor(id, updates)
+
+  if (status === 'verified') {
+    updates.verifiedAt = Date.now()
+    updates.rejectionReason = null // Clears any previous rejection note cleanly
+  } else if (status === 'rejected') {
+    updates.rejectionReason =
+      rejectionReason?.trim() || 'Medical credentials could not be verified with the issuing authority.'
+    updates.verifiedAt = null // Clears verified timestamp cleanly
+  } else {
+    updates.rejectionReason = null
+    updates.verifiedAt = null
+  }
+
+  return updateDoctor(id, updates as Partial<Doctor>)
 }
 
 // ============ PATIENT OPERATIONS ============
@@ -471,29 +501,40 @@ export async function getPendingPatientsByDoctor(doctorId: string): Promise<Pati
 }
 
 export async function updatePatient(id: string, updates: Partial<Patient>): Promise<Patient | null> {
-  const expressionParts: string[] = []
+  const setParts: string[] = []
+  const removeParts: string[] = []
   const expressionAttributeNames: Record<string, string> = {}
   const expressionAttributeValues: Record<string, any> = {}
 
   Object.entries(updates).forEach(([key, value]) => {
-    if (key !== 'id' && key !== 'type' && key !== 'createdAt') {
-      expressionParts.push(`#${key} = :${key}`)
+    if (key === 'id' || key === 'type' || key === 'createdAt') return
+    if (value === undefined) return
+    if (value === null) {
+      removeParts.push(`#${key}`)
       expressionAttributeNames[`#${key}`] = key
-      expressionAttributeValues[`:${key}`] = value
+      return
     }
+
+    setParts.push(`#${key} = :${key}`)
+    expressionAttributeNames[`#${key}`] = key
+    expressionAttributeValues[`:${key}`] = value
   })
 
-  expressionParts.push('#updatedAt = :updatedAt')
+  setParts.push('#updatedAt = :updatedAt')
   expressionAttributeNames['#updatedAt'] = 'updatedAt'
   expressionAttributeValues[':updatedAt'] = Date.now()
+
+  const updateExpressions: string[] = []
+  if (setParts.length > 0) updateExpressions.push(`SET ${setParts.join(', ')}`)
+  if (removeParts.length > 0) updateExpressions.push(`REMOVE ${removeParts.join(', ')}`)
 
   const result = await docClient.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
       Key: { [PK]: id, [SK]: 'patient' },
-      UpdateExpression: `SET ${expressionParts.join(', ')}`,
+      UpdateExpression: updateExpressions.join(' '),
       ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
+      ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
       ReturnValues: 'ALL_NEW',
     }),
   )
@@ -583,35 +624,46 @@ export async function getSessionsByPatient(patientId: string): Promise<Session[]
 }
 
 export async function updateSession(id: string, updates: Partial<Session>): Promise<Session | null> {
-  const expressionParts: string[] = []
+  const setParts: string[] = []
+  const removeParts: string[] = []
   const expressionAttributeNames: Record<string, string> = {}
   const expressionAttributeValues: Record<string, any> = {}
 
   Object.entries(updates).forEach(([key, value]) => {
-    if (key !== 'id' && key !== 'type' && key !== 'createdAt') {
-      if (key === 'soapNote') {
-        expressionParts.push(`#soapNote = :soapNote`)
-        expressionAttributeNames['#soapNote'] = 'soapNote'
-        expressionAttributeValues[':soapNote'] = value
-      } else {
-        expressionParts.push(`#${key} = :${key}`)
-        expressionAttributeNames[`#${key}`] = key
-        expressionAttributeValues[`:${key}`] = value
-      }
+    if (key === 'id' || key === 'type' || key === 'createdAt') return
+    if (value === undefined) return
+    if (value === null) {
+      removeParts.push(`#${key}`)
+      expressionAttributeNames[`#${key}`] = key
+      return
+    }
+
+    if (key === 'soapNote') {
+      setParts.push(`#soapNote = :soapNote`)
+      expressionAttributeNames['#soapNote'] = 'soapNote'
+      expressionAttributeValues[':soapNote'] = value
+    } else {
+      setParts.push(`#${key} = :${key}`)
+      expressionAttributeNames[`#${key}`] = key
+      expressionAttributeValues[`:${key}`] = value
     }
   })
 
-  expressionParts.push('#updatedAt = :updatedAt')
+  setParts.push('#updatedAt = :updatedAt')
   expressionAttributeNames['#updatedAt'] = 'updatedAt'
   expressionAttributeValues[':updatedAt'] = Date.now()
+
+  const updateExpressions: string[] = []
+  if (setParts.length > 0) updateExpressions.push(`SET ${setParts.join(', ')}`)
+  if (removeParts.length > 0) updateExpressions.push(`REMOVE ${removeParts.join(', ')}`)
 
   const result = await docClient.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
       Key: { [PK]: id, [SK]: 'session' },
-      UpdateExpression: `SET ${expressionParts.join(', ')}`,
+      UpdateExpression: updateExpressions.join(' '),
       ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
+      ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
       ReturnValues: 'ALL_NEW',
     }),
   )
@@ -670,29 +722,40 @@ export async function getIntakesByPatient(patientId: string): Promise<PatientInt
 }
 
 export async function updateIntake(id: string, updates: Partial<PatientIntake>): Promise<PatientIntake | null> {
-  const expressionParts: string[] = []
+  const setParts: string[] = []
+  const removeParts: string[] = []
   const expressionAttributeNames: Record<string, string> = {}
   const expressionAttributeValues: Record<string, any> = {}
 
   Object.entries(updates).forEach(([key, value]) => {
-    if (key !== 'id' && key !== 'type' && key !== 'createdAt') {
-      expressionParts.push(`#${key} = :${key}`)
+    if (key === 'id' || key === 'type' || key === 'createdAt') return
+    if (value === undefined) return
+    if (value === null) {
+      removeParts.push(`#${key}`)
       expressionAttributeNames[`#${key}`] = key
-      expressionAttributeValues[`:${key}`] = value
+      return
     }
+
+    setParts.push(`#${key} = :${key}`)
+    expressionAttributeNames[`#${key}`] = key
+    expressionAttributeValues[`:${key}`] = value
   })
 
-  expressionParts.push('#updatedAt = :updatedAt')
+  setParts.push('#updatedAt = :updatedAt')
   expressionAttributeNames['#updatedAt'] = 'updatedAt'
   expressionAttributeValues[':updatedAt'] = Date.now()
+
+  const updateExpressions: string[] = []
+  if (setParts.length > 0) updateExpressions.push(`SET ${setParts.join(', ')}`)
+  if (removeParts.length > 0) updateExpressions.push(`REMOVE ${removeParts.join(', ')}`)
 
   const result = await docClient.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
       Key: { [PK]: id, [SK]: 'intake' },
-      UpdateExpression: `SET ${expressionParts.join(', ')}`,
+      UpdateExpression: updateExpressions.join(' '),
       ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
+      ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
       ReturnValues: 'ALL_NEW',
     }),
   )

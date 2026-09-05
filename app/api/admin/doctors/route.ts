@@ -31,16 +31,22 @@ export async function GET(request: NextRequest) {
 
     const statusParam = request.nextUrl.searchParams.get('status') as DoctorVerificationStatus | null
 
-    let doctors = []
-    if (statusParam && ['pending', 'verified', 'rejected'].includes(statusParam)) {
-      doctors = await getDoctorsByVerificationStatus(statusParam)
-    } else {
-      doctors = await getAllDoctors()
+    const allDoctors = await getAllDoctors()
+    const counts = {
+      pending: allDoctors.filter(d => (d.verificationStatus || 'pending') === 'pending').length,
+      verified: allDoctors.filter(d => d.verificationStatus === 'verified').length,
+      rejected: allDoctors.filter(d => d.verificationStatus === 'rejected').length,
+      total: allDoctors.length,
     }
+
+    const doctors = statusParam && ['pending', 'verified', 'rejected'].includes(statusParam)
+      ? allDoctors.filter(d => (d.verificationStatus || 'pending') === statusParam)
+      : allDoctors
 
     return NextResponse.json({
       success: true,
       count: doctors.length,
+      counts,
       doctors: doctors.map(doc => ({
         id: doc.id,
         name: doc.name,
@@ -63,7 +69,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('[Admin API] Error listing doctors:', error?.message)
     return NextResponse.json(
-      { message: error?.message || 'Failed to list doctors' },
+      { message: 'Failed to retrieve clinicians registry. Please check server logs or refresh.' },
       { status: 500 }
     )
   }
