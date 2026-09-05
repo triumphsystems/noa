@@ -36,6 +36,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { BottomNav } from '@/components/navigation/bottom-nav'
 
 interface DoctorItem {
   id: string
@@ -370,42 +371,40 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8faf9] flex flex-col font-sans text-slate-800 antialiased selection:bg-teal-100 selection:text-teal-900">
-      {/* Top Admin Navigation Header */}
-      <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-4 sm:px-8 py-3.5 transition-shadow">
+    <div className="min-h-screen bg-canvas text-deep-ink flex flex-col font-sans antialiased selection:bg-hi-yellow selection:text-deep-ink">
+      {/* Top Admin Navigation Header (Harmonized with Noa Brand) */}
+      <header className="bg-white/85 backdrop-blur-md border-b border-deep-ink/10 sticky top-0 z-30 px-4 sm:px-8 py-3.5 transition-shadow">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           {/* Brand & Console Title */}
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-600 to-teal-800 text-white flex items-center justify-center shadow-xs ring-1 ring-teal-700/20">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
+          <div className="flex items-center gap-3">
+            <img src="/logo.svg" alt="Noa Logo" className="w-9 h-9 rounded-xl shadow-2xs shrink-0" />
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-serif font-bold text-slate-900 tracking-tight text-lg">Noa</span>
-                <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-teal-50 text-teal-800 rounded-full border border-teal-200/80">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-serif font-bold text-deep-ink tracking-tight text-xl">Noa</span>
+                <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-soft-meadow text-deep-ink rounded-full border border-deep-ink/10">
                   Superadmin Console
                 </span>
-                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-emerald-50 text-emerald-700 rounded-md border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Gateway
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-medium bg-canvas text-deep-ink/80 rounded-full border border-deep-ink/10">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                  Clinical Governance Gateway
                 </span>
               </div>
-              <p className="text-xs text-slate-500 font-medium">Clinician Verification & Medical Practice Governance</p>
+              <p className="text-xs text-slate mt-0.5 font-medium">Clinician Verification & Medical Practice Governance</p>
             </div>
           </div>
 
           {/* Right Controls: User Profile, CSV Export, Refresh, Logout */}
-          <div className="flex items-center gap-2.5 self-end sm:self-auto flex-wrap">
+          <div className="flex items-center gap-2 self-stretch sm:self-auto justify-between sm:justify-end flex-wrap">
             {/* Admin identity pill */}
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200/70 text-xs">
-              <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-[10px]">
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-soft-meadow rounded-xl border border-deep-ink/10 text-xs">
+              <div className="w-6 h-6 rounded-full bg-white text-deep-ink font-serif font-bold flex items-center justify-center text-[10px] border border-deep-ink/10">
                 {adminUser?.name ? getDoctorInitials(adminUser.name) : 'SA'}
               </div>
               <div className="text-left">
-                <span className="font-semibold text-slate-800 block truncate max-w-[130px]">
+                <span className="font-semibold text-deep-ink block truncate max-w-[130px]">
                   {adminUser?.name || 'Administrator'}
                 </span>
-                <span className="text-[10px] text-slate-500 block">Admins Cognito Group</span>
+                <span className="text-[10px] text-slate block">Admins Cognito Group</span>
               </div>
             </div>
 
@@ -415,10 +414,10 @@ export default function AdminDashboardPage() {
               size="sm"
               onClick={handleExportCSV}
               disabled={loading || doctors.length === 0}
-              className="gap-1.5 text-xs text-slate-700 border-slate-200 hover:bg-slate-50 h-9"
+              className="gap-1.5 text-xs text-deep-ink border-deep-ink/10 bg-white hover:bg-soft-meadow h-9 shadow-editorial"
               title="Download full clinician audit log as CSV"
             >
-              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <Download className="w-3.5 h-3.5 text-slate" />
               <span className="hidden sm:inline">Export Audit</span>
             </Button>
 
@@ -428,10 +427,10 @@ export default function AdminDashboardPage() {
               size="sm"
               onClick={fetchDoctors}
               disabled={refreshing}
-              className="gap-1.5 text-xs text-slate-700 border-slate-200 hover:bg-slate-50 h-9"
+              className="gap-1.5 text-xs text-deep-ink border-deep-ink/10 bg-white hover:bg-soft-meadow h-9 shadow-editorial"
               title={`Last refreshed: ${lastUpdated.toLocaleTimeString()}`}
             >
-              <RefreshCw className={cn('w-3.5 h-3.5 text-slate-500', refreshing && 'animate-spin text-teal-600')} />
+              <RefreshCw className={cn('w-3.5 h-3.5 text-slate', refreshing && 'animate-spin text-deep-ink')} />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
 
@@ -450,18 +449,18 @@ export default function AdminDashboardPage() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3.5 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 pb-28 lg:pb-8">
         {/* Notification Banner with Smooth Presentation */}
         {notification && (
           <div
             className={cn(
-              'p-4 rounded-xl text-sm flex items-start justify-between gap-3 shadow-xs border transition-all animate-in fade-in slide-in-from-top-2',
+              'p-3.5 sm:p-4 rounded-xl text-xs sm:text-sm flex items-start justify-between gap-3 shadow-xs border transition-all animate-in fade-in slide-in-from-top-2 break-words',
               notification.type === 'success' && 'bg-emerald-50 text-emerald-900 border-emerald-200',
               notification.type === 'error' && 'bg-rose-50 text-rose-900 border-rose-200',
               notification.type === 'info' && 'bg-teal-50 text-teal-900 border-teal-200'
             )}
           >
-            <div className="flex items-start gap-2.5">
+            <div className="flex items-start gap-2.5 min-w-0 flex-1">
               {notification.type === 'success' && (
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
               )}
@@ -471,16 +470,16 @@ export default function AdminDashboardPage() {
               {notification.type === 'info' && (
                 <Info className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
               )}
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="font-semibold text-xs tracking-wide uppercase opacity-80">
                   {notification.type === 'success' ? 'Action Completed' : notification.type === 'error' ? 'Validation Notice' : 'System Notice'}
                 </p>
-                <p className="mt-0.5 text-sm leading-relaxed">{notification.message}</p>
+                <p className="mt-0.5 text-xs sm:text-sm leading-relaxed break-words">{notification.message}</p>
               </div>
             </div>
             <button
               onClick={() => setNotification(null)}
-              className="text-slate-400 hover:text-slate-700 p-1 rounded-md hover:bg-black/5 cursor-pointer transition-colors"
+              className="text-slate-400 hover:text-slate-700 p-1 rounded-md hover:bg-black/5 cursor-pointer transition-colors shrink-0"
               aria-label="Dismiss notification"
             >
               <X className="w-4 h-4" />
@@ -488,39 +487,39 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Executive KPI Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Executive KPI Metric Cards (Compact 2x2 on Mobile, 4 columns on Desktop) */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           {/* Card 1: Pending */}
           <div
             onClick={() => setActiveTab('pending')}
             role="button"
             tabIndex={0}
             className={cn(
-              'p-5 rounded-2xl border transition-all cursor-pointer bg-white text-left relative overflow-hidden group',
+              'p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border transition-all cursor-pointer bg-white text-left relative overflow-hidden group shadow-editorial',
               activeTab === 'pending'
-                ? 'border-amber-400 shadow-md ring-2 ring-amber-400/20 bg-amber-50/20'
-                : 'border-slate-200/90 hover:border-slate-300 hover:shadow-xs'
+                ? 'border-deep-ink ring-2 ring-deep-ink/10 shadow-editorial-elevated bg-amber-50/20'
+                : 'border-deep-ink/8 hover:border-deep-ink/20 hover:shadow-editorial-elevated'
             )}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate truncate">
                 Pending Review
               </span>
-              <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
-                <Clock className="w-4 h-4" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-100/80 text-amber-800 flex items-center justify-center shrink-0">
+                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-bold font-serif text-slate-900">{counts.pending}</span>
+            <div className="mt-2 sm:mt-3 flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
+              <span className="text-2xl sm:text-3xl font-medium font-serif text-deep-ink">{counts.pending}</span>
               {counts.pending > 0 && (
-                <span className="text-[11px] font-semibold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded-full">
-                  Action Required
+                <span className="text-[10px] sm:text-[11px] font-semibold text-amber-900 bg-amber-200/50 px-1.5 py-0.2 sm:px-2 sm:py-0.5 rounded-full border border-amber-300/40">
+                  Action
                 </span>
               )}
             </div>
-            <p className="mt-1.5 text-xs text-slate-500">Awaiting medical credential check</p>
+            <p className="mt-1 text-[11px] sm:text-xs text-slate truncate">Awaiting review</p>
             {activeTab === 'pending' && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-amber-500" />
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-deep-ink" />
             )}
           </div>
 
@@ -530,29 +529,29 @@ export default function AdminDashboardPage() {
             role="button"
             tabIndex={0}
             className={cn(
-              'p-5 rounded-2xl border transition-all cursor-pointer bg-white text-left relative overflow-hidden group',
+              'p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border transition-all cursor-pointer bg-white text-left relative overflow-hidden group shadow-editorial',
               activeTab === 'verified'
-                ? 'border-emerald-500 shadow-md ring-2 ring-emerald-500/20 bg-emerald-50/20'
-                : 'border-slate-200/90 hover:border-slate-300 hover:shadow-xs'
+                ? 'border-deep-ink ring-2 ring-deep-ink/10 shadow-editorial-elevated bg-emerald-50/20'
+                : 'border-deep-ink/8 hover:border-deep-ink/20 hover:shadow-editorial-elevated'
             )}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Verified Clinicians
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate truncate">
+                Verified
               </span>
-              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                <CheckCircle2 className="w-4 h-4" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-100/80 text-emerald-800 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-bold font-serif text-slate-900">{counts.verified}</span>
-              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">
+            <div className="mt-2 sm:mt-3 flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
+              <span className="text-2xl sm:text-3xl font-medium font-serif text-deep-ink">{counts.verified}</span>
+              <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 sm:px-2 sm:py-0.5 rounded-full border border-emerald-200">
                 Active
               </span>
             </div>
-            <p className="mt-1.5 text-xs text-slate-500">Active licensed practice privileges</p>
+            <p className="mt-1 text-[11px] sm:text-xs text-slate truncate">Active licensed</p>
             {activeTab === 'verified' && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-600" />
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-deep-ink" />
             )}
           </div>
 
@@ -562,31 +561,31 @@ export default function AdminDashboardPage() {
             role="button"
             tabIndex={0}
             className={cn(
-              'p-5 rounded-2xl border transition-all cursor-pointer bg-white text-left relative overflow-hidden group',
+              'p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border transition-all cursor-pointer bg-white text-left relative overflow-hidden group shadow-editorial',
               activeTab === 'rejected'
-                ? 'border-rose-400 shadow-md ring-2 ring-rose-400/20 bg-rose-50/20'
-                : 'border-slate-200/90 hover:border-slate-300 hover:shadow-xs'
+                ? 'border-deep-ink ring-2 ring-deep-ink/10 shadow-editorial-elevated bg-rose-50/20'
+                : 'border-deep-ink/8 hover:border-deep-ink/20 hover:shadow-editorial-elevated'
             )}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Rejected / Revoked
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate truncate">
+                Revoked
               </span>
-              <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
-                <XCircle className="w-4 h-4" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-100/80 text-rose-800 flex items-center justify-center shrink-0">
+                <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-bold font-serif text-slate-900">{counts.rejected}</span>
+            <div className="mt-2 sm:mt-3 flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
+              <span className="text-2xl sm:text-3xl font-medium font-serif text-deep-ink">{counts.rejected}</span>
               {counts.rejected > 0 && (
-                <span className="text-[11px] font-semibold text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] sm:text-[11px] font-semibold text-rose-800 bg-rose-100 px-1.5 py-0.2 sm:px-2 sm:py-0.5 rounded-full border border-rose-200">
                   Restricted
                 </span>
               )}
             </div>
-            <p className="mt-1.5 text-xs text-slate-500">Revoked or denied clinical privileges</p>
+            <p className="mt-1 text-[11px] sm:text-xs text-slate truncate">Revoked access</p>
             {activeTab === 'rejected' && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-rose-500" />
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-deep-ink" />
             )}
           </div>
 
@@ -596,50 +595,50 @@ export default function AdminDashboardPage() {
             role="button"
             tabIndex={0}
             className={cn(
-              'p-5 rounded-2xl border transition-all cursor-pointer bg-white text-left relative overflow-hidden group',
+              'p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border transition-all cursor-pointer bg-white text-left relative overflow-hidden group shadow-editorial',
               activeTab === 'all'
-                ? 'border-teal-600 shadow-md ring-2 ring-teal-600/20 bg-teal-50/20'
-                : 'border-slate-200/90 hover:border-slate-300 hover:shadow-xs'
+                ? 'border-deep-ink ring-2 ring-deep-ink/10 shadow-editorial-elevated bg-soft-meadow/40'
+                : 'border-deep-ink/8 hover:border-deep-ink/20 hover:shadow-editorial-elevated'
             )}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Total Practitioners
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate truncate">
+                Total
               </span>
-              <div className="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center">
-                <Users className="w-4 h-4" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-soft-meadow text-deep-ink flex items-center justify-center shrink-0 border border-deep-ink/10">
+                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-bold font-serif text-slate-900">{counts.total}</span>
-              <span className="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
-                All Records
+            <div className="mt-2 sm:mt-3 flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
+              <span className="text-2xl sm:text-3xl font-medium font-serif text-deep-ink">{counts.total}</span>
+              <span className="text-[10px] sm:text-[11px] font-medium text-slate bg-soft-meadow px-1.5 py-0.2 sm:px-2 sm:py-0.5 rounded-full border border-deep-ink/10">
+                All
               </span>
             </div>
-            <p className="mt-1.5 text-xs text-slate-500">Registered across healthcare centers</p>
+            <p className="mt-1 text-[11px] sm:text-xs text-slate truncate">All clinicians</p>
             {activeTab === 'all' && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-teal-600" />
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-deep-ink" />
             )}
           </div>
         </div>
 
         {/* Command Toolbar: Search, Specialty Filter, Sort, Status Segmented Tabs */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-3.5">
+        <div className="bg-white p-4 rounded-2xl border border-deep-ink/8 shadow-editorial space-y-3.5">
           <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
             {/* Search Input with Clear Button */}
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate" />
               <input
                 type="text"
                 placeholder="Search by name, email, clinic, license #, or care code..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-9 py-2 rounded-xl border border-slate-200 bg-slate-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600/40 focus:bg-white transition-all text-slate-900 placeholder:text-slate-400"
+                className="w-full pl-10 pr-9 py-2 rounded-xl border border-deep-ink/10 bg-canvas text-sm focus:outline-none focus:ring-2 focus:ring-deep-ink/20 focus:bg-white transition-all text-deep-ink placeholder:text-slate/60"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate hover:text-deep-ink p-0.5 rounded cursor-pointer"
                   title="Clear search"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -651,12 +650,12 @@ export default function AdminDashboardPage() {
             <div className="flex items-center gap-2.5 flex-wrap">
               {/* Specialty Dropdown */}
               {specialties.length > 0 && (
-                <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                <div className="flex items-center gap-1.5 text-xs text-slate">
                   <select
                     value={specialtyFilter}
                     onChange={e => setSpecialtyFilter(e.target.value)}
                     aria-label="Filter by specialty"
-                    className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-600/40 cursor-pointer"
+                    className="px-3 py-2 rounded-xl border border-deep-ink/10 bg-canvas text-xs text-deep-ink focus:outline-none focus:ring-2 focus:ring-deep-ink/20 cursor-pointer"
                   >
                     <option value="all">All Specialties</option>
                     {specialties.map(spec => (
@@ -673,7 +672,7 @@ export default function AdminDashboardPage() {
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as any)}
                 aria-label="Sort order"
-                className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-600/40 cursor-pointer"
+                className="px-3 py-2 rounded-xl border border-deep-ink/10 bg-canvas text-xs text-deep-ink focus:outline-none focus:ring-2 focus:ring-deep-ink/20 cursor-pointer"
               >
                 <option value="newest">Newest Registered</option>
                 <option value="oldest">Oldest Registered</option>
@@ -681,7 +680,7 @@ export default function AdminDashboardPage() {
               </select>
 
               {/* Segmented Status Tabs */}
-              <div className="flex gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/70">
+              <div className="flex gap-1 p-1 bg-soft-meadow rounded-xl border border-deep-ink/8 overflow-x-auto scrollbar-none w-full sm:w-auto">
                 {(
                   [
                     { id: 'pending', label: 'Pending', count: counts.pending },
@@ -694,10 +693,10 @@ export default function AdminDashboardPage() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      'px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer flex items-center gap-1.5',
+                      'px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer flex items-center gap-1.5 shrink-0',
                       activeTab === tab.id
-                        ? 'bg-white text-slate-900 shadow-2xs font-semibold'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-white text-deep-ink shadow-2xs font-semibold border border-deep-ink/8'
+                        : 'text-slate hover:text-deep-ink'
                     )}
                   >
                     <span>{tab.label}</span>
@@ -705,8 +704,8 @@ export default function AdminDashboardPage() {
                       className={cn(
                         'px-1.5 py-0.2 rounded-full text-[10px]',
                         activeTab === tab.id
-                          ? 'bg-slate-100 text-slate-800'
-                          : 'bg-slate-200/70 text-slate-600'
+                          ? 'bg-soft-meadow text-deep-ink font-bold'
+                          : 'bg-deep-ink/5 text-slate'
                       )}
                     >
                       {tab.count}
@@ -718,9 +717,9 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Results Summary Subtext */}
-          <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
+          <div className="flex items-center justify-between text-xs text-slate pt-1 border-t border-deep-ink/6">
             <span>
-              Showing <strong className="text-slate-800">{filteredDoctors.length}</strong>{' '}
+              Showing <strong className="text-deep-ink">{filteredDoctors.length}</strong>{' '}
               {filteredDoctors.length === 1 ? 'clinician' : 'clinicians'}
               {searchQuery && ` matching "${searchQuery}"`}
               {activeTab !== 'all' && ` with status "${activeTab}"`}
@@ -732,7 +731,7 @@ export default function AdminDashboardPage() {
                   setSpecialtyFilter('all')
                   setActiveTab('all')
                 }}
-                className="text-teal-700 hover:underline cursor-pointer font-medium"
+                className="text-deep-ink font-semibold underline underline-offset-2 hover:opacity-75 cursor-pointer"
               >
                 Reset filters
               </button>
@@ -800,7 +799,7 @@ export default function AdminDashboardPage() {
             </div>
           ) : (
             /* Clinician Dossier Cards */
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-deep-ink/5">
               {filteredDoctors.map(doctor => {
                 const status = doctor.verificationStatus || 'pending'
                 const isPending = status === 'pending'
@@ -810,69 +809,69 @@ export default function AdminDashboardPage() {
                 return (
                   <div
                     key={doctor.id}
-                    className="p-6 hover:bg-slate-50/50 transition-colors flex flex-col lg:flex-row lg:items-center justify-between gap-6"
+                    className="p-4 sm:p-6 hover:bg-soft-meadow/30 transition-colors flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6"
                   >
                     {/* Left Clinician Identity & Metadata */}
                     <div className="space-y-3.5 flex-1 min-w-0">
                       {/* Name, Status Badge, Care Code, Email */}
-                      <div className="flex items-center gap-3.5 flex-wrap">
+                      <div className="flex items-start sm:items-center gap-3 sm:gap-3.5">
                         {/* Avatar */}
                         <div
                           className={cn(
-                            'w-11 h-11 rounded-xl flex items-center justify-center font-bold font-serif text-sm shrink-0 border shadow-2xs',
-                            isVerified && 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                            isPending && 'bg-amber-50 text-amber-800 border-amber-200',
-                            isRejected && 'bg-rose-50 text-rose-800 border-rose-200'
+                            'w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center font-bold font-serif text-sm shrink-0 border shadow-2xs',
+                            isVerified && 'bg-emerald-50 text-emerald-800 border-emerald-200/80',
+                            isPending && 'bg-amber-50 text-amber-900 border-amber-200/80',
+                            isRejected && 'bg-rose-50 text-rose-900 border-rose-200/80'
                           )}
                         >
                           {getDoctorInitials(doctor.name)}
                         </div>
 
                         {/* Name & Badges */}
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-base font-bold font-serif text-slate-900 tracking-tight">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                            <h3 className="text-base font-bold font-serif text-deep-ink tracking-tight">
                               Dr. {doctor.name.replace(/^dr\.?\s+/i, '')}
                             </h3>
 
                             {/* Status badge */}
                             <span
                               className={cn(
-                                'px-2.5 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border',
-                                isVerified && 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                                isPending && 'bg-amber-50 text-amber-700 border-amber-200',
-                                isRejected && 'bg-rose-50 text-rose-700 border-rose-200'
+                                'px-2 sm:px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 border shrink-0',
+                                isVerified && 'bg-emerald-50 text-emerald-800 border-emerald-200/80',
+                                isPending && 'bg-amber-50 text-amber-900 border-amber-200/80',
+                                isRejected && 'bg-rose-50 text-rose-900 border-rose-200/80'
                               )}
                             >
-                              {isVerified && <CheckCircle2 className="w-3 h-3 text-emerald-600" />}
-                              {isPending && <Clock className="w-3 h-3 text-amber-600" />}
-                              {isRejected && <XCircle className="w-3 h-3 text-rose-600" />}
+                              {isVerified && <CheckCircle2 className="w-3 h-3 text-emerald-700" />}
+                              {isPending && <Clock className="w-3 h-3 text-amber-700" />}
+                              {isRejected && <XCircle className="w-3 h-3 text-rose-700" />}
                               <span className="capitalize">{status}</span>
                             </span>
 
                             {/* Care Code with 1-Click Copy */}
                             <button
                               onClick={() => handleCopy(doctor.careCode, `code-${doctor.id}`)}
-                              className="text-xs font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200 flex items-center gap-1 hover:bg-slate-200/80 transition-colors cursor-pointer"
+                              className="text-xs font-mono bg-soft-meadow text-deep-ink px-2 py-0.5 rounded-md border border-deep-ink/10 flex items-center gap-1 hover:bg-soft-meadow/80 transition-colors cursor-pointer shrink-0 font-semibold"
                               title="Click to copy care code"
                             >
                               <span>{doctor.careCode}</span>
                               {copiedCode === `code-${doctor.id}` ? (
-                                <Check className="w-3 h-3 text-emerald-600" />
+                                <Check className="w-3 h-3 text-emerald-700" />
                               ) : (
-                                <Copy className="w-3 h-3 text-slate-400" />
+                                <Copy className="w-3 h-3 text-slate" />
                               )}
                             </button>
                           </div>
 
-                          <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5 flex-wrap">
-                            <span className="inline-flex items-center gap-1">
-                              <Mail className="w-3 h-3 text-slate-400" />
-                              <span className="text-slate-700 font-medium">{doctor.email}</span>
+                          <div className="flex items-center gap-3 text-xs text-slate mt-1 flex-wrap">
+                            <span className="inline-flex items-center gap-1 min-w-0">
+                              <Mail className="w-3 h-3 text-slate/70 shrink-0" />
+                              <span className="text-deep-ink font-medium break-all">{doctor.email}</span>
                             </span>
                             {doctor.phone && (
-                              <span className="inline-flex items-center gap-1">
-                                <Phone className="w-3 h-3 text-slate-400" />
+                              <span className="inline-flex items-center gap-1 shrink-0">
+                                <Phone className="w-3 h-3 text-slate/70" />
                                 <span>{doctor.phone}</span>
                               </span>
                             )}
@@ -881,21 +880,21 @@ export default function AdminDashboardPage() {
                       </div>
 
                       {/* Credential Data Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-2 gap-x-6 text-xs bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-2.5 gap-x-4 sm:gap-x-6 text-xs bg-soft-meadow/50 p-3 sm:p-3.5 rounded-xl border border-deep-ink/8">
                         <div>
-                          <span className="text-slate-400 font-medium block">Specialty</span>
-                          <span className="font-semibold text-slate-800">{doctor.specialty || 'General Practice'}</span>
+                          <span className="text-slate font-medium block text-[11px]">Specialty</span>
+                          <span className="font-semibold text-deep-ink">{doctor.specialty || 'General Practice'}</span>
                         </div>
                         <div>
-                          <span className="text-slate-400 font-medium block">Clinic Affiliation</span>
-                          <span className="font-semibold text-slate-800 truncate block" title={doctor.clinic}>
+                          <span className="text-slate font-medium block text-[11px]">Clinic Affiliation</span>
+                          <span className="font-semibold text-deep-ink truncate block" title={doctor.clinic}>
                             {doctor.clinic || 'Independent Practice'}
                           </span>
                         </div>
                         <div>
-                          <span className="text-slate-400 font-medium block">Medical License #</span>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-mono font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                          <span className="text-slate font-medium block text-[11px]">Medical License #</span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-mono font-bold text-deep-ink bg-white px-1.5 py-0.5 rounded border border-deep-ink/10 break-all text-xs">
                               {doctor.license}
                             </span>
                             {/* Medical board lookup link */}
@@ -905,7 +904,7 @@ export default function AdminDashboardPage() {
                               )}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-teal-700 hover:text-teal-800 hover:underline inline-flex items-center gap-0.5 text-[11px]"
+                              className="text-deep-ink hover:text-slate font-medium hover:underline inline-flex items-center gap-0.5 text-[11px] shrink-0"
                               title="Search state medical registry"
                             >
                               <span>Verify Board</span>
@@ -915,15 +914,15 @@ export default function AdminDashboardPage() {
                         </div>
 
                         <div>
-                          <span className="text-slate-400 font-medium block">Issuing Authority</span>
-                          <span className="text-slate-700 font-medium">
+                          <span className="text-slate font-medium block text-[11px]">Issuing Authority</span>
+                          <span className="text-deep-ink/80 font-medium truncate block">
                             {doctor.issuingAuthority || 'State Medical Board'}
                           </span>
                         </div>
 
                         <div>
-                          <span className="text-slate-400 font-medium block">Registered Date</span>
-                          <span className="text-slate-700">
+                          <span className="text-slate font-medium block text-[11px]">Registered Date</span>
+                          <span className="text-deep-ink/80">
                             {new Date(doctor.createdAt).toLocaleDateString(undefined, {
                               month: 'short',
                               day: 'numeric',
@@ -933,39 +932,39 @@ export default function AdminDashboardPage() {
                         </div>
 
                         <div>
-                          <span className="text-slate-400 font-medium block">License Documentation</span>
+                          <span className="text-slate font-medium block text-[11px]">License Documentation</span>
                           {doctor.licenseDocumentUrl ? (
                             <a
                               href={doctor.licenseDocumentUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-teal-700 font-semibold underline underline-offset-2 hover:text-teal-900 inline-flex items-center gap-1"
+                              className="text-deep-ink font-semibold underline underline-offset-2 hover:text-slate inline-flex items-center gap-1 shrink-0"
                             >
-                              <FileCheck className="w-3 h-3 text-teal-600" />
+                              <FileCheck className="w-3 h-3 text-deep-ink/70" />
                               <span>View Certificate</span>
                               <ExternalLink className="w-2.5 h-2.5" />
                             </a>
                           ) : (
-                            <span className="text-slate-400 italic">Self-attested (no file)</span>
+                            <span className="text-slate/60 italic">Self-attested (no file)</span>
                           )}
                         </div>
                       </div>
 
                       {/* Rejection Note if applicable */}
                       {doctor.rejectionReason && (
-                        <div className="text-xs text-rose-800 bg-rose-50/80 p-3 rounded-xl border border-rose-200/70 flex items-start gap-2">
-                          <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                          <div>
-                            <span className="font-semibold block">Credential Revocation Reason:</span>
-                            <span className="leading-relaxed">{doctor.rejectionReason}</span>
+                        <div className="text-xs text-rose-950 bg-rose-50/90 p-3 rounded-xl border border-rose-200/80 flex items-start gap-2 break-words">
+                          <AlertTriangle className="w-4 h-4 text-rose-700 shrink-0 mt-0.5" />
+                          <div className="min-w-0 flex-1">
+                            <span className="font-semibold block text-rose-900">Credential Revocation Reason:</span>
+                            <span className="leading-relaxed break-words">{doctor.rejectionReason}</span>
                           </div>
                         </div>
                       )}
 
                       {/* Verification Audit Note if verified */}
                       {isVerified && doctor.verifiedAt && (
-                        <div className="text-[11px] text-slate-500 flex items-center gap-2">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <div className="text-[11px] text-slate flex items-center gap-2 flex-wrap">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                           <span>
                             Verified on{' '}
                             {new Date(doctor.verifiedAt).toLocaleDateString(undefined, {
@@ -979,16 +978,16 @@ export default function AdminDashboardPage() {
                       )}
                     </div>
 
-                    {/* Right Governance Actions */}
-                    <div className="flex items-center gap-2 self-end lg:self-center shrink-0 flex-wrap">
+                    {/* Right Governance Actions (Full width on mobile, right-aligned on desktop) */}
+                    <div className="w-full lg:w-auto flex items-center justify-stretch sm:justify-end gap-2 pt-3 lg:pt-0 border-t lg:border-t-0 border-deep-ink/8 flex-wrap sm:flex-nowrap">
                       {/* View Full Dossier */}
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => setDossierDoctor(doctor)}
-                        className="text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 gap-1"
+                        className="flex-1 sm:flex-initial justify-center min-h-[38px] text-xs text-deep-ink hover:text-deep-ink hover:bg-soft-meadow border border-deep-ink/10 gap-1 rounded-xl"
                       >
-                        <Eye className="w-3.5 h-3.5" />
+                        <Eye className="w-3.5 h-3.5 text-slate" />
                         <span>Dossier</span>
                       </Button>
 
@@ -999,9 +998,9 @@ export default function AdminDashboardPage() {
                             size="sm"
                             onClick={() => setApprovingDoctor(doctor)}
                             disabled={actionLoadingId === doctor.id}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs gap-1.5 text-xs font-semibold"
+                            className="flex-1 sm:flex-initial justify-center min-h-[38px] bg-deep-ink hover:bg-deep-ink/90 text-white shadow-xs gap-1.5 text-xs font-semibold rounded-xl cursor-pointer"
                           >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                             <span>Approve</span>
                           </Button>
 
@@ -1013,7 +1012,7 @@ export default function AdminDashboardPage() {
                               setRejectionReason('')
                             }}
                             disabled={actionLoadingId === doctor.id}
-                            className="border-rose-200 text-rose-700 hover:bg-rose-50 hover:border-rose-300 gap-1.5 text-xs font-semibold"
+                            className="flex-1 sm:flex-initial justify-center min-h-[38px] border-rose-200/90 text-rose-800 hover:bg-rose-50 hover:border-rose-300 gap-1.5 text-xs font-semibold rounded-xl cursor-pointer"
                           >
                             <XCircle className="w-3.5 h-3.5" />
                             <span>Reject</span>
@@ -1028,9 +1027,9 @@ export default function AdminDashboardPage() {
                           variant="outline"
                           onClick={() => setApprovingDoctor(doctor)}
                           disabled={actionLoadingId === doctor.id}
-                          className="text-emerald-700 border-emerald-200 hover:bg-emerald-50 gap-1.5 text-xs font-semibold"
+                          className="flex-1 sm:flex-initial justify-center min-h-[38px] text-deep-ink border-deep-ink/20 hover:bg-soft-meadow gap-1.5 text-xs font-semibold rounded-xl cursor-pointer"
                         >
-                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                           <span>Re-Verify</span>
                         </Button>
                       )}
@@ -1045,7 +1044,7 @@ export default function AdminDashboardPage() {
                             setRejectionReason('')
                           }}
                           disabled={actionLoadingId === doctor.id}
-                          className="text-slate-500 border-slate-200 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 text-xs gap-1"
+                          className="flex-1 sm:flex-initial justify-center min-h-[38px] text-slate border-deep-ink/10 hover:text-rose-700 hover:border-rose-200 hover:bg-rose-50 text-xs gap-1 rounded-xl cursor-pointer"
                         >
                           <ShieldAlert className="w-3.5 h-3.5" />
                           <span>Revoke Access</span>
@@ -1062,53 +1061,54 @@ export default function AdminDashboardPage() {
 
       {/* MODAL 1: Approval Confirmation Modal */}
       {approvingDoctor && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-4">
+        <div className="fixed inset-0 z-50 bg-deep-ink/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-editorial-elevated border border-deep-ink/10 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200/80 flex items-center justify-center">
                 <UserCheck className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold font-serif text-slate-900">Grant Clinical Practice Privileges</h3>
-                <p className="text-xs text-slate-500">Dr. {approvingDoctor.name}</p>
+                <h3 className="text-base font-bold font-serif text-deep-ink">Grant Clinical Practice Privileges</h3>
+                <p className="text-xs text-slate">Dr. {approvingDoctor.name}</p>
               </div>
             </div>
 
-            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1.5 text-slate-700">
+            <div className="p-3.5 bg-soft-meadow/70 rounded-xl border border-deep-ink/8 text-xs space-y-1.5 text-deep-ink">
               <div className="flex justify-between">
-                <span className="text-slate-400">Email:</span>
+                <span className="text-slate">Email:</span>
                 <span className="font-medium">{approvingDoctor.email}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">License Number:</span>
-                <span className="font-mono font-bold text-slate-800">{approvingDoctor.license}</span>
+                <span className="text-slate">License Number:</span>
+                <span className="font-mono font-bold text-deep-ink">{approvingDoctor.license}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Specialty:</span>
+                <span className="text-slate">Specialty:</span>
                 <span className="font-medium">{approvingDoctor.specialty}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Clinic:</span>
+                <span className="text-slate">Clinic:</span>
                 <span className="font-medium">{approvingDoctor.clinic}</span>
               </div>
             </div>
 
-            <div className="text-xs text-slate-600 leading-relaxed space-y-1">
+            <div className="text-xs text-slate leading-relaxed space-y-1">
               <p>
                 Approving this clinician will assign their Cognito account to the <strong>Doctors</strong> security group,
                 enabling full access to patient health records, live clinical sessions, and prescription creation.
               </p>
-              <p className="text-emerald-700 font-medium">
+              <p className="text-emerald-800 font-medium">
                 An audit entry will be permanently logged in DynamoDB with your Administrator ID.
               </p>
             </div>
 
-            <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
+            <div className="flex justify-end gap-2.5 pt-2 border-t border-deep-ink/8">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setApprovingDoctor(null)}
                 disabled={actionLoadingId !== null}
+                className="border-deep-ink/10 text-slate hover:text-deep-ink hover:bg-soft-meadow rounded-xl"
               >
                 Cancel
               </Button>
@@ -1116,7 +1116,7 @@ export default function AdminDashboardPage() {
                 size="sm"
                 onClick={() => handleApprove(approvingDoctor)}
                 disabled={actionLoadingId !== null}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-1.5"
+                className="bg-deep-ink hover:bg-deep-ink/90 text-white font-semibold gap-1.5 rounded-xl cursor-pointer"
               >
                 {actionLoadingId === approvingDoctor.id ? (
                   <>
@@ -1125,7 +1125,7 @@ export default function AdminDashboardPage() {
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Confirm Verification</span>
                   </>
                 )}
@@ -1137,30 +1137,30 @@ export default function AdminDashboardPage() {
 
       {/* MODAL 2: Rejection / Revocation Modal */}
       {(rejectionModalDoctor || revokingDoctor) && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-4">
+        <div className="fixed inset-0 z-50 bg-deep-ink/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-editorial-elevated border border-deep-ink/10 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-800 border border-rose-200/80 flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold font-serif text-slate-900">
+                <h3 className="text-base font-bold font-serif text-deep-ink">
                   {revokingDoctor ? 'Revoke Clinical Privileges' : 'Reject Clinician Application'}
                 </h3>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate">
                   Dr. {(rejectionModalDoctor || revokingDoctor)?.name} ({ (rejectionModalDoctor || revokingDoctor)?.email })
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-slate leading-relaxed">
               Select or specify why this clinician cannot be certified. This notice will be recorded in the clinical
               governance audit trail and revoke active privileges.
             </p>
 
             {/* Quick Presets */}
             <div className="space-y-1.5">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate">
                 Common Administrative Reasons:
               </span>
               <div className="space-y-1">
@@ -1170,10 +1170,10 @@ export default function AdminDashboardPage() {
                     type="button"
                     onClick={() => setRejectionReason(preset)}
                     className={cn(
-                      'w-full text-left text-xs p-2 rounded-lg border transition-all cursor-pointer block',
+                      'w-full text-left text-xs p-2.5 rounded-xl border transition-all cursor-pointer block',
                       rejectionReason === preset
-                        ? 'bg-rose-50 text-rose-900 border-rose-300 font-medium'
-                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100/80'
+                        ? 'bg-rose-50 text-rose-950 border-rose-300 font-medium'
+                        : 'bg-soft-meadow/50 text-slate border-deep-ink/10 hover:bg-soft-meadow hover:text-deep-ink'
                     )}
                   >
                     • {preset}
@@ -1184,17 +1184,17 @@ export default function AdminDashboardPage() {
 
             {/* Custom Reason Textarea */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">Detailed Feedback / Notes:</label>
+              <label className="text-xs font-semibold text-deep-ink">Detailed Feedback / Notes:</label>
               <textarea
                 rows={3}
                 placeholder="Enter specific audit findings or state medical board reference..."
                 value={rejectionReason}
                 onChange={e => setRejectionReason(e.target.value)}
-                className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-400 bg-white"
+                className="w-full p-3 rounded-xl border border-deep-ink/15 text-xs focus:outline-none focus:ring-2 focus:ring-deep-ink/20 focus:border-deep-ink bg-canvas text-deep-ink"
               />
             </div>
 
-            <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
+            <div className="flex justify-end gap-2.5 pt-2 border-t border-deep-ink/8">
               <Button
                 variant="outline"
                 size="sm"
@@ -1203,6 +1203,7 @@ export default function AdminDashboardPage() {
                   setRevokingDoctor(null)
                 }}
                 disabled={actionLoadingId !== null}
+                className="border-deep-ink/10 text-slate hover:text-deep-ink hover:bg-soft-meadow rounded-xl"
               >
                 Cancel
               </Button>
@@ -1210,7 +1211,7 @@ export default function AdminDashboardPage() {
                 size="sm"
                 onClick={handleReject}
                 disabled={actionLoadingId !== null}
-                className="bg-rose-600 hover:bg-rose-700 text-white font-semibold gap-1.5"
+                className="bg-rose-600 hover:bg-rose-700 text-white font-semibold gap-1.5 rounded-xl cursor-pointer"
               >
                 {actionLoadingId !== null ? (
                   <>
@@ -1231,116 +1232,116 @@ export default function AdminDashboardPage() {
 
       {/* MODAL 3: Clinician Full Dossier Modal */}
       {dossierDoctor && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-deep-ink/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-editorial-elevated border border-deep-ink/10 space-y-6 max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-800 font-bold font-serif text-base flex items-center justify-center border border-teal-200">
+                <div className="w-12 h-12 rounded-xl bg-soft-meadow text-deep-ink font-bold font-serif text-base flex items-center justify-center border border-deep-ink/10">
                   {getDoctorInitials(dossierDoctor.name)}
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold font-serif text-slate-900">Dr. {dossierDoctor.name}</h2>
-                  <p className="text-xs text-slate-500">Care Code: {dossierDoctor.careCode} • {dossierDoctor.clinic}</p>
+                  <h2 className="text-lg font-bold font-serif text-deep-ink">Dr. {dossierDoctor.name}</h2>
+                  <p className="text-xs text-slate">Care Code: {dossierDoctor.careCode} • {dossierDoctor.clinic}</p>
                 </div>
               </div>
               <button
                 onClick={() => setDossierDoctor(null)}
-                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
+                className="text-slate hover:text-deep-ink p-1.5 rounded-lg hover:bg-soft-meadow cursor-pointer transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Status overview */}
-            <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="flex items-center justify-between p-3.5 rounded-xl bg-soft-meadow/60 border border-deep-ink/8">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Status:</span>
+                <span className="text-xs font-semibold text-slate uppercase tracking-wider">Status:</span>
                 <span
                   className={cn(
-                    'px-2.5 py-0.5 rounded-full text-xs font-bold capitalize',
-                    dossierDoctor.verificationStatus === 'verified' && 'bg-emerald-100 text-emerald-800',
-                    dossierDoctor.verificationStatus === 'pending' && 'bg-amber-100 text-amber-800',
-                    dossierDoctor.verificationStatus === 'rejected' && 'bg-rose-100 text-rose-800'
+                    'px-2.5 py-0.5 rounded-full text-xs font-bold capitalize border',
+                    dossierDoctor.verificationStatus === 'verified' && 'bg-emerald-50 text-emerald-800 border-emerald-200/80',
+                    dossierDoctor.verificationStatus === 'pending' && 'bg-amber-50 text-amber-900 border-amber-200/80',
+                    dossierDoctor.verificationStatus === 'rejected' && 'bg-rose-50 text-rose-900 border-rose-200/80'
                   )}
                 >
                   {dossierDoctor.verificationStatus}
                 </span>
               </div>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-slate">
                 Registered: {new Date(dossierDoctor.createdAt).toLocaleString()}
               </span>
             </div>
 
             {/* Dossier sections */}
             <div className="space-y-4 text-xs">
-              <h4 className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">Contact & Clinic Details</h4>
-              <div className="grid grid-cols-2 gap-4 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+              <h4 className="font-bold text-deep-ink uppercase tracking-wider text-[11px]">Contact & Clinic Details</h4>
+              <div className="grid grid-cols-2 gap-4 bg-soft-meadow/40 p-4 rounded-xl border border-deep-ink/8">
                 <div>
-                  <span className="text-slate-400 block font-medium">Full Legal Name</span>
-                  <span className="font-semibold text-slate-800">{dossierDoctor.name}</span>
+                  <span className="text-slate block font-medium">Full Legal Name</span>
+                  <span className="font-semibold text-deep-ink">{dossierDoctor.name}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block font-medium">Primary Email</span>
-                  <span className="font-semibold text-slate-800">{dossierDoctor.email}</span>
+                  <span className="text-slate block font-medium">Primary Email</span>
+                  <span className="font-semibold text-deep-ink">{dossierDoctor.email}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block font-medium">Specialty Practice</span>
-                  <span className="font-semibold text-slate-800">{dossierDoctor.specialty}</span>
+                  <span className="text-slate block font-medium">Specialty Practice</span>
+                  <span className="font-semibold text-deep-ink">{dossierDoctor.specialty}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block font-medium">Affiliated Health Clinic</span>
-                  <span className="font-semibold text-slate-800">{dossierDoctor.clinic}</span>
+                  <span className="text-slate block font-medium">Affiliated Health Clinic</span>
+                  <span className="font-semibold text-deep-ink">{dossierDoctor.clinic}</span>
                 </div>
               </div>
 
-              <h4 className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">Licensure Credentials</h4>
-              <div className="grid grid-cols-2 gap-4 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+              <h4 className="font-bold text-deep-ink uppercase tracking-wider text-[11px]">Licensure Credentials</h4>
+              <div className="grid grid-cols-2 gap-4 bg-soft-meadow/40 p-4 rounded-xl border border-deep-ink/8">
                 <div>
-                  <span className="text-slate-400 block font-medium">License / NPI Number</span>
-                  <span className="font-mono font-bold text-slate-900 text-sm">{dossierDoctor.license}</span>
+                  <span className="text-slate block font-medium">License / NPI Number</span>
+                  <span className="font-mono font-bold text-deep-ink text-sm">{dossierDoctor.license}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block font-medium">Issuing Board Authority</span>
-                  <span className="font-semibold text-slate-800">{dossierDoctor.issuingAuthority || 'State Board'}</span>
+                  <span className="text-slate block font-medium">Issuing Board Authority</span>
+                  <span className="font-semibold text-deep-ink">{dossierDoctor.issuingAuthority || 'State Board'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block font-medium">Official Registry Lookup</span>
+                  <span className="text-slate block font-medium">Official Registry Lookup</span>
                   <a
                     href={`https://www.google.com/search?q=${encodeURIComponent(
                       `medical board license verification "${dossierDoctor.license}" "${dossierDoctor.name}"`
                     )}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-teal-700 font-semibold inline-flex items-center gap-1 hover:underline"
+                    className="text-deep-ink font-semibold inline-flex items-center gap-1 hover:underline"
                   >
                     <span>Check State Registry</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
                 <div>
-                  <span className="text-slate-400 block font-medium">Certificate Document</span>
+                  <span className="text-slate block font-medium">Certificate Document</span>
                   {dossierDoctor.licenseDocumentUrl ? (
                     <a
                       href={dossierDoctor.licenseDocumentUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-teal-700 font-semibold inline-flex items-center gap-1 hover:underline"
+                      className="text-deep-ink font-semibold inline-flex items-center gap-1 hover:underline"
                     >
                       <FileCheck className="w-3.5 h-3.5" />
                       <span>Download Credential File</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   ) : (
-                    <span className="text-slate-400 italic">No document uploaded</span>
+                    <span className="text-slate/60 italic">No document uploaded</span>
                   )}
                 </div>
               </div>
 
               {/* Audit history */}
               {dossierDoctor.verifiedAt && (
-                <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100 text-emerald-900">
-                  <span className="font-bold block">Verified Record:</span>
+                <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/80 text-emerald-950">
+                  <span className="font-bold block text-emerald-900">Verified Record:</span>
                   <span>
                     Certified on {new Date(dossierDoctor.verifiedAt).toLocaleString()} by {dossierDoctor.verifiedBy || 'Administrator'}.
                   </span>
@@ -1348,16 +1349,21 @@ export default function AdminDashboardPage() {
               )}
 
               {dossierDoctor.rejectionReason && (
-                <div className="p-4 rounded-xl bg-rose-50/50 border border-rose-100 text-rose-900">
-                  <span className="font-bold block">Rejection / Revocation Record:</span>
+                <div className="p-4 rounded-xl bg-rose-50/70 border border-rose-200/80 text-rose-950">
+                  <span className="font-bold block text-rose-900">Rejection / Revocation Record:</span>
                   <span className="mt-1 block leading-relaxed">{dossierDoctor.rejectionReason}</span>
                 </div>
               )}
             </div>
 
             {/* Actions in dossier */}
-            <div className="flex justify-between items-center pt-4 border-t border-slate-100">
-              <Button variant="outline" size="sm" onClick={() => setDossierDoctor(null)}>
+            <div className="flex justify-between items-center pt-4 border-t border-deep-ink/8">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDossierDoctor(null)}
+                className="border-deep-ink/10 text-slate hover:text-deep-ink hover:bg-soft-meadow rounded-xl"
+              >
                 Close Dossier
               </Button>
 
@@ -1368,9 +1374,9 @@ export default function AdminDashboardPage() {
                     onClick={() => {
                       setApprovingDoctor(dossierDoctor)
                     }}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs gap-1.5"
+                    className="bg-deep-ink hover:bg-deep-ink/90 text-white font-semibold text-xs gap-1.5 rounded-xl cursor-pointer shadow-xs"
                   >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Approve Clinician</span>
                   </Button>
                 )}
@@ -1383,7 +1389,7 @@ export default function AdminDashboardPage() {
                       setRevokingDoctor(dossierDoctor)
                       setRejectionReason('')
                     }}
-                    className="text-rose-700 border-rose-200 hover:bg-rose-50 text-xs font-semibold gap-1.5"
+                    className="text-rose-800 border-rose-200 hover:bg-rose-50 text-xs font-semibold gap-1.5 rounded-xl cursor-pointer"
                   >
                     <ShieldAlert className="w-3.5 h-3.5" />
                     <span>Revoke Privileges</span>
@@ -1394,6 +1400,20 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Mobile-Native Role-Aware Bottom Navigation */}
+      <BottomNav
+        role="admin"
+        activeTab={activeTab}
+        onTabChange={tabId => setActiveTab(tabId as any)}
+        badgeCounts={{
+          pending: counts.pending > 0 ? counts.pending : undefined,
+          verified: counts.verified > 0 ? counts.verified : undefined,
+          rejected: counts.rejected > 0 ? counts.rejected : undefined,
+          all: counts.total > 0 ? counts.total : undefined,
+        }}
+        className="lg:hidden"
+      />
     </div>
   )
 }
