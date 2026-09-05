@@ -1,7 +1,5 @@
 /**
  * Superadmin Seed Tool
- * Interactively prompts for administrator credentials (email, name, password)
- * with styled ANSI gradient banners, colored boxes, and live step spinners.
  *
  * Provisions the user in AWS Cognito, sets permanent password,
  * creates the 'Admins' group, and stores the profile in DynamoDB.
@@ -10,7 +8,33 @@
  *   node scripts/seed-admin.mjs
  */
 
+import fs from 'node:fs'
 import readline from 'node:readline'
+
+// Load .env.local first if available, otherwise .env
+const envFile = fs.existsSync('.env.local') ? '.env.local' : fs.existsSync('.env') ? '.env' : null
+if (envFile) {
+  if (typeof process.loadEnvFile === 'function') {
+    try {
+      process.loadEnvFile(envFile)
+    } catch {}
+  } else {
+    try {
+      const content = fs.readFileSync(envFile, 'utf8')
+      for (const line of content.split(/\r?\n/)) {
+        const trimmed = line.trim()
+        if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+          const [key, ...rest] = trimmed.split('=')
+          const val = rest.join('=').trim().replace(/^["'](.*)["']$/, '$1')
+          const k = key.trim()
+          if (!process.env[k]) {
+            process.env[k] = val
+          }
+        }
+      }
+    } catch {}
+  }
+}
 import {
   CognitoIdentityProviderClient,
   AdminCreateUserCommand,
