@@ -505,27 +505,32 @@ export async function getPatientByEmail(
 export async function getPatientsByDoctor(
   doctorId: string
 ): Promise<Patient[]> {
-  const result = await docClient.send(
-    new QueryCommand({
-      TableName: TABLE_NAME,
-      IndexName: 'doctorId-index',
-      KeyConditionExpression: 'doctorId = :doctorId AND #type = :type',
-      ExpressionAttributeNames: {
-        '#type': 'type',
-      },
-      ExpressionAttributeValues: {
-        ':doctorId': doctorId,
-        ':type': 'patient',
-      },
-    })
-  );
+  try {
+    const result = await docClient.send(
+      new QueryCommand({
+        TableName: TABLE_NAME,
+        IndexName: 'doctorId-index',
+        KeyConditionExpression: 'doctorId = :doctorId AND #type = :type',
+        ExpressionAttributeNames: {
+          '#type': 'type',
+        },
+        ExpressionAttributeValues: {
+          ':doctorId': doctorId,
+          ':type': 'patient',
+        },
+      })
+    );
 
-  const keys = (result.Items || []).map((item) => ({
-    id: item.id as string,
-    type: 'patient',
-  }));
-  if (keys.length === 0) return [];
-  return await batchGetItems<Patient>(keys);
+    const keys = (result.Items || []).map((item) => ({
+      id: item.id as string,
+      type: 'patient',
+    }));
+    if (keys.length === 0) return [];
+    return await batchGetItems<Patient>(keys);
+  } catch (err) {
+    console.error('[DB] Error getting patients by doctor:', err);
+    return [];
+  }
 }
 
 export async function getPendingPatientsByDoctor(
@@ -624,53 +629,63 @@ export async function getSessionById(id: string): Promise<Session | null> {
 export async function getSessionsByDoctor(
   doctorId: string
 ): Promise<Session[]> {
-  const result = await docClient.send(
-    new QueryCommand({
-      TableName: TABLE_NAME,
-      IndexName: 'doctorId-index',
-      KeyConditionExpression: 'doctorId = :doctorId AND #type = :type',
-      ExpressionAttributeNames: {
-        '#type': 'type',
-      },
-      ExpressionAttributeValues: {
-        ':doctorId': doctorId,
-        ':type': 'session',
-      },
-    })
-  );
+  try {
+    const result = await docClient.send(
+      new QueryCommand({
+        TableName: TABLE_NAME,
+        IndexName: 'doctorId-index',
+        KeyConditionExpression: 'doctorId = :doctorId AND #type = :type',
+        ExpressionAttributeNames: {
+          '#type': 'type',
+        },
+        ExpressionAttributeValues: {
+          ':doctorId': doctorId,
+          ':type': 'session',
+        },
+      })
+    );
 
-  const keys = (result.Items || []).map((item) => ({
-    id: item.id as string,
-    type: 'session',
-  }));
-  if (keys.length === 0) return [];
-  return await batchGetItems<Session>(keys);
+    const keys = (result.Items || []).map((item) => ({
+      id: item.id as string,
+      type: 'session',
+    }));
+    if (keys.length === 0) return [];
+    return await batchGetItems<Session>(keys);
+  } catch (err) {
+    console.error('[DB] Error getting sessions by doctor:', err);
+    return [];
+  }
 }
 
 export async function getSessionsByPatient(
   patientId: string
 ): Promise<Session[]> {
-  const result = await docClient.send(
-    new QueryCommand({
-      TableName: TABLE_NAME,
-      IndexName: 'patientId-index',
-      KeyConditionExpression: 'patientId = :patientId AND #type = :type',
-      ExpressionAttributeNames: {
-        '#type': 'type',
-      },
-      ExpressionAttributeValues: {
-        ':patientId': patientId,
-        ':type': 'session',
-      },
-    })
-  );
+  try {
+    const result = await docClient.send(
+      new QueryCommand({
+        TableName: TABLE_NAME,
+        IndexName: 'patientId-index',
+        KeyConditionExpression: 'patientId = :patientId AND #type = :type',
+        ExpressionAttributeNames: {
+          '#type': 'type',
+        },
+        ExpressionAttributeValues: {
+          ':patientId': patientId,
+          ':type': 'session',
+        },
+      })
+    );
 
-  const keys = (result.Items || []).map((item) => ({
-    id: item.id as string,
-    type: 'session',
-  }));
-  if (keys.length === 0) return [];
-  return await batchGetItems<Session>(keys);
+    const keys = (result.Items || []).map((item) => ({
+      id: item.id as string,
+      type: 'session',
+    }));
+    if (keys.length === 0) return [];
+    return await batchGetItems<Session>(keys);
+  } catch (err) {
+    console.error('[DB] Error getting sessions by patient:', err);
+    return [];
+  }
 }
 
 export async function updateSession(

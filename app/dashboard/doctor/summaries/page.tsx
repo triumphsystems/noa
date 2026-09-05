@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Calendar, FileText, ArrowRight, User, Loader2 } from 'lucide-react';
+import { Calendar, FileText, ArrowRight, User, Loader2, RefreshCw } from 'lucide-react';
 import { useDoctorStore } from '@/lib/stores/doctor.store';
 import type { Session, Patient } from '@/lib/db';
 
@@ -21,6 +21,8 @@ export default function SummariesPage() {
   const sessions = useDoctorStore((state) => state.sessions);
   const patients = useDoctorStore((state) => state.patients);
   const isLoading = useDoctorStore((state) => state.isLoading);
+  const error = useDoctorStore((state) => state.error);
+  const lastLoadedDoctorId = useDoctorStore((state) => state.lastLoadedDoctorId);
   const loadDashboard = useDoctorStore((state) => state.loadDashboard);
 
   const [filterStatus, setFilterStatus] = useState<
@@ -37,10 +39,18 @@ export default function SummariesPage() {
       }
     }
 
-    if (resolvedDoctorId && sessions.length === 0 && !isLoading) {
+    // Only load once when doctorId is known and we haven't loaded for this doctorId yet
+    if (resolvedDoctorId && lastLoadedDoctorId !== resolvedDoctorId && !isLoading) {
       void loadDashboard(resolvedDoctorId);
     }
-  }, [doctorId, sessions.length, isLoading, loadDashboard]);
+  }, [doctorId, lastLoadedDoctorId, isLoading, loadDashboard]);
+
+  const handleRefresh = () => {
+    const activeId = doctorId || (typeof window !== 'undefined' ? window.localStorage.getItem('doctorId') : null);
+    if (activeId) {
+      void loadDashboard(activeId);
+    }
+  };
 
   // Map patientId -> Patient
   const patientMap = useMemo(() => {
@@ -49,10 +59,10 @@ export default function SummariesPage() {
     return map;
   }, [patients]);
 
-  // Filter sessions that have SOAP notes or completed consultations
+  // Filter sessions that have SOAP notes, transcripts, or completed/active consultations
   const sessionsWithSummaries = useMemo(() => {
     return sessions.filter(
-      (s) => Boolean(s.soapNote) || s.status === 'completed'
+      (s) => Boolean(s.soapNote) || Boolean(s.transcript) || s.status === 'completed' || s.status === 'active'
     );
   }, [sessions]);
 
@@ -64,15 +74,38 @@ export default function SummariesPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div>
-        <h1 className="text-deep-ink mb-1 font-serif text-2xl font-bold sm:text-3xl">
-          Clinical Summaries
-        </h1>
-        <p className="text-slate text-xs sm:text-sm">
-          Review, verify, and export live consultation notes and SOAP
-          assessments
-        </p>
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <h1 className="text-deep-ink mb-1 font-serif text-2xl font-bold sm:text-3xl">
+            Clinical Summaries
+          </h1>
+          <p className="text-slate text-xs sm:text-sm">
+            Review, verify, and export live consultation notes and SOAP assessments
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isLoading}
+          className="rounded-xl border-deep-ink/15 text-xs font-semibold gap-2 self-start sm:self-auto cursor-pointer"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          <span>Refresh</span>
+        </Button>
       </div>
+
+      {error && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 flex items-center justify-between">
+          <span>{error}</span>
+          <button
+            onClick={handleRefresh}
+            className="underline font-semibold ml-2 hover:text-rose-900 cursor-pointer"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex gap-2 overflow-x-auto pb-1">

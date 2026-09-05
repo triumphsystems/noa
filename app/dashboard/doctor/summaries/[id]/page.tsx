@@ -94,7 +94,7 @@ export default function SummaryDetailPage({
     if (sessionId) {
       void loadData();
     }
-  }, [sessionId, sessions, patients]);
+  }, [sessionId]);
 
   const handleDownloadPDF = () => {
     if (typeof window !== 'undefined') {

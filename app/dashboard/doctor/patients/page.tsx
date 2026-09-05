@@ -47,13 +47,14 @@ export default function PatientsPage() {
   const doctor = useDoctorStore((state) => state.doctor);
   const patients = useDoctorStore((state) => state.patients);
   const isLoading = useDoctorStore((state) => state.isLoading);
+  const lastLoadedDoctorId = useDoctorStore((state) => state.lastLoadedDoctorId);
   const loadDashboard = useDoctorStore((state) => state.loadDashboard);
 
   useEffect(() => {
-    if (doctorId && patients.length === 0 && !isLoading) {
+    if (doctorId && lastLoadedDoctorId !== doctorId && !isLoading) {
       void loadDashboard(doctorId);
     }
-  }, [doctorId, patients.length, isLoading, loadDashboard]);
+  }, [doctorId, lastLoadedDoctorId, isLoading, loadDashboard]);
 
   const careCode =
     doctor?.careCode ||
