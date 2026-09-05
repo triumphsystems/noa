@@ -1,23 +1,32 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, Suspense, useMemo } from 'react'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { AudioRecorderControl } from '@/components/session/audio-recorder-control'
 import { TranscriptFeed, type TranscriptItem } from '@/components/session/transcript-feed'
 import { ClinicalSuggestionsFeed, type ClinicalSuggestionItem } from '@/components/session/clinical-suggestions-feed'
 import { SoapNoteCard, type SOAPNoteData } from '@/components/session/soap-note-card'
 import { useDoctorStore } from '@/lib/stores/doctor.store'
+import { ArrowLeft, User, CheckCircle2, ShieldAlert } from 'lucide-react'
 
-export default function NewSessionPage() {
+function SessionPageContent() {
+  const searchParams = useSearchParams()
+  const initialPatientId = searchParams.get('patientId') || ''
+
   const [isRecording, setIsRecording] = useState(false)
   const [transcripts, setTranscripts] = useState<TranscriptItem[]>([])
   const [soapNote, setSoapNote] = useState<SOAPNoteData | null>(null)
-  const [selectedPatient, setSelectedPatient] = useState<string>('')
+  const [selectedPatient, setSelectedPatient] = useState<string>(initialPatientId)
   const [sessionDuration, setSessionDuration] = useState(0)
   const [suggestions, setSuggestions] = useState<ClinicalSuggestionItem[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [sessionId, setSessionId] = useState<string>('')
+  const [saveSuccess, setSaveSuccess] = useState(false)
 
   const doctorId = useDoctorStore(state => state.doctorId)
   const patients = useDoctorStore(state => state.patients)
@@ -34,6 +43,13 @@ export default function NewSessionPage() {
   useEffect(() => {
     transcriptsRef.current = transcripts
   }, [transcripts])
+
+  // Sync initial query param if present
+  useEffect(() => {
+    if (initialPatientId && !selectedPatient) {
+      setSelectedPatient(initialPatientId)
+    }
+  }, [initialPatientId, selectedPatient])
 
   // Ensure doctor data is loaded
   useEffect(() => {
@@ -56,6 +72,16 @@ export default function NewSessionPage() {
       }
     }
   }, [])
+
+  const activePatient = useMemo(() => {
+    return patients.find(p => p.id === selectedPatient) || null
+  }, [patients, selectedPatient])
+
+  const activePatientName = useMemo(() => {
+    if (!activePatient) return ''
+    const parts = [activePatient.firstName, activePatient.lastName].filter(Boolean)
+    return parts.length > 0 ? parts.join(' ') : (activePatient.email || `Patient #${activePatient.id.slice(-6)}`)
+  }, [activePatient])
 
   const getAISuggestions = async (transcript: string, activeSessionId?: string) => {
     setIsGenerating(true)
@@ -133,7 +159,6 @@ export default function NewSessionPage() {
 
       if (res.ok) {
         const data = await res.json()
-        // If the browser speech recognition missed speech but Bedrock Nova Sonic transcribed it, append it
         if (data.chunkTranscript && data.chunkTranscript.trim() && !recognitionRef.current) {
           const now = new Date()
           setTranscripts(prev => [
@@ -146,7 +171,6 @@ export default function NewSessionPage() {
           ])
         }
 
-        // Live clinical suggestions from Bedrock Nova
         if (data.suggestions && data.suggestions.length > 0) {
           setSuggestions(
             data.suggestions.map((text: string, idx: number) => ({
@@ -162,15 +186,20 @@ export default function NewSessionPage() {
   }
 
   const startRecording = async () => {
+    if (!selectedPatient) {
+      alert('Please select a patient record first.')
+      return
+    }
+
     try {
       const newSessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
       setSessionId(newSessionId)
       chunkIndexRef.current = 0
+      setSaveSuccess(false)
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       audioStreamRef.current = stream
 
-      // Configure rolling 10-second incremental timeslices
       const mediaRecorder = new MediaRecorder(stream)
       mediaRecorderRef.current = mediaRecorder
 
@@ -185,12 +214,10 @@ export default function NewSessionPage() {
         void generateSOAPNote(transcriptsRef.current, newSessionId)
       }
 
-      // Start with 10-second rolling interval (small ~150KB chunks safe for serverless)
       mediaRecorder.start(10000)
       setIsRecording(true)
       setSessionDuration(0)
 
-      // Start Web Speech API for instantaneous zero-latency UI transcription
       if (typeof window !== 'undefined') {
         const Win = window as any
         const SpeechRecognitionCtor = Win.SpeechRecognition || Win.webkitSpeechRecognition
@@ -245,7 +272,7 @@ export default function NewSessionPage() {
         ...prev,
         {
           role: 'system',
-          text: 'Session started — Nova AI rolling audio capture & real-time clinical intelligence active.',
+          text: `Consultation started with ${activePatientName || 'Patient'}. Bedrock Nova AI clinical streaming active.`,
           timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         },
       ])
@@ -279,59 +306,20 @@ export default function NewSessionPage() {
         ...prev,
         {
           role: 'system',
-          text: 'Recording stopped. Synthesizing consultation summary and final SOAP note.',
+          text: 'Recording finished. Amazon Bedrock Nova is synthesizing the structured SOAP note and clinical assessment.',
           timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         },
       ])
     }
   }
 
-  const simulateTranscription = () => {
-    const sampleTranscripts: TranscriptItem[] = [
-      {
-        role: 'doctor',
-        text: 'Good morning. How are you feeling today? What symptoms brought you in?',
-        timestamp: new Date(Date.now() + 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-      },
-      {
-        role: 'patient',
-        text: "I've been experiencing persistent headaches in the morning for the past week, lasting about 3 hours each time.",
-        timestamp: new Date(Date.now() + 3000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-      },
-      {
-        role: 'doctor',
-        text: 'I see. On a scale of 1 to 10, how severe is the throbbing? Any sensitivity to bright lights?',
-        timestamp: new Date(Date.now() + 5000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-      },
-    ]
-
-    sampleTranscripts.forEach((item, idx) => {
-      setTimeout(() => {
-        setTranscripts(prev => [...prev, item])
-      }, idx * 1500)
-    })
-
-    setSuggestions([
-      { text: 'Check for photophobia or visual aura indicators', priority: 'high' },
-      { text: 'Assess screen time, sleep rhythm, and hydration patterns', priority: 'medium' },
-      { text: 'Review family history of migraines or hypertension', priority: 'low' },
-    ])
-
-    setTimeout(() => {
-      setSoapNote({
-        subjective: 'Patient reports recurring morning headaches lasting ~3 hours daily for 1 week. Rates severity at 6/10.',
-        objective: 'Alert and oriented x3. Cranial nerves intact. No visible signs of acute distress. Vitals stable.',
-        assessment: 'Primary headache disorder, likely episodic tension-type or early migraine presentation.',
-        plan: 'Trial of OTC analgesics as needed. Maintain a 14-day headache diary. Schedule follow-up in 2 weeks.',
-      })
-    }, 5500)
-  }
-
-  const handleSaveSession = async () => {
+  const handleSaveSession = async (customNote?: SOAPNoteData) => {
     if (!selectedPatient || transcripts.length === 0) {
-      alert('Please select a patient and ensure the session has transcript data.')
+      alert('Please ensure a patient is selected and transcript data has been captured.')
       return
     }
+
+    const noteToSave = customNote || soapNote
 
     setIsSaving(true)
     try {
@@ -347,20 +335,18 @@ export default function NewSessionPage() {
           patientId: selectedPatient,
           transcript: transcripts.filter(t => t.role !== 'system').map(t => `${t.role}: ${t.text}`).join('\n'),
           transcripts,
-          soapNote,
+          soapNote: noteToSave,
           duration: sessionDuration,
         }),
       })
 
       if (response.ok) {
-        alert('Consultation session saved successfully!')
-        setTranscripts([])
-        setSoapNote(null)
-        setSelectedPatient('')
-        setSuggestions([])
-        setSessionDuration(0)
+        setSaveSuccess(true)
+        if (doctorId) {
+          void loadDashboard(doctorId)
+        }
       } else {
-        alert('Failed to save session. Please try again.')
+        alert('Failed to save session record. Please try again.')
       }
     } catch (error) {
       console.error('Error saving session:', error)
@@ -370,53 +356,209 @@ export default function NewSessionPage() {
     }
   }
 
+  const resetForNewSession = () => {
+    setTranscripts([])
+    setSoapNote(null)
+    setSuggestions([])
+    setSessionDuration(0)
+    setSessionId('')
+    setSaveSuccess(false)
+  }
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold font-serif mb-1 text-deep-ink">New Consultation</h1>
-        <p className="text-slate text-xs sm:text-sm">
-          Voice-guided session with real-time AI transcription & clinical SOAP note generation
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
-        {/* Main Recording & Transcript Area */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Patient Selector */}
-          <Card className="p-5 sm:p-6 bg-white border border-deep-ink/8 shadow-editorial font-sans">
-            <label className="block text-xs font-medium text-deep-ink mb-1.5">
-              Select Patient Record
-            </label>
-            <select
-              value={selectedPatient}
-              onChange={e => setSelectedPatient(e.target.value)}
-              className="w-full px-3.5 py-2.5 border border-deep-ink/15 rounded-lg text-deep-ink focus:outline-none focus:border-deep-ink focus:ring-1 focus:ring-deep-ink/20 bg-white text-xs sm:text-sm shadow-2xs transition-colors cursor-pointer"
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto font-sans">
+      {/* Top Header & Breadcrumb */}
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate mb-1">
+          <Link
+            href="/dashboard/doctor"
+            className="hover:text-deep-ink flex items-center gap-1 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Dashboard</span>
+          </Link>
+          <span>/</span>
+          {activePatient ? (
+            <Link
+              href={`/dashboard/doctor/patients/${activePatient.id}`}
+              className="hover:text-deep-ink transition-colors truncate max-w-xs"
             >
-              <option value="">Choose a patient...</option>
-              {patients.map(patient => (
-                <option key={patient.id} value={patient.id}>
-                  {patient.firstName} {patient.lastName} ({patient.email})
-                </option>
-              ))}
-            </select>
-          </Card>
-
-          {/* Recorder Controls */}
-          <AudioRecorderControl
-            isRecording={isRecording}
-            sessionDuration={sessionDuration}
-            selectedPatient={selectedPatient}
-            onStartRecording={startRecording}
-            onStopRecording={stopRecording}
-            onSimulate={simulateTranscription}
-          />
-
-          {/* Transcript Feed */}
-          <TranscriptFeed transcripts={transcripts} />
+              {activePatientName}
+            </Link>
+          ) : (
+            <span className="text-deep-ink">Consultation</span>
+          )}
         </div>
 
-        {/* AI Guidance & SOAP Note Sidebar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold font-serif text-deep-ink">
+              Clinical Voice Consultation
+            </h1>
+            <p className="text-slate text-xs sm:text-sm">
+              Live doctor-patient encounter with ambient speech recognition, clinical guidance, and automated SOAP documentation
+            </p>
+          </div>
+
+          {activePatient && (
+            <div className="flex items-center gap-2">
+              <Link href={`/dashboard/doctor/patients/${activePatient.id}`}>
+                <Button variant="outline" size="sm" className="rounded-full text-xs font-medium gap-1.5 cursor-pointer">
+                  <User className="w-3.5 h-3.5" />
+                  View Patient Chart
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Save Success Alert */}
+      {saveSuccess && (
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <div>
+              <p className="font-semibold text-xs sm:text-sm">Consultation Record Saved Successfully!</p>
+              <p className="text-xs text-emerald-800">
+                The SOAP note and dialogue transcript have been archived to {activePatientName}&apos;s clinical chart.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              onClick={resetForNewSession}
+              size="sm"
+              className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs cursor-pointer"
+            >
+              Start Another Session
+            </Button>
+            {activePatient && (
+              <Link href={`/dashboard/doctor/patients/${activePatient.id}`}>
+                <Button variant="outline" size="sm" className="rounded-full text-xs cursor-pointer border-emerald-300">
+                  Open Patient Profile
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Patient Selection & Clinical Context Card */}
+      <Card className="p-5 sm:p-6 bg-white border border-deep-ink/8 shadow-editorial">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex-1 space-y-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate">
+              Selected Patient Record
+            </label>
+            <div className="flex items-center gap-3 flex-wrap">
+              <select
+                value={selectedPatient}
+                onChange={e => {
+                  setSelectedPatient(e.target.value)
+                  setSaveSuccess(false)
+                }}
+                disabled={isRecording}
+                className="w-full sm:w-80 px-3.5 py-2.5 border border-deep-ink/15 rounded-xl text-deep-ink focus:outline-none focus:ring-2 focus:ring-hi-yellow bg-white text-xs sm:text-sm shadow-2xs transition-colors cursor-pointer disabled:opacity-60"
+              >
+                <option value="">Select a patient from your registry...</option>
+                {patients.map(p => {
+                  const pName = [p.firstName, p.lastName].filter(Boolean).join(' ') || p.email || `Patient #${p.id.slice(-6)}`
+                  return (
+                    <option key={p.id} value={p.id}>
+                      {pName} ({p.email || p.id.slice(0, 8)})
+                    </option>
+                  )
+                })}
+              </select>
+
+              {activePatient && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="secondary" className="text-xs">
+                    ID: {activePatient.id.slice(0, 8)}...
+                  </Badge>
+                  {activePatient.linkStatus === 'pending_patient_approval' && (
+                    <Badge variant="secondary" className="text-xs bg-amber-50 text-amber-800 border-amber-200">
+                      Pending Consent
+                    </Badge>
+                  )}
+                  {activePatient.linkStatus === 'linked' && (
+                    <Badge variant="success" className="text-xs">
+                      Practice Connected
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {activePatient && (
+            <div className="flex items-center gap-4 pt-3 lg:pt-0 border-t lg:border-t-0 border-deep-ink/10 text-xs">
+              <div>
+                <span className="text-slate block text-[11px]">Date of Birth</span>
+                <span className="font-semibold text-deep-ink">{activePatient.dateOfBirth || '—'}</span>
+              </div>
+              <div className="h-6 w-px bg-deep-ink/10 hidden sm:block" />
+              <div>
+                <span className="text-slate block text-[11px]">Gender</span>
+                <span className="font-semibold text-deep-ink capitalize">{activePatient.gender || '—'}</span>
+              </div>
+              <div className="h-6 w-px bg-deep-ink/10 hidden sm:block" />
+              <div>
+                <span className="text-slate block text-[11px]">Conditions</span>
+                <span className="font-semibold text-deep-ink">
+                  {activePatient.conditions?.length || 0} active
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {activePatient && (activePatient.conditions?.length || activePatient.allergies?.length) ? (
+          <div className="mt-4 pt-4 border-t border-deep-ink/8 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            {activePatient.conditions && activePatient.conditions.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-slate font-medium">History:</span>
+                {activePatient.conditions.map((cond, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded-md bg-soft-meadow text-deep-ink text-[11px]">
+                    {cond}
+                  </span>
+                ))}
+              </div>
+            )}
+            {activePatient.allergies && activePatient.allergies.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-rose-700 font-medium flex items-center gap-1">
+                  <ShieldAlert className="w-3 h-3" /> Allergies:
+                </span>
+                {activePatient.allergies.map((allergy, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[11px]">
+                    {allergy}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
+      </Card>
+
+      {/* Primary Audio Recording Console */}
+      <AudioRecorderControl
+        isRecording={isRecording}
+        sessionDuration={sessionDuration}
+        selectedPatient={selectedPatient}
+        onStartRecording={startRecording}
+        onStopRecording={stopRecording}
+      />
+
+      {/* Balanced 2-Column Clinical Workspace */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
+        {/* Left Column: Real-Time Consultation Dialogue */}
+        <div className="space-y-6">
+          <TranscriptFeed transcripts={transcripts} isRecording={isRecording} />
+        </div>
+
+        {/* Right Column: Real-time Copilot & Synthesized SOAP Documentation */}
         <div className="space-y-6">
           <ClinicalSuggestionsFeed
             suggestions={suggestions}
@@ -428,9 +570,24 @@ export default function NewSessionPage() {
             isGenerating={isGenerating}
             isSaving={isSaving}
             onSave={handleSaveSession}
+            onUpdateNote={setSoapNote}
           />
         </div>
       </div>
     </div>
+  )
+}
+
+export default function NewSessionPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-12 text-center text-slate text-sm max-w-5xl mx-auto">
+          Loading consultation console...
+        </div>
+      }
+    >
+      <SessionPageContent />
+    </Suspense>
   )
 }

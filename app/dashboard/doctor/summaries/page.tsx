@@ -83,8 +83,8 @@ export default function SummariesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {filteredSessions.map(session => {
-            const patient = patientMap.get(session.patientId)
-            const patientName = patient ? `${patient.firstName} ${patient.lastName}`.trim() : `Patient #${session.patientId.slice(-6)}`
+            const patientNameParts = patient ? [patient.firstName, patient.lastName].filter(Boolean) : []
+            const patientName = patientNameParts.length > 0 ? patientNameParts.join(' ').trim() : (patient?.name || patient?.email || `Patient #${session.patientId.slice(-6)}`)
             const formattedDate = session.startedAt
               ? new Date(session.startedAt).toLocaleDateString('en-US', {
                   month: 'short',

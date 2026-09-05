@@ -28,22 +28,25 @@ export default function PatientProfilePage({
 
   React.useEffect(() => {
     async function fetchPatientData() {
-      setIsLoading(true)
       setError(null)
       try {
-        // Find in store first
-        let foundPatient = storePatients.find(p => p.id === patientId) || null
-        if (!foundPatient) {
-          const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}`)
-          const data = await res.json()
-          if (!res.ok) throw new Error(data.error || data.message || 'Failed to fetch patient record')
-          foundPatient = data.patient || null
+        // Quick seed from store if available and populated
+        const cached = storePatients.find(p => p.id === patientId && p.email && p.firstName) || null
+        if (cached) {
+          setPatient(cached)
+          setIsLoading(false)
+        } else {
+          setIsLoading(true)
         }
 
-        if (!foundPatient) {
-          throw new Error('Patient record not found')
+        // Always fetch fresh authoritative record from API
+        const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}`)
+        const data = await res.json()
+        if (res.ok && data.patient) {
+          setPatient(data.patient)
+        } else if (!cached) {
+          throw new Error(data.error || data.message || 'Failed to fetch patient record')
         }
-        setPatient(foundPatient)
 
         // Find patient sessions
         let patientSessions = storeSessions.filter(s => s.patientId === patientId)
@@ -94,7 +97,8 @@ export default function PatientProfilePage({
     )
   }
 
-  const fullName = `${patient.firstName} ${patient.lastName}`.trim()
+  const nameParts = [patient.firstName, patient.lastName].filter(Boolean)
+  const fullName = nameParts.length > 0 ? nameParts.join(' ').trim() : (patient.name || patient.email || `Patient #${patient.id.slice(-6)}`)
   const medicalHistory = patient.conditions || []
   const allergies = patient.allergies || []
   const currentMedications = patient.medications || []
@@ -187,7 +191,7 @@ export default function PatientProfilePage({
                 </div>
                 <div>
                   <p className="text-xs text-slate mb-1">Status</p>
-                  <p className="font-semibold text-deep-ink capitalize">{patient.linkStatus || 'Active'}</p>
+                  <p className="font-semibold text-deep-ink capitalize">{patient.linkStatus ? patient.linkStatus.replace(/_/g, ' ') : 'Active'}</p>
                 </div>
               </div>
 
