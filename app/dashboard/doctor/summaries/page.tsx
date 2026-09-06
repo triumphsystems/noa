@@ -12,7 +12,14 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Calendar, FileText, ArrowRight, User, Loader2, RefreshCw } from 'lucide-react';
+import {
+  Calendar,
+  FileText,
+  ArrowRight,
+  User,
+  Loader2,
+  RefreshCw,
+} from 'lucide-react';
 import { useDoctorStore } from '@/lib/stores/doctor.store';
 import type { Session, Patient } from '@/lib/db';
 
@@ -22,7 +29,9 @@ export default function SummariesPage() {
   const patients = useDoctorStore((state) => state.patients);
   const isLoading = useDoctorStore((state) => state.isLoading);
   const error = useDoctorStore((state) => state.error);
-  const lastLoadedDoctorId = useDoctorStore((state) => state.lastLoadedDoctorId);
+  const lastLoadedDoctorId = useDoctorStore(
+    (state) => state.lastLoadedDoctorId
+  );
   const loadDashboard = useDoctorStore((state) => state.loadDashboard);
 
   const [filterStatus, setFilterStatus] = useState<
@@ -40,13 +49,21 @@ export default function SummariesPage() {
     }
 
     // Only load once when doctorId is known and we haven't loaded for this doctorId yet
-    if (resolvedDoctorId && lastLoadedDoctorId !== resolvedDoctorId && !isLoading) {
+    if (
+      resolvedDoctorId &&
+      lastLoadedDoctorId !== resolvedDoctorId &&
+      !isLoading
+    ) {
       void loadDashboard(resolvedDoctorId);
     }
   }, [doctorId, lastLoadedDoctorId, isLoading, loadDashboard]);
 
   const handleRefresh = () => {
-    const activeId = doctorId || (typeof window !== 'undefined' ? window.localStorage.getItem('doctorId') : null);
+    const activeId =
+      doctorId ||
+      (typeof window !== 'undefined'
+        ? window.localStorage.getItem('doctorId')
+        : null);
     if (activeId) {
       void loadDashboard(activeId);
     }
@@ -62,7 +79,11 @@ export default function SummariesPage() {
   // Filter sessions that have SOAP notes, transcripts, or completed/active consultations
   const sessionsWithSummaries = useMemo(() => {
     return sessions.filter(
-      (s) => Boolean(s.soapNote) || Boolean(s.transcript) || s.status === 'completed' || s.status === 'active'
+      (s) =>
+        Boolean(s.soapNote) ||
+        Boolean(s.transcript) ||
+        s.status === 'completed' ||
+        s.status === 'active'
     );
   }, [sessions]);
 
@@ -80,7 +101,8 @@ export default function SummariesPage() {
             Clinical Summaries
           </h1>
           <p className="text-slate text-xs sm:text-sm">
-            Review, verify, and export live consultation notes and SOAP assessments
+            Review, verify, and export live consultation notes and SOAP
+            assessments
           </p>
         </div>
         <Button
@@ -88,19 +110,21 @@ export default function SummariesPage() {
           size="sm"
           onClick={handleRefresh}
           disabled={isLoading}
-          className="rounded-xl border-deep-ink/15 text-xs font-semibold gap-2 self-start sm:self-auto cursor-pointer"
+          className="border-deep-ink/15 cursor-pointer gap-2 self-start rounded-xl text-xs font-semibold sm:self-auto"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`}
+          />
           <span>Refresh</span>
         </Button>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 flex items-center justify-between">
+        <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800">
           <span>{error}</span>
           <button
             onClick={handleRefresh}
-            className="underline font-semibold ml-2 hover:text-rose-900 cursor-pointer"
+            className="ml-2 cursor-pointer font-semibold underline hover:text-rose-900"
           >
             Retry
           </button>

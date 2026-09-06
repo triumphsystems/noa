@@ -1,47 +1,65 @@
 # System Architecture & Data Model
 
-Comprehensive reference for Noa's application architecture, AWS Bedrock AI integration, DynamoDB single-table design, and real-time voice consultation pipeline.
+Comprehensive reference for Noa's application architecture, Hybrid Tri-Model AI integration, DynamoDB single-table design, and real-time voice pipelines.
 
 ---
 
 ## 1. High-Level Architecture
 
-Noa is a Next.js (App Router) healthcare platform that combines generative AI clinical assistance, real-time voice streaming, and encrypted cloud storage.
+Noa is a Next.js (App Router) healthcare platform implementing the **Hybrid Tri-Model Architecture** — three purpose-built AI models working in concert across three distinct clinical workflows.
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Next.js Application                      │
-│        Doctor Dashboard · Patient Intake · Consultation UI  │
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-       ┌───────────────────────┼───────────────────────┐
-       │                       │                       │
-┌──────▼──────┐         ┌──────▼──────┐         ┌──────▼──────┐
-│ AWS Bedrock │         │AWS DynamoDB │         │   AWS S3    │
-│  Nova/Sonic │         │ Single-Table│         │ Audio Store │
-└─────────────┘         └─────────────┘         └─────────────┘
+                                NOA CLINICAL PLATFORM
+                                         │
+         ┌───────────────────────────────┴──────────────────────────────┐
+         ▼                                                              ▼
+PATIENT INTAKE (2–5 min)                               AMBIENT CONSULTATION (15–45+ min)
+[Interactive Speech-to-Speech]                           [Passive Clinical Scribing]
+         │                                                              │
+Browser AudioWorklet (16kHz PCM)                    Browser MediaRecorder (60s slices)
+         │                                                              │
+Vercel WebSocket (experimental_upgradeWebSocket)     S3 Presigned PUT (direct upload)
+         │                                                              │
+Bedrock InvokeModelWithBidirectionalStream           Amazon Transcribe Medical
+         │                                                              │
+Amazon Nova 2 Sonic (Human voice dialogue)          DynamoDB Transcript Stream
+         │                                                              │
+         └───────────────────────────────┬──────────────────────────────┘
+                                         ▼
+                             CLINICAL INTELLIGENCE
+                    ┌────────────────────┬──────────────────────┐
+                    ▼                    ▼                      ▼
+              FAST TIER           REASONING TIER           POST-VISIT
+          Nova 2 Lite             Nova Pro             SOAP Synthesis
+       Real-time suggestions  Differential diagnosis  Nova Pro async
+       Intake field extraction  ICD-10 coding         Full SOAP note
 ```
 
-- **Frontend**: Next.js 16, React 19, Tailwind CSS, Lucide icons, Zustand state stores.
-- **Real-Time Voice**: Serverless rolling audio pipeline (`app/api/sessions/voice`) with 10s incremental chunks, browser Web Speech live feedback, and Bedrock Nova Sonic transcription.
-- **Clinical AI Engine**: AWS Bedrock Runtime client (`lib/bedrock-nova.ts`) generating SOAP notes, triage priority, and diagnostic insights.
-- **Persistence**: AWS DynamoDB single-table design (`lib/db.ts`) with on-demand capacity.
-- **Media Storage**: AWS S3 bucket with AES-256 encryption and lifecycle archiving.
-- **Extensibility**: Native Model Context Protocol server and in-browser integration (`docs/webmcp.md`).
+### Component Summary
+
+| Layer                    | Technology                                  | Purpose                                                   |
+| :----------------------- | :------------------------------------------ | :-------------------------------------------------------- |
+| **Frontend**             | Next.js 16, React 19, Tailwind CSS, Zustand | Doctor dashboard, patient intake UI, consultation monitor |
+| **Patient Intake Voice** | Vercel WebSocket + Nova 2 Sonic             | Real-time speech-to-speech interactive intake dialogue    |
+| **Consultation Scribe**  | MediaRecorder + S3 + Transcribe Medical     | Unlimited-duration ambient clinical transcription         |
+| **Real-time AI**         | Nova 2 Lite (Converse API)                  | Live suggestions, field extraction, structured JSON       |
+| **Clinical Reasoning**   | Nova Pro (Converse API)                     | Deep SOAP synthesis, differential diagnosis, ICD-10       |
+| **Persistence**          | AWS DynamoDB single-table                   | Sessions, patients, SOAP notes, transcript segments       |
+| **Media Storage**        | AWS S3 + presigned URLs                     | Audio slices, reports, backups (AES-256 encrypted)        |
+| **Extensibility**        | WebMCP (in-browser Model Context Protocol)  | AI tool integration and clinical resource access          |
 
 ---
 
-## 2. AWS Bedrock AI Integration
+## 2. Hybrid Tri-Model AI Engine
 
-Noa interfaces with AWS Bedrock via `@aws-sdk/client-bedrock-runtime` (`lib/aws-config.ts` and `lib/bedrock-nova.ts`).
+Noa interfaces with AWS Bedrock via `@aws-sdk/client-bedrock-runtime` (`lib/aws-config.ts`, `lib/ai/provider.ts`).
 
 ### Model Roles
 
-| Role              | Bedrock Model           | Purpose                                                                                               | Location               |
 | ----------------- | ----------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------- |
-| **Nova Lite**     | `amazon.nova-lite-v2:0` | Low-latency clinical documentation: SOAP notes, patient-friendly summaries, triage assessments        | `lib/bedrock-nova.ts`  |
-| **Nova Pro**      | `amazon.nova-pro-v2:0`  | Deep clinical intelligence: differential diagnoses, complex case recommendations, pattern recognition | `lib/bedrock-nova.ts`  |
-| **Sonic / Voice** | `amazon.nova-lite-v2:0` | Real-time consultation suggestions, live transcript evaluation, sentiment analysis                    | `lib/voice-service.ts` |
+| **Nova Lite** | `amazon.nova-lite-v2:0` | Low-latency clinical documentation: SOAP notes, patient-friendly summaries, triage assessments | `lib/bedrock-nova.ts` |
+| **Nova Pro** | `amazon.nova-pro-v2:0` | Deep clinical intelligence: differential diagnoses, complex case recommendations, pattern recognition | `lib/bedrock-nova.ts` |
+| **Sonic / Voice** | `amazon.nova-lite-v2:0` | Real-time consultation suggestions, live transcript evaluation, sentiment analysis | `lib/voice-service.ts` |
 
 _(Fallback model IDs such as `us.anthropic.claude-3-5-sonnet-20241022` can be configured via environment variables if desired.)_
 

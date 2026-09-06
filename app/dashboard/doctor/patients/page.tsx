@@ -47,7 +47,9 @@ export default function PatientsPage() {
   const doctor = useDoctorStore((state) => state.doctor);
   const patients = useDoctorStore((state) => state.patients);
   const isLoading = useDoctorStore((state) => state.isLoading);
-  const lastLoadedDoctorId = useDoctorStore((state) => state.lastLoadedDoctorId);
+  const lastLoadedDoctorId = useDoctorStore(
+    (state) => state.lastLoadedDoctorId
+  );
   const loadDashboard = useDoctorStore((state) => state.loadDashboard);
 
   useEffect(() => {

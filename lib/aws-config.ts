@@ -1,6 +1,7 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { S3Client } from '@aws-sdk/client-s3';
 import { BedrockRuntimeClient } from '@aws-sdk/client-bedrock-runtime';
+import { TranscribeClient } from '@aws-sdk/client-transcribe';
 
 export type AwsCredentials = {
   accessKeyId: string;
@@ -211,6 +212,14 @@ export const bedrockClient = new BedrockRuntimeClient({
     : {}),
 });
 
+// Amazon Transcribe Client (for Medical transcription of consultation audio slices)
+export const transcribeClient = new TranscribeClient({
+  region,
+  ...(hasCredentialsConfigured
+    ? { credentials: createCredentialProvider(region) }
+    : {}),
+});
+
 // ============================================
 // AWS Configuration Object
 // ============================================
@@ -241,18 +250,23 @@ export const awsConfig = {
     },
   },
 
-  // Bedrock Configuration (Multiple models)
+  // Bedrock Configuration — Tri-Model Architecture
   bedrock: {
     region: bedrockRegion,
     models: {
-      // Nova Lite v2 - Fast, efficient model for SOAP notes and basic tasks
-      novaLite: process.env.BEDROCK_NOVA_LITE_MODEL || 'amazon.nova-lite-v2:0',
+      // Nova 2 Lite — fast clinical tasks, real-time suggestions, intake text extraction
+      // Cross-region global inference profile (routes to best available region)
+      novaLite:
+        process.env.BEDROCK_NOVA_LITE_MODEL || 'global.amazon.nova-2-lite-v1:0',
 
-      // Nova Pro v2 - Advanced model for clinical analysis
-      novaPro: process.env.BEDROCK_NOVA_PRO_MODEL || 'amazon.nova-pro-v2:0',
+      // Nova Pro — deep clinical reasoning, post-visit SOAP synthesis, ICD-10 coding
+      // Cross-region global inference profile
+      novaPro:
+        process.env.BEDROCK_NOVA_PRO_MODEL || 'global.amazon.nova-pro-v1:0',
 
-      // Sonic v2 - Voice/audio processing model
-      sonic: process.env.BEDROCK_SONIC_MODEL || 'amazon.nova-sonic-v2:0',
+      // Nova 2 Sonic — bidirectional audio stream ONLY (patient intake voice dialogue)
+      // Direct regional ID required — no global. prefix for bidirectional streaming
+      sonic: process.env.BEDROCK_SONIC_MODEL || 'amazon.nova-2-sonic-v1:0',
     },
     config: {
       maxTokens: parseInt(process.env.BEDROCK_MAX_TOKENS || '2048'),

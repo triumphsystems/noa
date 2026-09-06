@@ -1,9 +1,18 @@
 /**
  * Unified Clinical AI Provider Engine
- * Golden Standard: AWS Bedrock (Nova Lite, Nova Pro, Sonic)
+ * Golden Standard: AWS Bedrock (Nova 2 Lite, Nova Pro, Nova 2 Sonic)
  * Local Alternative: Local LLM via OpenAI-compatible endpoint (e.g. Ollama)
  *
- * Strict Clinical Safety: Fails fast with typed errors.
+ * Architecture: Hybrid Tri-Model
+ * - 'fast'        → Nova 2 Lite   (global.amazon.nova-2-lite-v1:0)  — SOAP extraction, suggestions, intake text
+ * - 'reasoning'   → Nova Pro      (global.amazon.nova-pro-v1:0)     — Deep clinical reasoning, post-visit SOAP synthesis
+ * - 'voice'       → Nova 2 Sonic  (amazon.nova-2-sonic-v1:0)        — Real-time bidirectional audio ONLY (WebSocket)
+ *
+ * IMPORTANT: Nova 2 Sonic does NOT support the Bedrock Converse/InvokeModel text APIs.
+ * It is exclusively used via InvokeModelWithBidirectionalStream in app/api/voice/session/route.ts.
+ * Do NOT pass 'voice' tier to invokeClinicalAI() — it will throw a hard error.
+ *
+ * Strict Clinical Safety: Fails fast with typed errors. Never falls back to mock strings.
  */
 
 import {
@@ -12,7 +21,15 @@ import {
 } from '@aws-sdk/client-bedrock-runtime';
 import { bedrockClient } from '@/lib/aws-config';
 
-export type AIModelTier = 'fast' | 'reasoning' | 'intake';
+/**
+ * Text-capable model tiers for invokeClinicalAI().
+ * 'voice' is intentionally excluded — use the WebSocket route for Nova Sonic.
+ */
+export type AIModelTier = 'fast' | 'reasoning';
+
+/** All tiers including voice (for model ID resolution only, not for invokeClinicalAI) */
+export type AIModelTierFull = AIModelTier | 'voice';
+
 export type AIProvider = 'bedrock' | 'local';
 
 export class ClinicalAIUnavailableError extends Error {
@@ -62,7 +79,10 @@ interface InvokeResult {
   model: string;
 }
 
-// Configuration getters
+// ============================================================
+// Configuration Getters
+// ============================================================
+
 export function getActiveAIProvider(): AIProvider {
   const configured = (
     process.env.CLINICAL_AI_PROVIDER || 'bedrock'
@@ -70,29 +90,53 @@ export function getActiveAIProvider(): AIProvider {
   return configured === 'local' ? 'local' : 'bedrock';
 }
 
+/**
+ * Resolves the Bedrock model ID for a given tier.
+ * 'voice' returns the Nova 2 Sonic ID — only for use with the bidirectional stream WebSocket route.
+ */
 export function getModelForTier(
   provider: AIProvider,
-  tier: AIModelTier = 'fast'
+  tier: AIModelTierFull = 'fast'
 ): string {
   if (provider === 'local') {
     return process.env.LOCAL_AI_MODEL || 'llama3.2:latest';
   }
 
-  // Bedrock Nova v2 model mapping (supports direct or cross-region inference profiles)
   switch (tier) {
     case 'reasoning':
-      return process.env.BEDROCK_NOVA_PRO_MODEL || 'amazon.nova-pro-v2:0';
-    case 'intake':
+      // Nova Pro — deep clinical reasoning, post-visit SOAP synthesis, ICD-10 coding
+      return (
+        process.env.BEDROCK_NOVA_PRO_MODEL || 'global.amazon.nova-pro-v1:0'
+      );
+    case 'voice':
+      // Nova 2 Sonic — bidirectional audio ONLY via InvokeModelWithBidirectionalStream
+      // DO NOT use this in invokeClinicalAI() — it will be rejected by Bedrock text APIs
       return process.env.BEDROCK_SONIC_MODEL || 'amazon.nova-2-sonic-v1:0';
     case 'fast':
     default:
-      return process.env.BEDROCK_NOVA_LITE_MODEL || 'amazon.nova-lite-v2:0';
+      // Nova 2 Lite — fast clinical tasks, real-time suggestions, intake text extraction
+      return (
+        process.env.BEDROCK_NOVA_LITE_MODEL || 'global.amazon.nova-2-lite-v1:0'
+      );
   }
 }
 
 /**
- * Invoke Clinical AI via the configured provider (Bedrock or Local Ollama)
- * Never falls back to mock strings.
+ * Returns the Nova 2 Sonic model ID. Use exclusively with the WebSocket bidirectional stream.
+ * Exported as a named helper to make intent explicit at call sites.
+ */
+export function getSonicModelId(): string {
+  return process.env.BEDROCK_SONIC_MODEL || 'amazon.nova-2-sonic-v1:0';
+}
+
+// ============================================================
+// Text Invocation (Nova 2 Lite & Nova Pro only)
+// ============================================================
+
+/**
+ * Invoke Clinical AI via the configured provider (Bedrock or Local Ollama).
+ * Only accepts 'fast' (Nova 2 Lite) and 'reasoning' (Nova Pro) tiers.
+ * Never use 'voice' here — Nova Sonic requires the WebSocket bidirectional stream.
  */
 export async function invokeClinicalAI({
   prompt,
@@ -123,8 +167,14 @@ export async function invokeClinicalAI({
   });
 }
 
+// ============================================================
+// Bedrock Invocation (Nova 2 Lite & Nova Pro via Converse API)
+// ============================================================
+
 /**
- * Invocation via AWS Bedrock (Nova models)
+ * Invocation via AWS Bedrock using the Converse API.
+ * Compatible with Nova 2 Lite and Nova Pro (including cross-region inference profiles).
+ * NOT compatible with Nova 2 Sonic — use InvokeModelWithBidirectionalStream instead.
  */
 async function invokeBedrockAI({
   prompt,
@@ -140,7 +190,6 @@ async function invokeBedrockAI({
   model: string;
 }): Promise<InvokeResult> {
   try {
-    // Bedrock Converse API provides uniform support across Nova, Claude, and Cross-Region inference profiles
     const command = new ConverseCommand({
       modelId: model,
       messages: [
@@ -164,17 +213,12 @@ async function invokeBedrockAI({
       throw new Error('Empty response received from Bedrock model');
     }
 
-    return {
-      text,
-      provider: 'bedrock',
-      model,
-    };
+    return { text, provider: 'bedrock', model };
   } catch (error: any) {
     const errorName: string = error?.name || '';
     const statusCode: number = error?.$metadata?.httpStatusCode;
 
-    // Re-throw immediately for throttling and network errors — do NOT retry,
-    // as that doubles latency and cost with no benefit
+    // Throttling — re-throw immediately, do NOT retry (doubles latency & cost)
     if (
       errorName === 'ThrottlingException' ||
       errorName === 'RequestLimitExceeded' ||
@@ -190,18 +234,16 @@ async function invokeBedrockAI({
       );
     }
 
-    // Only fall back to InvokeModelCommand for model-compatibility errors
-    // (e.g. model doesn't support the Converse API yet)
+    // Compatibility fallback — try InvokeModel for older model variants
     const isCompatibilityError =
       errorName === 'UnsupportedOperationException' ||
-      errorName === 'ValidationException' ||
-      statusCode === 400;
+      (errorName === 'ValidationException' && statusCode === 400);
 
     if (!isCompatibilityError) {
       throw new ClinicalAIUnavailableError('bedrock', model, error);
     }
 
-    // Fallback: Bedrock InvokeModel API for models that don't support Converse
+    // Fallback: InvokeModel API
     try {
       const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
       const isNova = model.includes('nova');
@@ -244,15 +286,16 @@ async function invokeBedrockAI({
         'bedrock',
         model,
         fallbackError,
-        'Check AWS IAM credentials, Bedrock cross-region inference profiles, model access in AWS Console, or configure CLINICAL_AI_PROVIDER=local.'
+        'Check AWS IAM credentials, Bedrock model access in AWS Console, or configure CLINICAL_AI_PROVIDER=local.'
       );
     }
   }
 }
 
-/**
- * Invocation via Local LLM Server (Ollama / LocalAI / OpenAI-compatible endpoint)
- */
+// ============================================================
+// Local LLM Invocation (Ollama / LocalAI / OpenAI-compatible)
+// ============================================================
+
 async function invokeLocalAI({
   prompt,
   systemPrompt,
@@ -278,9 +321,7 @@ async function invokeLocalAI({
   try {
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model,
         messages,
@@ -303,11 +344,7 @@ async function invokeLocalAI({
       throw new Error('Empty response received from local LLM');
     }
 
-    return {
-      text,
-      provider: 'local',
-      model,
-    };
+    return { text, provider: 'local', model };
   } catch (error) {
     throw new ClinicalAIUnavailableError(
       'local',

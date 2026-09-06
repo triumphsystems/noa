@@ -1,29 +1,39 @@
 'use client';
 
-import { useEffect, useRef, useState, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import type {
-  IntakeConversationDraft,
-  IntakeConversationMessage,
-} from '@/lib/voice-service';
+/**
+ * useIntakeVoice — Nova 2 Sonic WebSocket Voice Intake Hook
+ *
+ * Replaces the legacy browser SpeechRecognition + speechSynthesis implementation
+ * with a high-fidelity, bidirectional WebSocket connection to the Vercel-hosted
+ * Nova 2 Sonic relay at /api/voice/session.
+ *
+ * Architecture:
+ *   Browser AudioWorklet (16kHz PCM)
+ *     → WSS /api/voice/session
+ *       → Amazon Bedrock InvokeModelWithBidirectionalStream (nova-2-sonic-v1:0)
+ *     ← WSS sends Nova Sonic audio chunks back
+ *   Web Audio API plays the received audio (human-quality clinical voice)
+ *
+ * Fallback: If WebSocket or microphone access fails, the hook surfaces a clear
+ * error message and falls back gracefully (silent mode + text input).
+ *
+ * Text-based intake field extraction continues to run through
+ * POST /api/intakes/conversation → Nova 2 Lite, unchanged.
+ */
 
-function mapLanguageToBcp47(langName: string): string {
-  const normalized = (langName || '').toLowerCase();
-  if (normalized.includes('spanish') || normalized.includes('español'))
-    return 'es-ES';
-  if (normalized.includes('french') || normalized.includes('français'))
-    return 'fr-FR';
-  if (normalized.includes('german') || normalized.includes('deutsch'))
-    return 'de-DE';
-  if (normalized.includes('chinese') || normalized.includes('mandarin'))
-    return 'zh-CN';
-  if (normalized.includes('yoruba')) return 'yo-NG';
-  if (normalized.includes('igbo')) return 'ig-NG';
-  if (normalized.includes('hausa')) return 'ha-NG';
-  if (normalized.includes('arabic')) return 'ar-SA';
-  if (normalized.includes('portuguese')) return 'pt-BR';
-  return 'en-US';
-}
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import type { IntakeConversationDraft } from '@/lib/voice-service';
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Types
+// ──────────────────────────────────────────────────────────────────────────────
+
+export type ConversationEntry = {
+  id: string;
+  role: 'assistant' | 'patient' | 'system';
+  text: string;
+};
 
 type IntakeTurn = {
   assistantMessage: string;
@@ -35,11 +45,14 @@ type IntakeTurn = {
   summary: string;
 };
 
-export type ConversationEntry = {
-  id: string;
-  role: 'assistant' | 'patient' | 'system';
-  text: string;
-};
+// ──────────────────────────────────────────────────────────────────────────────
+// Constants
+// ──────────────────────────────────────────────────────────────────────────────
+
+const SAMPLE_RATE = 16000; // Hz — required by Nova 2 Sonic
+const SLICE_DURATION_MS = 100; // AudioWorklet flush interval
+const WS_RECONNECT_DELAY_BASE_MS = 1000;
+const WS_RECONNECT_DELAY_MAX_MS = 15000;
 
 const initialDraft: IntakeConversationDraft = {
   firstName: '',
@@ -63,32 +76,82 @@ const initialDraft: IntakeConversationDraft = {
   consentRead: false,
 };
 
-const initialPrompt =
-  'Hi, I’m Noa. I’ll ask one short question at a time, and you can answer naturally in any language. I will listen, translate if needed, and keep the conversation moving.';
+const INITIAL_PROMPT =
+  "Hi, I'm Noa. I'll ask you one short question at a time. You can answer naturally in any language. Let's get started — what's your full name?";
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────────────────────────────────────
+
+function buildWsUrl(sessionId: string): string {
+  if (typeof window === 'undefined') return '';
+  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${proto}//${window.location.host}/api/voice/session?sessionId=${encodeURIComponent(sessionId)}`;
+}
+
+function generateSessionId(): string {
+  return `intake-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// AudioWorklet processor (inlined as a Blob URL to avoid a separate file)
+// Converts MediaStream Float32 PCM → 16kHz Int16 PCM binary frames
+// ──────────────────────────────────────────────────────────────────────────────
+
+const AUDIO_WORKLET_CODE = /* javascript */ `
+class PcmCapture extends AudioWorkletProcessor {
+  process(inputs) {
+    const input = inputs[0]?.[0];
+    if (!input || input.length === 0) return true;
+    // Convert Float32 [-1, 1] to Int16 [-32768, 32767]
+    const pcm = new Int16Array(input.length);
+    for (let i = 0; i < input.length; i++) {
+      const clamped = Math.max(-1, Math.min(1, input[i]));
+      pcm[i] = clamped < 0 ? clamped * 32768 : clamped * 32767;
+    }
+    this.port.postMessage(pcm.buffer, [pcm.buffer]);
+    return true;
+  }
+}
+registerProcessor('pcm-capture', PcmCapture);
+`;
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Hook
+// ──────────────────────────────────────────────────────────────────────────────
 
 export function useIntakeVoice() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const recognitionRef = useRef<any>(null);
-  const silenceTimerRef = useRef<number | null>(null);
-  const isStartingRef = useRef(false);
+
+  // WebSocket + audio refs
+  const wsRef = useRef<WebSocket | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const workletNodeRef = useRef<AudioWorkletNode | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioQueueRef = useRef<ArrayBuffer[]>([]);
+  const isPlayingRef = useRef(false);
+  const reconnectDelayRef = useRef(WS_RECONNECT_DELAY_BASE_MS);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionIdRef = useRef(generateSessionId());
+
+  // Submission state refs
   const isSubmittingRef = useRef(false);
-  const committedTranscriptRef = useRef('');
-  const lastSubmittedTranscriptRef = useRef('');
   const isCompleteRef = useRef(false);
   const isVoiceOutputRef = useRef(true);
 
+  // React state
   const [isRecording, setIsRecording] = useState(false);
-  const [isListening, setIsListening] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
-  const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [assistantMessage, setAssistantMessage] = useState(initialPrompt);
+  const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true);
+  const [assistantMessage, setAssistantMessage] = useState(INITIAL_PROMPT);
   const [detectedLanguage, setDetectedLanguage] = useState('English');
   const [draft, setDraft] = useState<IntakeConversationDraft>(initialDraft);
   const [history, setHistory] = useState<ConversationEntry[]>([
-    { id: 'system-1', role: 'system', text: initialPrompt },
+    { id: 'system-1', role: 'system', text: INITIAL_PROMPT },
   ]);
   const [error, setError] = useState('');
   const [transcriptPreview, setTranscriptPreview] = useState('');
@@ -101,22 +164,15 @@ export function useIntakeVoice() {
     [history]
   );
 
+  // Keep refs in sync
   useEffect(() => {
     isCompleteRef.current = isComplete;
   }, [isComplete]);
-
   useEffect(() => {
     isVoiceOutputRef.current = isVoiceOutputEnabled;
-    if (
-      !isVoiceOutputEnabled &&
-      typeof window !== 'undefined' &&
-      'speechSynthesis' in window
-    ) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
   }, [isVoiceOutputEnabled]);
 
+  // Resolve IDs from query params / localStorage
   useEffect(() => {
     const resolvedDoctorId =
       searchParams?.get('doctorId') ||
@@ -131,241 +187,342 @@ export function useIntakeVoice() {
     setPatientId(resolvedPatientId);
   }, [searchParams]);
 
-  const pushHistory = (role: ConversationEntry['role'], text: string) => {
-    if (!text.trim()) return;
-    setHistory((prev) => [
-      ...prev,
-      {
-        id: `${role}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        role,
-        text,
-      },
-    ]);
-  };
+  // ──────────────────────────────────────────────────────
+  // Conversation history
+  // ──────────────────────────────────────────────────────
 
-  const speakMessage = (text: string, language: string) => {
-    if (
-      typeof window === 'undefined' ||
-      !('speechSynthesis' in window) ||
-      !isVoiceOutputRef.current
-    )
+  const pushHistory = useCallback(
+    (role: ConversationEntry['role'], text: string) => {
+      if (!text.trim()) return;
+      setHistory((prev) => [
+        ...prev,
+        {
+          id: `${role}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          role,
+          text,
+        },
+      ]);
+    },
+    []
+  );
+
+  // ──────────────────────────────────────────────────────
+  // Web Audio playback of Nova Sonic audio chunks
+  // ──────────────────────────────────────────────────────
+
+  const playNextChunk = useCallback(async () => {
+    if (isPlayingRef.current || audioQueueRef.current.length === 0) return;
+    if (!audioContextRef.current || !isVoiceOutputRef.current) {
+      audioQueueRef.current = [];
       return;
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = mapLanguageToBcp47(language);
-      utterance.rate = 0.95;
-      utterance.pitch = 1.0;
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => {
-        setIsSpeaking(false);
-        if (!isCompleteRef.current) {
-          setTimeout(() => {
-            void startRecording();
-          }, 400);
+    }
+
+    isPlayingRef.current = true;
+    setIsSpeaking(true);
+
+    while (audioQueueRef.current.length > 0) {
+      const chunk = audioQueueRef.current.shift()!;
+      try {
+        const ctx = audioContextRef.current;
+        // Nova Sonic returns 16kHz signed 16-bit PCM
+        const pcm16 = new Int16Array(chunk);
+        const float32 = new Float32Array(pcm16.length);
+        for (let i = 0; i < pcm16.length; i++) {
+          float32[i] = pcm16[i] / 32768;
         }
-      };
-      utterance.onerror = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utterance);
-    } catch {
-      setIsSpeaking(false);
-    }
-  };
-
-  const sendTranscript = async (transcript: string) => {
-    const trimmed = transcript.trim();
-    if (!trimmed || isSubmittingRef.current) return;
-    isSubmittingRef.current = true;
-    setIsSubmitting(true);
-    setError('');
-    pushHistory('patient', trimmed);
-
-    const outgoingHistory = [
-      ...history,
-      { id: `patient-${Date.now()}`, role: 'patient' as const, text: trimmed },
-    ];
-
-    try {
-      const response = await fetch('/api/intakes/conversation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transcript: trimmed,
-          language: detectedLanguage,
-          history: outgoingHistory.map((item) => ({
-            role: item.role,
-            content: item.text,
-            timestamp: Date.now(),
-          })),
-          draft,
-          doctorId,
-          patientId,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok)
-        throw new Error(data.message || 'Failed to process intake response');
-
-      const nextTurn: IntakeTurn = data.turn;
-      const updatedDraft = nextTurn.draft || draft;
-      setDraft(updatedDraft);
-      setAssistantMessage(nextTurn.assistantMessage);
-      setDetectedLanguage(nextTurn.detectedLanguage || detectedLanguage);
-      pushHistory('assistant', nextTurn.assistantMessage);
-      speakMessage(
-        nextTurn.assistantMessage,
-        nextTurn.detectedLanguage || detectedLanguage
-      );
-
-      if (nextTurn.isComplete) {
-        setIsComplete(true);
-        sessionStorage.setItem(
-          'intake-completion',
-          JSON.stringify({
-            summary: nextTurn.summary,
-            draft: updatedDraft,
-            language: nextTurn.detectedLanguage || detectedLanguage,
-            doctorId,
-            patientId,
-          })
-        );
-        router.push('/intake/confirmation');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      pushHistory('assistant', 'I missed that. Please try again.');
-    } finally {
-      isSubmittingRef.current = false;
-      setIsSubmitting(false);
-    }
-  };
-
-  const startRecording = async () => {
-    if (isStartingRef.current || isRecording || isSubmittingRef.current) return;
-    isStartingRef.current = true;
-    setError('');
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
-
-    try {
-      await navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then((stream) => {
-          stream.getTracks().forEach((track) => track.stop());
+        const audioBuffer = ctx.createBuffer(1, float32.length, SAMPLE_RATE);
+        audioBuffer.copyToChannel(float32, 0);
+        const source = ctx.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(ctx.destination);
+        await new Promise<void>((resolve) => {
+          source.onended = () => resolve();
+          source.start();
         });
-      committedTranscriptRef.current = '';
-      lastSubmittedTranscriptRef.current = '';
-      setTranscriptPreview('');
-      recognitionRef.current?.start();
-      setIsRecording(true);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Unable to access microphone'
-      );
-      setIsRecording(false);
-    } finally {
-      isStartingRef.current = false;
+      } catch {
+        // Chunk decode error — skip and continue
+      }
     }
-  };
 
-  const stopRecording = () => {
-    if (silenceTimerRef.current) window.clearTimeout(silenceTimerRef.current);
-    recognitionRef.current?.stop();
+    isPlayingRef.current = false;
+    setIsSpeaking(false);
+  }, []);
+
+  // ──────────────────────────────────────────────────────
+  // WebSocket connection to /api/voice/session
+  // ──────────────────────────────────────────────────────
+
+  const connectWebSocket = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+
+    const url = buildWsUrl(sessionIdRef.current);
+    const ws = new WebSocket(url);
+    ws.binaryType = 'arraybuffer';
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      setIsConnected(true);
+      setError('');
+      reconnectDelayRef.current = WS_RECONNECT_DELAY_BASE_MS;
+      // Signal server to initialise the Nova Sonic stream
+      ws.send(JSON.stringify({ type: 'init' }));
+    };
+
+    ws.onmessage = (event) => {
+      // JSON control messages
+      if (typeof event.data === 'string') {
+        try {
+          const msg = JSON.parse(event.data) as {
+            type: string;
+            [k: string]: any;
+          };
+          if (msg.type === 'ready') {
+            // Server stream ready — no action needed
+          } else if (msg.type === 'session_complete') {
+            // Final transcript available — trigger text extraction via Nova 2 Lite
+            if (msg.transcript) {
+              void sendTranscript(msg.transcript);
+            }
+          } else if (msg.type === 'error') {
+            setError(msg.message || 'Voice stream error');
+          }
+        } catch {
+          // Ignore malformed JSON
+        }
+        return;
+      }
+
+      // Binary audio — Nova Sonic speech output
+      if (event.data instanceof ArrayBuffer && isVoiceOutputRef.current) {
+        audioQueueRef.current.push(event.data);
+        void playNextChunk();
+      }
+    };
+
+    ws.onclose = () => {
+      setIsConnected(false);
+      wsRef.current = null;
+      // Exponential backoff reconnect if recording is still active
+      if (!isCompleteRef.current) {
+        reconnectDelayRef.current = Math.min(
+          reconnectDelayRef.current * 2,
+          WS_RECONNECT_DELAY_MAX_MS
+        );
+        reconnectTimerRef.current = setTimeout(
+          connectWebSocket,
+          reconnectDelayRef.current
+        );
+      }
+    };
+
+    ws.onerror = () => {
+      // onclose will fire after onerror — reconnect logic handles recovery
+      setSupportMessage('Voice connection interrupted. Reconnecting…');
+    };
+  }, [playNextChunk]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ──────────────────────────────────────────────────────
+  // Microphone + AudioWorklet capture
+  // ──────────────────────────────────────────────────────
+
+  const startRecording = useCallback(async () => {
+    if (isRecording) return;
+    setError('');
+
+    try {
+      // Initialise AudioContext
+      const ctx = new AudioContext({ sampleRate: SAMPLE_RATE });
+      audioContextRef.current = ctx;
+
+      // Load the inline PCM capture worklet
+      const blob = new Blob([AUDIO_WORKLET_CODE], {
+        type: 'application/javascript',
+      });
+      const workletUrl = URL.createObjectURL(blob);
+      await ctx.audioWorklet.addModule(workletUrl);
+      URL.revokeObjectURL(workletUrl);
+
+      // Request microphone
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: SAMPLE_RATE,
+          channelCount: 1,
+        },
+      });
+      mediaStreamRef.current = stream;
+
+      const source = ctx.createMediaStreamSource(stream);
+      const worklet = new AudioWorkletNode(ctx, 'pcm-capture');
+      workletNodeRef.current = worklet;
+      source.connect(worklet);
+
+      // Forward PCM frames to WebSocket
+      worklet.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(event.data);
+        }
+        // Live transcript preview (waveform word count heuristic)
+        setTranscriptPreview((prev) =>
+          prev.length < 120 ? prev + '…' : '…speaking…'
+        );
+      };
+
+      setIsRecording(true);
+    } catch (err: any) {
+      const msg = err?.message || 'Unable to access microphone';
+      setError(msg);
+      setSupportMessage(
+        'Microphone access denied. Use the text field instead.'
+      );
+    }
+  }, [isRecording]);
+
+  const stopRecording = useCallback(() => {
+    workletNodeRef.current?.disconnect();
+    workletNodeRef.current = null;
+    mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+    mediaStreamRef.current = null;
+    audioContextRef.current?.close().catch(() => {});
+    audioContextRef.current = null;
     setIsRecording(false);
-    setIsListening(false);
-  };
+    setTranscriptPreview('');
+  }, []);
 
-  const toggleMic = () => {
+  const toggleMic = useCallback(() => {
     if (isRecording) stopRecording();
     else void startRecording();
-  };
+  }, [isRecording, startRecording, stopRecording]);
 
-  const resetConversation = () => {
-    if (silenceTimerRef.current) window.clearTimeout(silenceTimerRef.current);
-    recognitionRef.current?.stop();
-    committedTranscriptRef.current = '';
-    lastSubmittedTranscriptRef.current = '';
+  // ──────────────────────────────────────────────────────
+  // Text transcript → Nova 2 Lite field extraction
+  // (unchanged API contract with /api/intakes/conversation)
+  // ──────────────────────────────────────────────────────
+
+  const sendTranscript = useCallback(
+    async (transcript: string) => {
+      const trimmed = transcript.trim();
+      if (!trimmed || isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
+      setIsSubmitting(true);
+      setError('');
+      setTranscriptPreview('');
+      pushHistory('patient', trimmed);
+
+      const outgoingHistory = [
+        ...history,
+        {
+          id: `patient-${Date.now()}`,
+          role: 'patient' as const,
+          text: trimmed,
+        },
+      ];
+
+      try {
+        const response = await fetch('/api/intakes/conversation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            transcript: trimmed,
+            language: detectedLanguage,
+            history: outgoingHistory.map((item) => ({
+              role: item.role,
+              content: item.text,
+              timestamp: Date.now(),
+            })),
+            draft,
+            doctorId,
+            patientId,
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok)
+          throw new Error(data.message || 'Failed to process intake response');
+
+        const nextTurn: IntakeTurn = data.turn;
+        const updatedDraft = nextTurn.draft || draft;
+        setDraft(updatedDraft);
+        setAssistantMessage(nextTurn.assistantMessage);
+        setDetectedLanguage(nextTurn.detectedLanguage || detectedLanguage);
+        pushHistory('assistant', nextTurn.assistantMessage);
+
+        // Send the assistant text to the WebSocket for Nova Sonic to vocalise
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(
+            JSON.stringify({
+              type: 'transcript_chunk',
+              payload: { text: nextTurn.assistantMessage },
+            })
+          );
+        }
+
+        if (nextTurn.isComplete) {
+          setIsComplete(true);
+          // Signal end of intake session
+          wsRef.current?.send(JSON.stringify({ type: 'end' }));
+          sessionStorage.setItem(
+            'intake-completion',
+            JSON.stringify({
+              summary: nextTurn.summary,
+              draft: updatedDraft,
+              language: nextTurn.detectedLanguage || detectedLanguage,
+              doctorId,
+              patientId,
+            })
+          );
+          router.push('/intake/confirmation');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+        pushHistory('assistant', 'I missed that. Could you please repeat?');
+      } finally {
+        isSubmittingRef.current = false;
+        setIsSubmitting(false);
+      }
+    },
+    [history, draft, detectedLanguage, doctorId, patientId, router, pushHistory]
+  );
+
+  // ──────────────────────────────────────────────────────
+  // Lifecycle: Connect WS on mount, clean up on unmount
+  // ──────────────────────────────────────────────────────
+
+  useEffect(() => {
+    connectWebSocket();
+    return () => {
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      wsRef.current?.close();
+      stopRecording();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ──────────────────────────────────────────────────────
+  // Reset
+  // ──────────────────────────────────────────────────────
+
+  const resetConversation = useCallback(() => {
+    stopRecording();
+    wsRef.current?.close();
+    sessionIdRef.current = generateSessionId();
     setDraft(initialDraft);
-    setHistory([{ id: 'system-1', role: 'system', text: initialPrompt }]);
-    setAssistantMessage(initialPrompt);
+    setHistory([{ id: 'system-1', role: 'system', text: INITIAL_PROMPT }]);
+    setAssistantMessage(INITIAL_PROMPT);
     setDetectedLanguage('English');
     setTranscriptPreview('');
     setIsComplete(false);
     setError('');
-    setIsRecording(false);
-    setIsListening(false);
     isSubmittingRef.current = false;
     setIsSubmitting(false);
-  };
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const Win = window as any;
-    const recognitionCtor =
-      Win.SpeechRecognition || Win.webkitSpeechRecognition;
-    if (!recognitionCtor) {
-      setSupportMessage(
-        'Browser does not support speech recognition. Use text fallback.'
-      );
-      return;
-    }
-
-    const rec = new recognitionCtor();
-    rec.lang = 'en-US';
-    rec.interimResults = true;
-    rec.continuous = true;
-    rec.maxAlternatives = 1;
-    rec.onstart = () => setIsListening(true);
-    rec.onend = () => setIsListening(false);
-    rec.onerror = (e: any) => {
-      setError(e?.error || 'Speech recognition failed');
-      setIsListening(false);
-      setIsRecording(false);
-    };
-    rec.onresult = (e: any) => {
-      let fin = '';
-      let inter = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const text = e.results[i][0]?.transcript || '';
-        if (e.results[i].isFinal) fin += text;
-        else inter += text;
-      }
-      if (fin.trim())
-        committedTranscriptRef.current =
-          `${committedTranscriptRef.current} ${fin}`.trim();
-      setTranscriptPreview(`${committedTranscriptRef.current} ${inter}`.trim());
-
-      if (silenceTimerRef.current) window.clearTimeout(silenceTimerRef.current);
-      if (committedTranscriptRef.current.trim()) {
-        silenceTimerRef.current = window.setTimeout(() => {
-          const toSend = committedTranscriptRef.current.trim();
-          if (
-            !toSend ||
-            toSend === lastSubmittedTranscriptRef.current ||
-            isSubmittingRef.current
-          )
-            return;
-          lastSubmittedTranscriptRef.current = toSend;
-          committedTranscriptRef.current = '';
-          setTranscriptPreview('');
-          void sendTranscript(toSend);
-        }, 1200);
-      }
-    };
-    recognitionRef.current = rec;
-
-    return () => {
-      rec.stop();
-      recognitionRef.current = null;
-    };
-  }, []);
+    audioQueueRef.current = [];
+    // Reconnect with a fresh session ID
+    setTimeout(connectWebSocket, 500);
+  }, [stopRecording, connectWebSocket]);
 
   return {
     isRecording,
-    isListening,
+    isConnected,
     isSubmitting,
     isComplete,
     isVoiceOutputEnabled,
@@ -381,5 +538,7 @@ export function useIntakeVoice() {
     toggleMic,
     sendTranscript,
     resetConversation,
+    // Additional fields for UI
+    isListening: isRecording,
   };
 }

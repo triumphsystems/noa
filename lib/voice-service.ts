@@ -6,8 +6,9 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { bedrockClient, s3Client, awsConfig } from './aws-config';
 import { invokeClinicalAI } from '@/lib/ai/provider';
 
-// Sonic model ID for real-time voice conversations
-const SONIC_MODEL = process.env.BEDROCK_SONIC_MODEL || 'amazon.nova-sonic-v2:0';
+// Nova 2 Sonic model ID — only for the WebSocket bidirectional stream route
+const SONIC_MODEL =
+  process.env.BEDROCK_SONIC_MODEL || 'amazon.nova-2-sonic-v1:0';
 
 interface VoiceMessage {
   role: 'doctor' | 'patient' | 'system';
@@ -96,7 +97,7 @@ Provide brief, focused responses that support clinical decision-making. Keep res
       systemPrompt,
       maxTokens: 500,
       temperature: 0.3,
-      modelTier: 'intake',
+      modelTier: 'fast',
     });
     return text || 'Unable to process voice input';
   } catch (error) {
@@ -330,7 +331,7 @@ Return as JSON:
       prompt,
       maxTokens: 400,
       temperature: 0.3,
-      modelTier: 'intake',
+      modelTier: 'fast',
     });
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -375,7 +376,7 @@ Provide actionable clinical suggestions as a JSON array:
       prompt,
       maxTokens: 300,
       temperature: 0.4,
-      modelTier: 'intake',
+      modelTier: 'fast',
     });
 
     const arrayMatch = text.match(/\[[\s\S]*\]/);
@@ -418,7 +419,7 @@ Respond as JSON:
       prompt,
       maxTokens: 300,
       temperature: 0.3,
-      modelTier: 'intake',
+      modelTier: 'fast',
     });
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -518,7 +519,7 @@ Completion criteria:
       prompt: `${prompt}\n\nIntake assistant response:`,
       maxTokens: 900,
       temperature: 0.2,
-      modelTier: 'intake',
+      modelTier: 'fast',
     });
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
