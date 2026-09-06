@@ -278,6 +278,12 @@ export function useIntakeVoice() {
           };
           if (msg.type === 'ready') {
             // Server stream ready — no action needed
+          } else if (msg.type === 'transcript_chunk') {
+            if (msg.payload?.text) {
+              setTranscriptPreview((prev) =>
+                prev ? `${prev} ${msg.payload.text}` : msg.payload.text
+              );
+            }
           } else if (msg.type === 'session_complete') {
             // Final transcript available — trigger text extraction via Nova 2 Lite
             if (msg.transcript) {
@@ -334,13 +340,21 @@ export function useIntakeVoice() {
       const ctx = new AudioContext({ sampleRate: SAMPLE_RATE });
       audioContextRef.current = ctx;
 
-      // Load the inline PCM capture worklet
-      const blob = new Blob([AUDIO_WORKLET_CODE], {
-        type: 'application/javascript',
-      });
-      const workletUrl = URL.createObjectURL(blob);
-      await ctx.audioWorklet.addModule(workletUrl);
-      URL.revokeObjectURL(workletUrl);
+      // Load the PCM capture AudioWorklet
+      // Try same-origin static file first (CSP-safe), fallback to inline blob URL
+      try {
+        await ctx.audioWorklet.addModule('/pcm-worklet.js');
+      } catch {
+        const blob = new Blob([AUDIO_WORKLET_CODE], {
+          type: 'application/javascript',
+        });
+        const workletUrl = URL.createObjectURL(blob);
+        try {
+          await ctx.audioWorklet.addModule(workletUrl);
+        } finally {
+          URL.revokeObjectURL(workletUrl);
+        }
+      }
 
       // Request microphone
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -363,9 +377,9 @@ export function useIntakeVoice() {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(event.data);
         }
-        // Live transcript preview (waveform word count heuristic)
+        // Live transcript preview (waveform word count heuristic if no transcript yet)
         setTranscriptPreview((prev) =>
-          prev.length < 120 ? prev + '…' : '…speaking…'
+          prev && !prev.includes('…') ? prev : prev.length < 120 ? prev + '…' : '…speaking…'
         );
       };
 
@@ -373,9 +387,13 @@ export function useIntakeVoice() {
     } catch (err: any) {
       const msg = err?.message || 'Unable to access microphone';
       setError(msg);
-      setSupportMessage(
-        'Microphone access denied. Use the text field instead.'
-      );
+      if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+        setSupportMessage(
+          'Microphone access denied. Please allow microphone permissions or use the text field.'
+        );
+      } else {
+        setSupportMessage(msg);
+      }
     }
   }, [isRecording]);
 
