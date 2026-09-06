@@ -24,6 +24,7 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { IntakeConversationDraft } from '@/lib/voice-service';
+import { http } from '@/lib/http';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Types
@@ -198,6 +199,55 @@ export function useIntakeVoice() {
   }, [searchParams]);
 
   // ──────────────────────────────────────────────────────
+  // Smart Intake: Prefill known patient data from DynamoDB
+  // ──────────────────────────────────────────────────────
+  const prefillAttemptedRef = useRef(false);
+
+  useEffect(() => {
+    if (prefillAttemptedRef.current) return;
+    prefillAttemptedRef.current = true;
+
+    async function fetchPrefill() {
+      try {
+        const queryParams = new URLSearchParams();
+        if (doctorId) queryParams.set('doctorId', doctorId);
+        if (patientId) queryParams.set('patientId', patientId);
+
+        const data = await http.get<{
+          success: boolean;
+          authenticated: boolean;
+          draft: IntakeConversationDraft;
+          initialPrompt: string;
+          patientId: string | null;
+          doctorId: string | null;
+        }>(`/api/intakes/conversation?${queryParams.toString()}`, {
+          skipAuthRedirect: true,
+        });
+
+        if (data?.draft && Object.keys(data.draft).length > 0) {
+          setDraft((prev) => ({ ...prev, ...data.draft }));
+        }
+        if (data?.initialPrompt) {
+          setAssistantMessage(data.initialPrompt);
+          setHistory([
+            { id: 'system-1', role: 'system', text: data.initialPrompt },
+          ]);
+        }
+        if (data?.patientId && !patientId) {
+          setPatientId(data.patientId);
+        }
+        if (data?.doctorId && !doctorId) {
+          setDoctorId(data.doctorId);
+        }
+      } catch (err) {
+        console.warn('[Voice/Prefill] Could not load prefill data:', err);
+      }
+    }
+
+    void fetchPrefill();
+  }, [doctorId, patientId]);
+
+  // ──────────────────────────────────────────────────────
   // Playback Context Provider (independent of recording)
   // ──────────────────────────────────────────────────────
 
@@ -361,6 +411,7 @@ export function useIntakeVoice() {
               setTranscriptPreview('');
             }
           } else if (msg.type === 'session_complete') {
+            if (isCompleteRef.current) return;
             if (msg.transcript) {
               void sendTranscript(msg.transcript);
             }
@@ -505,13 +556,13 @@ export function useIntakeVoice() {
 
   // ──────────────────────────────────────────────────────
   // Text transcript → Nova 2 Lite field extraction
-  // (unchanged API contract with /api/intakes/conversation)
+  // Uses resilient HTTP client with auto-refresh on 401
   // ──────────────────────────────────────────────────────
 
   const sendTranscript = useCallback(
     async (transcript: string) => {
       const trimmed = transcript.trim();
-      if (!trimmed || isSubmittingRef.current) return;
+      if (!trimmed || isSubmittingRef.current || isCompleteRef.current) return;
       isSubmittingRef.current = true;
       setIsSubmitting(true);
       setError('');
@@ -531,10 +582,13 @@ export function useIntakeVoice() {
       ];
 
       try {
-        const response = await fetch('/api/intakes/conversation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        const data = await http.post<{
+          success: boolean;
+          turn: IntakeTurn;
+          savedIntake?: any;
+        }>(
+          '/api/intakes/conversation',
+          {
             transcript: trimmed,
             language: detectedLanguage,
             history: outgoingHistory.map((item) => ({
@@ -545,12 +599,9 @@ export function useIntakeVoice() {
             draft,
             doctorId,
             patientId,
-          }),
-        });
-
-        const data = await response.json();
-        if (!response.ok)
-          throw new Error(data.message || 'Failed to process intake response');
+          },
+          { skipAuthRedirect: true }
+        );
 
         const nextTurn: IntakeTurn = data.turn;
         const updatedDraft = nextTurn.draft || draft;
@@ -574,8 +625,14 @@ export function useIntakeVoice() {
 
         if (nextTurn.isComplete) {
           setIsComplete(true);
+          isCompleteRef.current = true;
+          stopRecording();
+
           // Signal end of intake session
-          wsRef.current?.send(JSON.stringify({ type: 'end' }));
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({ type: 'end' }));
+          }
+
           sessionStorage.setItem(
             'intake-completion',
             JSON.stringify({
@@ -586,7 +643,12 @@ export function useIntakeVoice() {
               patientId,
             })
           );
-          router.push('/intake/confirmation');
+
+          // Allow patient to hear closing statement before routing to confirmation
+          setTimeout(() => {
+            router.push('/intake/confirmation');
+          }, 1500);
+          return;
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -606,8 +668,16 @@ export function useIntakeVoice() {
       pushHistory,
       getPlaybackContext,
       speakText,
+      stopRecording,
     ]
   );
+
+  const finalizeIntake = useCallback(() => {
+    if (isCompleteRef.current || isSubmittingRef.current) return;
+    void sendTranscript(
+      'I confirm all my health information and give consent to finalize and submit my intake.'
+    );
+  }, [sendTranscript]);
 
   // ──────────────────────────────────────────────────────
   // Lifecycle: Connect WS on mount, clean up on unmount
@@ -665,6 +735,7 @@ export function useIntakeVoice() {
     supportMessage,
     toggleMic,
     sendTranscript,
+    finalizeIntake,
     resetConversation,
     // Additional fields for UI
     isListening: isRecording,

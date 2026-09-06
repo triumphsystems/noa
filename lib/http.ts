@@ -81,12 +81,16 @@ async function performTokenRefresh(): Promise<boolean> {
   return refreshPromise;
 }
 
+export interface HttpOptions extends RequestInit {
+  skipAuthRedirect?: boolean;
+}
+
 /**
  * Enhanced fetch with automatic 401 interception and token refresh
  */
 export async function http<T = any>(
   input: RequestInfo | URL,
-  init?: RequestInit
+  init?: HttpOptions
 ): Promise<T> {
   // 1. Attempt original request
   let response = await fetch(input, {
@@ -110,11 +114,15 @@ export async function http<T = any>(
         });
       } else {
         // Refresh failed: session is irrecoverable
-        handleAuthExpiration();
+        if (!init?.skipAuthRedirect) {
+          handleAuthExpiration();
+        }
         throw new Error('Session expired. Please log in again.');
       }
     } else {
-      handleAuthExpiration();
+      if (!init?.skipAuthRedirect) {
+        handleAuthExpiration();
+      }
       throw new Error('Session expired. Please log in again.');
     }
   }
@@ -135,13 +143,13 @@ export async function http<T = any>(
 }
 
 // Convenience REST methods
-http.get = <T = any>(url: string, init?: Omit<RequestInit, 'method'>) =>
+http.get = <T = any>(url: string, init?: Omit<HttpOptions, 'method'>) =>
   http<T>(url, { ...init, method: 'GET' });
 
 http.post = <T = any>(
   url: string,
   body?: any,
-  init?: Omit<RequestInit, 'method' | 'body'>
+  init?: Omit<HttpOptions, 'method' | 'body'>
 ) =>
   http<T>(url, {
     ...init,
@@ -156,7 +164,7 @@ http.post = <T = any>(
 http.put = <T = any>(
   url: string,
   body?: any,
-  init?: Omit<RequestInit, 'method' | 'body'>
+  init?: Omit<HttpOptions, 'method' | 'body'>
 ) =>
   http<T>(url, {
     ...init,
@@ -168,5 +176,5 @@ http.put = <T = any>(
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
-http.delete = <T = any>(url: string, init?: Omit<RequestInit, 'method'>) =>
+http.delete = <T = any>(url: string, init?: Omit<HttpOptions, 'method'>) =>
   http<T>(url, { ...init, method: 'DELETE' });

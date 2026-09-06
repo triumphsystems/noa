@@ -102,9 +102,7 @@ Noa is an AI-Powered Medical Intelligence Platform that transforms medical consu
 - `scripts/seed-admin.mjs`: Script for creating an initial admin user.
 - `terraform/`: Infrastructure as code definitions.
 - `tests/`: Contains unit and integration tests.
-- `QUICK_REFERENCE.md`: Detailed API endpoint documentation.
-- `TROUBLESHOOTING.md`: Common issues and solutions.
-- `CONTRIBUTING.md`: Contribution guidelines.
+- `docs/`: Detailed documentation.
 
 ## Notes for Agents
 

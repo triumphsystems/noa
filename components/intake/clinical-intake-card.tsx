@@ -17,9 +17,18 @@ type RightPanelProps = {
     role: 'assistant' | 'patient' | 'system';
     text: string;
   }>;
+  isComplete?: boolean;
+  isSubmitting?: boolean;
+  onFinalize?: () => void;
 };
 
-export function ClinicalIntakeCard({ draft, chatItems }: RightPanelProps) {
+export function ClinicalIntakeCard({
+  draft,
+  chatItems,
+  isComplete,
+  isSubmitting,
+  onFinalize,
+}: RightPanelProps) {
   const [showHistory, setShowHistory] = useState(false);
 
   const fields = [
@@ -59,6 +68,22 @@ export function ClinicalIntakeCard({ draft, chatItems }: RightPanelProps) {
             style={{ width: `${percentComplete}%` }}
           />
         </div>
+
+        {(percentComplete === 100 || isComplete) && onFinalize && (
+          <button
+            type="button"
+            onClick={onFinalize}
+            disabled={isSubmitting}
+            className="bg-moss-green text-white hover:bg-moss-green/90 mt-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold shadow-xs transition-all disabled:opacity-50"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            <span>
+              {isComplete
+                ? 'Intake Complete — Finalizing…'
+                : 'Finalize Intake & View Summary'}
+            </span>
+          </button>
+        )}
       </div>
 
       {/* Extracted Fields Table */}

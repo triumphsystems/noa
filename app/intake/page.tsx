@@ -36,6 +36,7 @@ function PatientIntakeContent() {
     supportMessage,
     toggleMic,
     sendTranscript,
+    finalizeIntake,
     resetConversation,
   } = useIntakeVoice();
 
@@ -86,7 +87,13 @@ function PatientIntakeContent() {
 
           {/* Clinical Card & Collapsible Drawer */}
           <aside className="min-h-0 overflow-visible lg:overflow-hidden">
-            <ClinicalIntakeCard draft={draft} chatItems={chatItems} />
+            <ClinicalIntakeCard
+              draft={draft}
+              chatItems={chatItems}
+              isComplete={isComplete}
+              isSubmitting={isSubmitting}
+              onFinalize={finalizeIntake}
+            />
           </aside>
         </main>
 

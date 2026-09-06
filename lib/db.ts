@@ -157,6 +157,7 @@ export interface PatientIntake {
   patientId: string;
   doctorId: string;
   chiefComplaint?: string;
+  summary?: string;
   medicalHistory: string;
   medications: string[];
   allergies: string[];

@@ -458,7 +458,7 @@ export async function generateIntakeConversationTurn({
     .map((message) => `${message.role}: ${message.content}`)
     .join('\n');
 
-  const prompt = `You are Noa, a warm voice-first medical intake assistant.
+  const prompt = `You are Noa, a warm voice-first clinical intake assistant.
 
 Rules:
 - Ask one concise question at a time.
@@ -467,6 +467,7 @@ Rules:
 - If the user gives information in another language, normalize it into the intake JSON in English when useful, but keep the spoken assistant response in ${language}.
 - Do not produce markdown.
 - Return STRICT JSON only.
+- CRITICAL: DO NOT ask questions for fields that are ALREADY populated in the current draft below (such as full name, date of birth, email, phone, known allergies, conditions, or medications). Skip or briefly acknowledge known information and focus ONLY on remaining missing details and what brings the patient in today.
 
 Current draft:
 ${JSON.stringify(draft)}
@@ -479,7 +480,7 @@ ${transcript}
 
 Return JSON with this shape:
 {
-  "assistantMessage": "one short next question or acknowledgement in ${language}",
+  "assistantMessage": "one short next question, acknowledgement, or closing statement in ${language}",
   "detectedLanguage": "best guess language name",
   "normalizedTranscript": "a clean English version of the latest user response",
   "draft": {
@@ -503,16 +504,22 @@ Return JSON with this shape:
     "emergencyContactRelation": "...",
     "consentRead": true
   },
-  "missingFields": ["firstName", "lastName"],
+  "missingFields": ["fieldName1", "fieldName2"],
   "isComplete": false,
   "summary": "short summary of what has been captured so far in English"
 }
 
 Completion criteria:
-- Mark isComplete true only when the intake has enough information to be clinically useful and the user has agreed to proceed.
-- If consent has not been collected, ask for consent.
+- Mark isComplete true ONLY when:
+  1. The core clinical details are captured (patient identity, reason for visit / symptoms, and medical background).
+  2. Patient has provided consent (consentRead is true or patient confirmed consent in dialogue).
+- When isComplete is true:
+  * DO NOT ask any more questions.
+  * Set "missingFields": [].
+  * Set "assistantMessage" to a warm closing confirmation in ${language} acknowledging that their intake is complete and securely submitted for their doctor (e.g. "Thank you, your medical intake is complete and has been securely recorded for your doctor. Taking you to the confirmation now.").
+- If all clinical details are filled but consent has not been confirmed yet, ask the patient for their consent to submit the intake.
 - Prefer asking for the biggest missing piece next.
-- The latest user response may contain multiple answers; extract them.`;
+- The latest user response may contain multiple answers; extract all of them into the draft.`;
 
   try {
     const { text } = await invokeClinicalAI({

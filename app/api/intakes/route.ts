@@ -1,18 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createIntake, getIntakesByPatient } from '@/lib/db';
 import { getAuthenticatedUser } from '@/lib/auth/jwt';
+import { AUTH_COOKIE_NAMES } from '@/lib/auth/cookies';
 
 export async function POST(request: NextRequest) {
   try {
     const auth = await getAuthenticatedUser(request);
-    if (!auth.isValid) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const hasRefreshToken = Boolean(
+      request.cookies.get(AUTH_COOKIE_NAMES.REFRESH_TOKEN)?.value
+    );
+
+    // If an authenticated session has expired, trigger client HTTP auto-refresh via 401
+    if (!auth.isValid && hasRefreshToken) {
+      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
     }
 
     const body = await request.json();
     const {
-      patientId,
+      patientId: requestedPatientId,
       doctorId,
+      chiefComplaint,
+      summary,
       medicalHistory,
       medications,
       allergies,
@@ -21,14 +29,19 @@ export async function POST(request: NextRequest) {
       socialHistory,
     } = body;
 
-    if (!patientId || !doctorId) {
+    const patientId =
+      auth.isValid && auth.userType === 'patient' && auth.sub
+        ? auth.sub
+        : requestedPatientId || `guest-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+    if (!doctorId) {
       return NextResponse.json(
-        { error: 'patientId and doctorId are required' },
+        { error: 'doctorId is required' },
         { status: 400 }
       );
     }
 
-    if (auth.userType === 'patient' && patientId !== auth.sub) {
+    if (auth.isValid && auth.userType === 'patient' && requestedPatientId && requestedPatientId !== auth.sub) {
       return NextResponse.json(
         { error: 'Forbidden: Cannot submit intake for another patient' },
         { status: 403 }
@@ -39,6 +52,8 @@ export async function POST(request: NextRequest) {
     const intake = await createIntake({
       patientId,
       doctorId,
+      chiefComplaint: chiefComplaint || summary || '',
+      summary: summary || chiefComplaint || '',
       medicalHistory: medicalHistory || '',
       medications: medications || [],
       allergies: allergies || [],
