@@ -77,23 +77,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Session expired' }, { status: 401 });
     }
 
-    const requestedPatientId = request.nextUrl.searchParams.get('patientId');
     const requestedDoctorId =
       request.nextUrl.searchParams.get('doctorId') ||
       request.nextUrl.searchParams.get('doctorCode');
 
-    // Resolve patient record from authentication or query param
+    // SECURITY: Pre-filling existing patient data from DynamoDB MUST ONLY occur
+    // for verified authenticated sessions matching auth.sub.
+    // Unauthenticated public requests MUST NEVER be permitted to query arbitrary patient records.
     let patient: Patient | null = null;
-    const patientId =
-      auth.isValid && auth.userType === 'patient'
-        ? auth.sub
-        : requestedPatientId || null;
-
-    if (patientId) {
-      patient = await getPatientById(patientId);
-    }
-    if (!patient && auth.isValid && auth.email) {
-      patient = await getPatientByEmail(auth.email);
+    if (auth.isValid && auth.userType === 'patient' && auth.sub) {
+      patient = await getPatientById(auth.sub);
+      if (!patient && auth.email) {
+        patient = await getPatientByEmail(auth.email);
+      }
     }
 
     if (patient) {
@@ -126,7 +122,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Public / guest intake fallback
+    // Public / guest intake fallback — ZERO sensitive patient data is returned
     return NextResponse.json({
       success: true,
       authenticated: false,
@@ -173,13 +169,6 @@ export async function POST(request: NextRequest) {
     const incomingDraft = (body.draft || {}) as IntakeConversationDraft;
     const doctorInput =
       typeof body.doctorId === 'string' ? body.doctorId.trim() : '';
-    let patientId =
-      auth.isValid && auth.userType === 'patient' && auth.sub
-        ? auth.sub
-        : typeof body.patientId === 'string'
-          ? body.patientId.trim()
-          : '';
-
     if (!transcript) {
       return NextResponse.json(
         { message: 'transcript is required' },
@@ -187,14 +176,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Smart Intake: If patient exists in DynamoDB, prefill any known fields not yet in draft
+    // SECURITY: Pre-filling known patient data from DynamoDB MUST ONLY occur
+    // for verified authenticated sessions matching auth.sub.
+    // Unauthenticated public requests MUST NEVER be permitted to query arbitrary patient records.
     let patient: Patient | null = null;
-    if (patientId) {
+    let patientId = '';
+
+    if (auth.isValid && auth.userType === 'patient' && auth.sub) {
+      patientId = auth.sub;
       patient = await getPatientById(patientId);
-    }
-    if (!patient && auth.isValid && auth.email) {
-      patient = await getPatientByEmail(auth.email);
-      if (patient) patientId = patient.id;
+      if (!patient && auth.email) {
+        patient = await getPatientByEmail(auth.email);
+        if (patient) patientId = patient.id;
+      }
     }
 
     let enrichedDraft: IntakeConversationDraft = { ...incomingDraft };
