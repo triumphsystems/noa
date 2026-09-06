@@ -100,16 +100,24 @@ function generateSessionId(): string {
 
 const AUDIO_WORKLET_CODE = /* javascript */ `
 class PcmCapture extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.bufferSize = 1600;
+    this.buffer = new Int16Array(this.bufferSize);
+    this.bufferIndex = 0;
+  }
   process(inputs) {
     const input = inputs[0]?.[0];
     if (!input || input.length === 0) return true;
-    // Convert Float32 [-1, 1] to Int16 [-32768, 32767]
-    const pcm = new Int16Array(input.length);
     for (let i = 0; i < input.length; i++) {
       const clamped = Math.max(-1, Math.min(1, input[i]));
-      pcm[i] = clamped < 0 ? clamped * 32768 : clamped * 32767;
+      this.buffer[this.bufferIndex++] = clamped < 0 ? clamped * 32768 : clamped * 32767;
+      if (this.bufferIndex >= this.bufferSize) {
+        const chunk = this.buffer.slice(0, this.bufferSize);
+        this.port.postMessage(chunk.buffer, [chunk.buffer]);
+        this.bufferIndex = 0;
+      }
     }
-    this.port.postMessage(pcm.buffer, [pcm.buffer]);
     return true;
   }
 }
@@ -377,13 +385,10 @@ export function useIntakeVoice() {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(event.data);
         }
-        // Live transcript preview (waveform word count heuristic if no transcript yet)
-        setTranscriptPreview((prev) =>
-          prev && !prev.includes('…') ? prev : prev.length < 120 ? prev + '…' : '…speaking…'
-        );
       };
 
       setIsRecording(true);
+      setTranscriptPreview('Listening…');
     } catch (err: any) {
       const msg = err?.message || 'Unable to access microphone';
       setError(msg);

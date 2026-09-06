@@ -59,8 +59,8 @@ function PatientIntakeContent() {
 
         {error && <ErrorAlert message={error} className="shrink-0" />}
 
-        {/* Studio Layout: Stacked on mobile, 2-column on desktop */}
-        <main className="grid min-h-0 flex-1 gap-2.5 overflow-y-auto sm:gap-3.5 lg:grid-cols-[1.25fr_0.95fr] lg:overflow-hidden">
+        {/* Studio Layout: Stacked on mobile, 2-column on tablet and desktop */}
+        <main className="grid min-h-0 flex-1 gap-2.5 overflow-y-auto sm:gap-3.5 md:grid-cols-[1.2fr_0.95fr] md:overflow-hidden lg:grid-cols-[1.25fr_0.95fr]">
           {/* Interactive Voice Canvas */}
           <section className="border-deep-ink/10 flex min-h-0 flex-col gap-2.5 rounded-2xl border bg-white p-3 shadow-sm sm:rounded-3xl sm:p-4">
             <AssistantPromptBox
