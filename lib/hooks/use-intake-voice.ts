@@ -134,7 +134,9 @@ export function useIntakeVoice() {
 
   // WebSocket + audio refs
   const wsRef = useRef<WebSocket | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const recordingContextRef = useRef<AudioContext | null>(null);
+  const playbackContextRef = useRef<AudioContext | null>(null);
+  const nextPlayTimeRef = useRef<number>(0);
   const workletNodeRef = useRef<AudioWorkletNode | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioQueueRef = useRef<ArrayBuffer[]>([]);
@@ -196,6 +198,61 @@ export function useIntakeVoice() {
   }, [searchParams]);
 
   // ──────────────────────────────────────────────────────
+  // Playback Context Provider (independent of recording)
+  // ──────────────────────────────────────────────────────
+
+  const getPlaybackContext = useCallback((): AudioContext | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      if (!playbackContextRef.current || playbackContextRef.current.state === 'closed') {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        playbackContextRef.current = new AudioCtx({ sampleRate: SAMPLE_RATE });
+        nextPlayTimeRef.current = 0;
+      }
+      if (playbackContextRef.current.state === 'suspended') {
+        void playbackContextRef.current.resume();
+      }
+      return playbackContextRef.current;
+    } catch (e) {
+      console.warn('[Voice/Playback] Failed to init playback context:', e);
+      return null;
+    }
+  }, []);
+
+  // ──────────────────────────────────────────────────────
+  // Web Speech API fallback for vocalization
+  // ──────────────────────────────────────────────────────
+
+  const speakText = useCallback(
+    (text: string) => {
+      if (!isVoiceOutputRef.current || typeof window === 'undefined') return;
+      if (!('speechSynthesis' in window)) return;
+
+      try {
+        window.speechSynthesis.cancel();
+        const clean = text.replace(/[*#_`]/g, '').trim();
+        if (!clean) return;
+
+        const utterance = new SpeechSynthesisUtterance(clean);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.lang = detectedLanguage?.toLowerCase().startsWith('es')
+          ? 'es-ES'
+          : 'en-US';
+
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn('[Voice/Speech] SpeechSynthesis error:', err);
+      }
+    },
+    [detectedLanguage]
+  );
+
+  // ──────────────────────────────────────────────────────
   // Conversation history
   // ──────────────────────────────────────────────────────
 
@@ -215,46 +272,52 @@ export function useIntakeVoice() {
   );
 
   // ──────────────────────────────────────────────────────
-  // Web Audio playback of Nova Sonic audio chunks
+  // Web Audio playback of Nova Sonic neural audio chunks
   // ──────────────────────────────────────────────────────
 
-  const playNextChunk = useCallback(async () => {
-    if (isPlayingRef.current || audioQueueRef.current.length === 0) return;
-    if (!audioContextRef.current || !isVoiceOutputRef.current) {
-      audioQueueRef.current = [];
-      return;
-    }
+  const playNextChunk = useCallback(() => {
+    if (!isVoiceOutputRef.current || audioQueueRef.current.length === 0) return;
 
-    isPlayingRef.current = true;
+    const ctx = getPlaybackContext();
+    if (!ctx) return;
+
     setIsSpeaking(true);
 
     while (audioQueueRef.current.length > 0) {
-      const chunk = audioQueueRef.current.shift()!;
+      const rawChunk = audioQueueRef.current.shift()!;
       try {
-        const ctx = audioContextRef.current;
-        // Nova Sonic returns 16kHz signed 16-bit PCM
-        const pcm16 = new Int16Array(chunk);
+        // Enforce 16-bit word alignment
+        const safeLength = rawChunk.byteLength - (rawChunk.byteLength % 2);
+        if (safeLength === 0) continue;
+
+        const pcm16 = new Int16Array(rawChunk.slice(0, safeLength));
         const float32 = new Float32Array(pcm16.length);
         for (let i = 0; i < pcm16.length; i++) {
           float32[i] = pcm16[i] / 32768;
         }
+
         const audioBuffer = ctx.createBuffer(1, float32.length, SAMPLE_RATE);
         audioBuffer.copyToChannel(float32, 0);
+
         const source = ctx.createBufferSource();
         source.buffer = audioBuffer;
         source.connect(ctx.destination);
-        await new Promise<void>((resolve) => {
-          source.onended = () => resolve();
-          source.start();
-        });
-      } catch {
-        // Chunk decode error — skip and continue
+
+        const now = ctx.currentTime;
+        const startTime = Math.max(now, nextPlayTimeRef.current);
+        source.start(startTime);
+        nextPlayTimeRef.current = startTime + audioBuffer.duration;
+
+        source.onended = () => {
+          if (ctx.currentTime >= nextPlayTimeRef.current - 0.05) {
+            setIsSpeaking(false);
+          }
+        };
+      } catch (err) {
+        console.warn('[Voice/Play] Chunk decode error:', err);
       }
     }
-
-    isPlayingRef.current = false;
-    setIsSpeaking(false);
-  }, []);
+  }, [getPlaybackContext]);
 
   // ──────────────────────────────────────────────────────
   // WebSocket connection to /api/voice/session
@@ -272,7 +335,6 @@ export function useIntakeVoice() {
       setIsConnected(true);
       setError('');
       reconnectDelayRef.current = WS_RECONNECT_DELAY_BASE_MS;
-      // Signal server to initialise the Nova Sonic stream
       ws.send(JSON.stringify({ type: 'init' }));
     };
 
@@ -285,15 +347,20 @@ export function useIntakeVoice() {
             [k: string]: any;
           };
           if (msg.type === 'ready') {
-            // Server stream ready — no action needed
+            // Stream ready
           } else if (msg.type === 'transcript_chunk') {
             if (msg.payload?.text) {
               setTranscriptPreview((prev) =>
                 prev ? `${prev} ${msg.payload.text}` : msg.payload.text
               );
             }
+          } else if (msg.type === 'assistant_message') {
+            if (msg.payload?.text) {
+              setAssistantMessage(msg.payload.text);
+              pushHistory('assistant', msg.payload.text);
+              setTranscriptPreview('');
+            }
           } else if (msg.type === 'session_complete') {
-            // Final transcript available — trigger text extraction via Nova 2 Lite
             if (msg.transcript) {
               void sendTranscript(msg.transcript);
             }
@@ -308,15 +375,18 @@ export function useIntakeVoice() {
 
       // Binary audio — Nova Sonic speech output
       if (event.data instanceof ArrayBuffer && isVoiceOutputRef.current) {
+        // Cancel browser synthesis if neural audio is streaming
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
         audioQueueRef.current.push(event.data);
-        void playNextChunk();
+        playNextChunk();
       }
     };
 
     ws.onclose = () => {
       setIsConnected(false);
       wsRef.current = null;
-      // Exponential backoff reconnect if recording is still active
       if (!isCompleteRef.current) {
         reconnectDelayRef.current = Math.min(
           reconnectDelayRef.current * 2,
@@ -330,10 +400,9 @@ export function useIntakeVoice() {
     };
 
     ws.onerror = () => {
-      // onclose will fire after onerror — reconnect logic handles recovery
       setSupportMessage('Voice connection interrupted. Reconnecting…');
     };
-  }, [playNextChunk]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [playNextChunk, pushHistory]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ──────────────────────────────────────────────────────
   // Microphone + AudioWorklet capture
@@ -344,12 +413,19 @@ export function useIntakeVoice() {
     setError('');
 
     try {
-      // Initialise AudioContext
+      // Ensure playback AudioContext is resumed on user gesture
+      getPlaybackContext();
+
+      // Cancel any ongoing synthetic speech when user begins speaking
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+
+      // Initialise recording AudioContext
       const ctx = new AudioContext({ sampleRate: SAMPLE_RATE });
-      audioContextRef.current = ctx;
+      recordingContextRef.current = ctx;
 
       // Load the PCM capture AudioWorklet
-      // Try same-origin static file first (CSP-safe), fallback to inline blob URL
       try {
         await ctx.audioWorklet.addModule('/pcm-worklet.js');
       } catch {
@@ -380,6 +456,11 @@ export function useIntakeVoice() {
       workletNodeRef.current = worklet;
       source.connect(worklet);
 
+      // Tell WebSocket server that a new speaking turn has started
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: 'audio_start' }));
+      }
+
       // Forward PCM frames to WebSocket
       worklet.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -400,17 +481,21 @@ export function useIntakeVoice() {
         setSupportMessage(msg);
       }
     }
-  }, [isRecording]);
+  }, [isRecording, getPlaybackContext]);
 
   const stopRecording = useCallback(() => {
     workletNodeRef.current?.disconnect();
     workletNodeRef.current = null;
     mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
     mediaStreamRef.current = null;
-    audioContextRef.current?.close().catch(() => {});
-    audioContextRef.current = null;
+    recordingContextRef.current?.close().catch(() => {});
+    recordingContextRef.current = null;
     setIsRecording(false);
-    setTranscriptPreview('');
+
+    // Tell WebSocket server the user finished speaking this turn -> Bedrock will process & respond
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'audio_end' }));
+    }
   }, []);
 
   const toggleMic = useCallback(() => {
@@ -432,6 +517,9 @@ export function useIntakeVoice() {
       setError('');
       setTranscriptPreview('');
       pushHistory('patient', trimmed);
+
+      // Un-suspend playback context on user submission
+      getPlaybackContext();
 
       const outgoingHistory = [
         ...history,
@@ -471,12 +559,15 @@ export function useIntakeVoice() {
         setDetectedLanguage(nextTurn.detectedLanguage || detectedLanguage);
         pushHistory('assistant', nextTurn.assistantMessage);
 
-        // Send the assistant text to the WebSocket for Nova Sonic to vocalise
+        // Vocalize response via browser speech synthesis fallback
+        speakText(nextTurn.assistantMessage);
+
+        // Request Nova Sonic vocalization over WebSocket
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(
             JSON.stringify({
-              type: 'transcript_chunk',
-              payload: { text: nextTurn.assistantMessage },
+              type: 'speak',
+              text: nextTurn.assistantMessage,
             })
           );
         }
@@ -505,7 +596,17 @@ export function useIntakeVoice() {
         setIsSubmitting(false);
       }
     },
-    [history, draft, detectedLanguage, doctorId, patientId, router, pushHistory]
+    [
+      history,
+      draft,
+      detectedLanguage,
+      doctorId,
+      patientId,
+      router,
+      pushHistory,
+      getPlaybackContext,
+      speakText,
+    ]
   );
 
   // ──────────────────────────────────────────────────────
@@ -518,6 +619,10 @@ export function useIntakeVoice() {
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       wsRef.current?.close();
       stopRecording();
+      playbackContextRef.current?.close().catch(() => {});
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -19,11 +19,6 @@
  *       ← Bedrock audio events streamed back (parsed from event.chunk.bytes JSON)
  *     ← WSS forwards audio bytes to browser
  *   Browser plays audio via Web Audio API
- *
- * Session state (transcript, patientId, doctorId) is persisted in DynamoDB
- * so reconnects resume cleanly within Vercel's 5-minute function window.
- *
- * For consultation recording (30+ min), use: /api/consultation/upload-slice
  */
 
 import {
@@ -57,19 +52,6 @@ Do not diagnose or give medical advice. When intake is complete, summarize what 
 
 /**
  * Nova Sonic Event Builders
- *
- * Amazon Bedrock InvokeModelWithBidirectionalStream protocol requires a strict hierarchical
- * event sequence:
- * 1. sessionStart (inference configuration)
- * 2. promptStart (prompt context, audio & text output configuration)
- * 3. contentStart (system prompt metadata)
- * 4. textInput (system prompt content)
- * 5. contentEnd (close system prompt content block)
- * 6. contentStart (user audio stream metadata)
- * 7. audioInput (raw base64 LPCM audio chunks)
- * 8. contentEnd (close audio block) -> promptEnd -> sessionEnd
- *
- * All prompt and content events require promptName/promptId and contentName/contentId.
  */
 
 function buildSessionStart(): Uint8Array {
@@ -144,6 +126,45 @@ function buildSystemTextInput(
         promptId: promptId,
         contentName: systemContentId,
         contentId: systemContentId,
+        content: text,
+      },
+    },
+  };
+  return new TextEncoder().encode(JSON.stringify(payload));
+}
+
+function buildUserTextContentStart(promptId: string, textContentId: string): Uint8Array {
+  const payload = {
+    event: {
+      contentStart: {
+        promptName: promptId,
+        promptId: promptId,
+        contentName: textContentId,
+        contentId: textContentId,
+        type: 'TEXT',
+        interactive: true,
+        role: 'USER',
+        textInputConfiguration: {
+          mediaType: 'text/plain',
+        },
+      },
+    },
+  };
+  return new TextEncoder().encode(JSON.stringify(payload));
+}
+
+function buildUserTextInput(
+  promptId: string,
+  textContentId: string,
+  text: string
+): Uint8Array {
+  const payload = {
+    event: {
+      textInput: {
+        promptName: promptId,
+        promptId: promptId,
+        contentName: textContentId,
+        contentId: textContentId,
         content: text,
       },
     },
@@ -241,15 +262,24 @@ function parseBedrockChunk(bytes: Uint8Array): ParsedBedrockEvent[] {
   const results: ParsedBedrockEvent[] = [];
 
   const extract = (obj: any) => {
-    const ev = obj?.event;
+    const ev = obj?.event || obj;
     if (!ev) return;
-    if (ev.audioOutput?.content) {
-      results.push({ audio: Buffer.from(ev.audioOutput.content, 'base64') });
+    const audioData = ev.audioOutput?.content || ev.audio?.content || ev.audioOutput;
+    if (typeof audioData === 'string') {
+      try {
+        results.push({ audio: Buffer.from(audioData, 'base64') });
+      } catch {
+        // Ignore invalid base64
+      }
+    } else if (audioData instanceof Uint8Array || Buffer.isBuffer(audioData)) {
+      results.push({ audio: Buffer.from(audioData) });
     }
-    if (ev.textOutput?.content) {
+
+    const textData = ev.textOutput?.content || ev.text?.content || ev.textOutput;
+    if (textData) {
       results.push({
-        text: ev.textOutput.content,
-        role: ev.textOutput.role || 'ASSISTANT',
+        text: typeof textData === 'string' ? textData : String(textData),
+        role: ev.textOutput?.role || ev.role || 'ASSISTANT',
       });
     }
   };
@@ -265,7 +295,7 @@ function parseBedrockChunk(bytes: Uint8Array): ParsedBedrockEvent[] {
         const parsed = JSON.parse(line);
         extract(parsed);
       } catch {
-        // Skip unparseable lines
+        // Skip
       }
     }
   }
@@ -283,13 +313,13 @@ export async function GET(request: Request) {
 
   return experimental_upgradeWebSocket(async (ws) => {
     console.log(
-      `[Voice/WS] Session ${sessionId} connected — model: ${modelId}`
+      `[Voice/WS] Session ${sessionId} connected — model: ${modelId} (${region})`
     );
 
     // Correlated turn IDs required by Amazon Bedrock Nova Sonic protocol
     const promptId = randomUUID();
     const systemContentId = randomUUID();
-    const audioContentId = randomUUID();
+    let activeAudioContentId: string | null = null;
 
     // Create a per-connection Bedrock client
     const credProvider = createCredentialProvider(region);
@@ -318,16 +348,12 @@ export async function GET(request: Request) {
       yield { chunk: { bytes: buildSystemTextInput(promptId, systemContentId, INTAKE_SYSTEM_PROMPT) } };
       yield { chunk: { bytes: buildContentEnd(promptId, systemContentId) } };
 
-      // 4. Start audio input block for streaming user speech
-      yield { chunk: { bytes: buildAudioContentStart(promptId, audioContentId) } };
-
-      // 5. Stream audio chunks pushed from the WebSocket message handler
+      // 4. Process dynamic events (audio input, text input, end of utterance)
       while (!streamDone) {
         if (chunkQueue.length > 0) {
           const bytes = chunkQueue.shift()!;
           yield { chunk: { bytes } };
         } else {
-          // Suspend until the next chunk arrives or stream ends
           await new Promise<void>((resolve) => {
             const check = setInterval(() => {
               if (chunkQueue.length > 0 || streamDone) {
@@ -339,8 +365,12 @@ export async function GET(request: Request) {
         }
       }
 
-      // 6. Close audio block, prompt, and session
-      yield { chunk: { bytes: buildContentEnd(promptId, audioContentId) } };
+      // 5. If an audio content block was open, close it
+      if (activeAudioContentId) {
+        yield { chunk: { bytes: buildContentEnd(promptId, activeAudioContentId) } };
+      }
+
+      // 6. Close prompt turn and session
       yield { chunk: { bytes: buildPromptEnd(promptId) } };
       yield { chunk: { bytes: buildSessionEnd() } };
     }
@@ -353,7 +383,6 @@ export async function GET(request: Request) {
 
     const command = new InvokeModelWithBidirectionalStreamCommand(input);
 
-    // Start the stream and forward responses to the browser in the background
     bedrockStreamClient
       .send(command)
       .then(async (response) => {
@@ -362,6 +391,8 @@ export async function GET(request: Request) {
           ws.send(JSON.stringify({ type: 'error', message: 'No response from voice model' }));
           return;
         }
+        console.log(`[Voice/WS] Bedrock stream established for session ${sessionId}`);
+
         try {
           for await (const event of response.body) {
             if (event.chunk?.bytes) {
@@ -369,7 +400,7 @@ export async function GET(request: Request) {
               if (events.length > 0) {
                 for (const ev of events) {
                   if (ev.audio) {
-                    // Raw Nova Sonic LPCM audio bytes → forward to browser
+                    // Send raw LPCM audio bytes to browser
                     ws.send(ev.audio);
                   }
                   if (ev.text && ev.text.trim()) {
@@ -382,10 +413,18 @@ export async function GET(request: Request) {
                         payload: { text: ev.text, role: ev.role },
                       })
                     );
+                    if (ev.role === 'ASSISTANT') {
+                      ws.send(
+                        JSON.stringify({
+                          type: 'assistant_message',
+                          payload: { text: ev.text },
+                        })
+                      );
+                    }
                   }
                 }
               } else {
-                // If chunk is raw binary audio, forward directly
+                // If chunk is already raw binary audio, forward directly
                 ws.send(Buffer.from(event.chunk.bytes));
               }
             } else if (event.internalServerException) {
@@ -424,19 +463,67 @@ export async function GET(request: Request) {
         ws.send(JSON.stringify({ type: 'error', message: 'Failed to connect to voice model' }));
       });
 
-    // Signal to the browser that the WebSocket is open and stream is live
+    // Notify browser that WebSocket connection is established
     ws.send(JSON.stringify({ type: 'ready', sessionId }));
 
-    // Handle incoming WebSocket messages from the browser
+    // Handle incoming messages from browser
     ws.on('message', async (data: WebSocketData) => {
       try {
         if (typeof data === 'string') {
-          const msg = JSON.parse(data) as { type: string; payload?: any };
+          const msg = JSON.parse(data) as {
+            type: string;
+            text?: string;
+            payload?: any;
+          };
+
+          // User started a new microphone speaking turn
+          if (msg.type === 'audio_start') {
+            if (!activeAudioContentId) {
+              activeAudioContentId = randomUUID();
+              chunkQueue.push(
+                buildAudioContentStart(promptId, activeAudioContentId)
+              );
+            }
+            return;
+          }
+
+          // User completed their speaking turn -> close audio block to trigger Bedrock response
+          if (msg.type === 'audio_end') {
+            if (activeAudioContentId) {
+              chunkQueue.push(
+                buildContentEnd(promptId, activeAudioContentId)
+              );
+              activeAudioContentId = null;
+            }
+            return;
+          }
+
+          // Vocalize text input or assistant response via Bedrock
+          if (msg.type === 'speak' || msg.type === 'text_input') {
+            const textToSpeak = msg.text || msg.payload?.text;
+            if (textToSpeak && textToSpeak.trim()) {
+              const textContentId = randomUUID();
+              chunkQueue.push(
+                buildUserTextContentStart(promptId, textContentId)
+              );
+              chunkQueue.push(
+                buildUserTextInput(promptId, textContentId, textToSpeak.trim())
+              );
+              chunkQueue.push(
+                buildContentEnd(promptId, textContentId)
+              );
+            }
+            return;
+          }
 
           if (msg.type === 'end') {
             streamDone = true;
             ws.send(
-              JSON.stringify({ type: 'session_complete', sessionId, transcript: fullTranscript.trim() })
+              JSON.stringify({
+                type: 'session_complete',
+                sessionId,
+                transcript: fullTranscript.trim(),
+              })
             );
             return;
           }
@@ -447,16 +534,26 @@ export async function GET(request: Request) {
           return;
         }
 
-        // Binary PCM audio from the browser's AudioWorklet
+        // Binary PCM audio chunks from browser's AudioWorklet
         if (
           data instanceof Buffer ||
           data instanceof ArrayBuffer ||
           ArrayBuffer.isView(data)
         ) {
+          // If user started streaming without explicit audio_start, open content block
+          if (!activeAudioContentId) {
+            activeAudioContentId = randomUUID();
+            chunkQueue.push(
+              buildAudioContentStart(promptId, activeAudioContentId)
+            );
+          }
+
           const bytes =
             data instanceof Buffer ? data : Buffer.from(data as ArrayBuffer);
           const base64 = bytes.toString('base64');
-          chunkQueue.push(buildAudioChunk(promptId, audioContentId, base64));
+          chunkQueue.push(
+            buildAudioChunk(promptId, activeAudioContentId, base64)
+          );
         }
       } catch (err: any) {
         console.error('[Voice/WS] Message handler error:', err?.message);
