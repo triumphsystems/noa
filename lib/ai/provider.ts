@@ -83,7 +83,7 @@ export function getModelForTier(
     case 'reasoning':
       return process.env.BEDROCK_NOVA_PRO_MODEL || 'amazon.nova-pro-v2:0';
     case 'intake':
-      return process.env.BEDROCK_SONIC_MODEL || 'amazon.nova-sonic-v2:0';
+      return process.env.BEDROCK_SONIC_MODEL || 'amazon.nova-2-sonic-v1:0';
     case 'fast':
     default:
       return process.env.BEDROCK_NOVA_LITE_MODEL || 'amazon.nova-lite-v2:0';
