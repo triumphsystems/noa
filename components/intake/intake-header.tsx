@@ -68,14 +68,12 @@ export function IntakeHeader({
           <span className="text-[11px] font-medium">{statusLabel}</span>
         </div>
 
-        <Link href="/" className="shrink-0">
-          <button
-            type="button"
-            className="border-deep-ink/15 text-deep-ink hover:bg-soft-meadow inline-flex items-center gap-1 rounded-full border bg-white px-2 py-1 text-[11px] font-semibold shadow-2xs transition-colors"
-          >
-            <ArrowLeft className="h-3 w-3" />
-            <span className="hidden sm:inline">Exit</span>
-          </button>
+        <Link
+          href="/"
+          className="border-deep-ink/15 text-deep-ink hover:bg-soft-meadow inline-flex shrink-0 items-center gap-1 rounded-full border bg-white px-2 py-1 text-[11px] font-semibold shadow-2xs transition-colors"
+        >
+          <ArrowLeft className="h-3 w-3" />
+          <span className="hidden sm:inline">Exit</span>
         </Link>
       </div>
     </header>

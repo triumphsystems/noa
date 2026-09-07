@@ -496,14 +496,37 @@ export async function GET(request: Request) {
             }
           }
         } catch (err: any) {
-          if (err?.name !== 'AbortError') {
-            console.error('[Voice/WS] Stream read error:', err?.message);
-            ws.send(
-              JSON.stringify({
-                type: 'error',
-                message: 'Voice stream interrupted',
-              })
+          const isIdleTimeout =
+            err?.message?.includes('Timed out waiting for audio bytes') ||
+            err?.message?.includes('less than 55 seconds');
+
+          if (isIdleTimeout) {
+            console.log(
+              `[Voice/WS] Bedrock stream paused after 55s inactivity for session ${sessionId}`
             );
+            try {
+              ws.send(
+                JSON.stringify({
+                  type: 'idle_timeout',
+                  message: 'Voice paused due to inactivity.',
+                })
+              );
+              ws.close(1000, 'idle_timeout');
+            } catch {
+              // Ignore close error
+            }
+          } else if (err?.name !== 'AbortError') {
+            console.error('[Voice/WS] Stream read error:', err?.message);
+            try {
+              ws.send(
+                JSON.stringify({
+                  type: 'error',
+                  message: 'Voice stream interrupted',
+                })
+              );
+            } catch {
+              // Ignore send error
+            }
           }
         }
       })

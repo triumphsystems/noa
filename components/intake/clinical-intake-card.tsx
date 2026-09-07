@@ -31,21 +31,37 @@ export function ClinicalIntakeCard({
 }: RightPanelProps) {
   const [showHistory, setShowHistory] = useState(false);
 
+  const safeFormatList = (val: unknown): string => {
+    if (Array.isArray(val)) return val.filter(Boolean).join(', ');
+    if (typeof val === 'string') return val.trim();
+    return '';
+  };
+
+  const safeFormatText = (val: unknown): string => {
+    if (typeof val === 'string') return val.trim();
+    if (val !== null && val !== undefined) return String(val).trim();
+    return '';
+  };
+
   const fields = [
     {
       label: 'Full Name',
-      value: `${draft.firstName || ''} ${draft.lastName || ''}`.trim(),
+      value:
+        `${safeFormatText(draft?.firstName)} ${safeFormatText(draft?.lastName)}`.trim(),
     },
-    { label: 'Date of Birth', value: draft.dateOfBirth },
-    { label: 'Email', value: draft.email },
-    { label: 'Phone', value: draft.phone },
-    { label: 'Conditions', value: draft.medicalConditions?.join(', ') },
-    { label: 'Allergies', value: draft.allergies?.join(', ') },
-    { label: 'Emergency Contact', value: draft.emergencyContactName },
+    { label: 'Date of Birth', value: safeFormatText(draft?.dateOfBirth) },
+    { label: 'Email', value: safeFormatText(draft?.email) },
+    { label: 'Phone', value: safeFormatText(draft?.phone) },
+    { label: 'Conditions', value: safeFormatList(draft?.medicalConditions) },
+    { label: 'Allergies', value: safeFormatList(draft?.allergies) },
+    {
+      label: 'Emergency Contact',
+      value: safeFormatText(draft?.emergencyContactName),
+    },
   ];
 
   const capturedCount = fields.filter((f) =>
-    Boolean(f.value && f.value.trim())
+    Boolean(f.value && f.value.length > 0)
   ).length;
   const percentComplete = Math.round((capturedCount / fields.length) * 100);
 
@@ -74,7 +90,7 @@ export function ClinicalIntakeCard({
             type="button"
             onClick={onFinalize}
             disabled={isSubmitting}
-            className="bg-moss-green text-white hover:bg-moss-green/90 mt-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold shadow-xs transition-all disabled:opacity-50"
+            className="bg-moss-green hover:bg-moss-green/90 mt-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-white shadow-xs transition-all disabled:opacity-50"
           >
             <CheckCircle2 className="h-4 w-4" />
             <span>

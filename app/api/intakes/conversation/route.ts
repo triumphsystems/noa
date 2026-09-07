@@ -17,6 +17,8 @@ import {
   type IntakeConversationMessage,
 } from '@/lib/voice-service';
 
+export const dynamic = 'force-dynamic';
+
 function mergeStringArrays(existing: string[] = [], incoming: string[] = []) {
   return Array.from(
     new Set(

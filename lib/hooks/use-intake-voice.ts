@@ -150,6 +150,7 @@ export function useIntakeVoice() {
   const intakeIdRef = useRef<string>('');
   const speechBufferRef = useRef<string>('');
   const recognitionRef = useRef<any>(null);
+  const isIdlePausedRef = useRef<boolean>(false);
 
   // Submission state refs
   const isSubmittingRef = useRef(false);
@@ -462,6 +463,12 @@ export function useIntakeVoice() {
             if (msg.transcript) {
               void sendTranscript(msg.transcript);
             }
+          } else if (msg.type === 'idle_timeout') {
+            isIdlePausedRef.current = true;
+            setIsRecording(false);
+            setSupportMessage(
+              'Voice paused due to inactivity. Tap mic to resume.'
+            );
           } else if (msg.type === 'error') {
             setError(msg.message || 'Voice stream error');
           }
@@ -485,7 +492,7 @@ export function useIntakeVoice() {
     ws.onclose = () => {
       setIsConnected(false);
       wsRef.current = null;
-      if (!isCompleteRef.current) {
+      if (!isCompleteRef.current && !isIdlePausedRef.current) {
         reconnectDelayRef.current = Math.min(
           reconnectDelayRef.current * 2,
           WS_RECONNECT_DELAY_MAX_MS
@@ -498,7 +505,9 @@ export function useIntakeVoice() {
     };
 
     ws.onerror = () => {
-      setSupportMessage('Voice connection interrupted. Reconnecting…');
+      if (!isIdlePausedRef.current) {
+        setSupportMessage('Voice connection interrupted. Reconnecting…');
+      }
     };
   }, [playNextChunk, pushHistory]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -509,6 +518,18 @@ export function useIntakeVoice() {
   const startRecording = useCallback(async () => {
     if (isRecording) return;
     setError('');
+
+    // Re-open WebSocket if connection was paused due to inactivity or closed
+    if (
+      isIdlePausedRef.current ||
+      !wsRef.current ||
+      wsRef.current.readyState !== WebSocket.OPEN
+    ) {
+      isIdlePausedRef.current = false;
+      setSupportMessage('');
+      sessionIdRef.current = generateSessionId();
+      connectWebSocket();
+    }
 
     try {
       // Ensure playback AudioContext is resumed on user gesture
@@ -645,7 +666,7 @@ export function useIntakeVoice() {
         setSupportMessage(msg);
       }
     }
-  }, [isRecording, getPlaybackContext, detectedLanguage]);
+  }, [isRecording, getPlaybackContext, detectedLanguage, connectWebSocket]);
 
   const stopRecording = useCallback(() => {
     // Stop Web Speech Recognition
@@ -850,6 +871,8 @@ export function useIntakeVoice() {
     speechBufferRef.current = '';
     audioRemainderRef.current = null;
     isSpeakingRef.current = false;
+    isIdlePausedRef.current = false;
+    setSupportMessage('');
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
