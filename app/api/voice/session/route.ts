@@ -38,6 +38,8 @@ import {
   type IntakeConversationDraft,
 } from '@/lib/voice-service';
 import { getPatientById, getIntakeById } from '@/lib/db';
+import { AUTH_COOKIE_NAMES } from '@/lib/auth/cookies';
+import { verifyToken } from '@/lib/auth/jwt';
 
 // Keep WebSocket connections alive up to Vercel Pro's maximum (5 minutes)
 export const maxDuration = 300;
@@ -327,23 +329,58 @@ function parseBedrockChunk(bytes: Uint8Array): ParsedBedrockEvent[] {
   return results;
 }
 
+function parseCookies(header: string | null): Record<string, string> {
+  if (!header) return {};
+  const cookies: Record<string, string> = {};
+  for (const part of header.split(';')) {
+    const [rawKey, ...valParts] = part.trim().split('=');
+    if (rawKey && valParts.length > 0) {
+      cookies[rawKey.trim()] = decodeURIComponent(valParts.join('='));
+    }
+  }
+  return cookies;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const sessionId = searchParams.get('sessionId') || `intake-${Date.now()}`;
-  const patientId = searchParams.get('patientId') || '';
+  const requestedPatientId = searchParams.get('patientId') || '';
   const intakeId = searchParams.get('intakeId') || '';
   const language = searchParams.get('language') || 'English';
   const region =
     process.env.BEDROCK_REGION || process.env.AWS_REGION || 'us-east-1';
   const modelId = getSonicModelId();
 
-  // Smart Context: Pre-load patient and draft state from DynamoDB
+  // SECURITY: Extract and verify authentication from session cookies
+  const cookieHeader = request.headers.get('cookie') || '';
+  const cookies = parseCookies(cookieHeader);
+  const idToken = cookies[AUTH_COOKIE_NAMES.ID_TOKEN];
+  const accessToken = cookies[AUTH_COOKIE_NAMES.ACCESS_TOKEN];
+
+  let auth = { isValid: false, sub: undefined as string | undefined, userType: undefined as string | undefined };
+  try {
+    auth = await verifyToken(idToken, accessToken);
+  } catch {
+    // Unauthenticated guest
+  }
+
+  // Pre-loading patient records from DynamoDB MUST ONLY occur for verified sessions.
+  // Unauthenticated guests must NEVER load arbitrary patient-* records.
+  let authorizedPatientId = '';
+  if (auth.isValid) {
+    if (auth.userType === 'patient' && auth.sub) {
+      authorizedPatientId = auth.sub;
+    } else if (auth.userType === 'doctor' && requestedPatientId) {
+      authorizedPatientId = requestedPatientId;
+    }
+  }
+
   let patientName = '';
   let draft: IntakeConversationDraft = {};
 
-  if (patientId) {
+  if (authorizedPatientId) {
     try {
-      const patient = await getPatientById(patientId);
+      const patient = await getPatientById(authorizedPatientId);
       if (patient) {
         patientName = [patient.firstName, patient.lastName].filter(Boolean).join(' ');
         draft = {
@@ -367,11 +404,24 @@ export async function GET(request: Request) {
   if (intakeId) {
     try {
       const intake = await getIntakeById(intakeId);
-      if (intake?.draft && typeof intake.draft === 'object') {
-        draft = { ...draft, ...(intake.draft as unknown as IntakeConversationDraft) };
-      }
-      if (intake?.chiefComplaint && !draft.chiefComplaint) {
-        draft.chiefComplaint = intake.chiefComplaint;
+      // Security: Only allow intake access if:
+      // 1. Authenticated patient owns it (auth.sub === intake.patientId)
+      // 2. Authenticated doctor is reviewing it (auth.userType === 'doctor')
+      // 3. Anonymous in-progress guest intake (intake.patientId.startsWith('guest-') && !intake.completed)
+      const isOwner = auth.isValid && Boolean(auth.sub) && intake?.patientId === auth.sub;
+      const isDoctor = auth.isValid && auth.userType === 'doctor';
+      const isAnonymousGuest =
+        !auth.isValid &&
+        Boolean(intake?.patientId?.startsWith('guest-')) &&
+        !intake?.completed;
+
+      if (intake && (isOwner || isDoctor || isAnonymousGuest)) {
+        if (intake.draft && typeof intake.draft === 'object') {
+          draft = { ...draft, ...(intake.draft as unknown as IntakeConversationDraft) };
+        }
+        if (intake.chiefComplaint && !draft.chiefComplaint) {
+          draft.chiefComplaint = intake.chiefComplaint;
+        }
       }
     } catch (err) {
       console.warn('[Voice/WS] Could not fetch intake record for prompt:', err);

@@ -94,6 +94,9 @@ export async function GET(request: NextRequest) {
     const requestedIntakeId =
       request.nextUrl.searchParams.get('intakeId');
 
+    // SECURITY: Pre-filling existing patient data from DynamoDB MUST ONLY occur
+    // for verified authenticated sessions (matching auth.sub) or an authorized doctor.
+    // Unauthenticated public requests MUST NEVER be permitted to query arbitrary patient records.
     let patient: Patient | null = null;
 
     if (auth.isValid) {
@@ -105,16 +108,24 @@ export async function GET(request: NextRequest) {
       } else if (auth.userType === 'doctor' && requestedPatientId) {
         patient = await getPatientById(requestedPatientId);
       }
-    } else if (requestedPatientId && requestedPatientId.startsWith('patient-')) {
-      // Direct patient link lookup
-      patient = await getPatientById(requestedPatientId);
     }
 
     let existingIntake: PatientIntake | null = null;
     if (requestedIntakeId) {
-      existingIntake = await getIntakeById(requestedIntakeId);
-      if (existingIntake && !patient && existingIntake.patientId && existingIntake.patientId.startsWith('patient-')) {
-        patient = await getPatientById(existingIntake.patientId);
+      const candidateIntake = await getIntakeById(requestedIntakeId);
+      // Security: Only allow intake access if:
+      // 1. Authenticated patient owns it (auth.sub === candidateIntake.patientId)
+      // 2. Authenticated doctor is reviewing it (auth.userType === 'doctor')
+      // 3. Unauthenticated caller owns an in-progress anonymous guest intake (starts with guest- and not completed)
+      const isOwner = auth.isValid && Boolean(auth.sub) && candidateIntake?.patientId === auth.sub;
+      const isDoctor = auth.isValid && auth.userType === 'doctor';
+      const isAnonymousGuest =
+        !auth.isValid &&
+        Boolean(candidateIntake?.patientId?.startsWith('guest-')) &&
+        !candidateIntake?.completed;
+
+      if (candidateIntake && (isOwner || isDoctor || isAnonymousGuest)) {
+        existingIntake = candidateIntake;
       }
     }
 
