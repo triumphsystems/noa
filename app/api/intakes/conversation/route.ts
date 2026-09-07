@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from '@/lib/auth/jwt';
 import { AUTH_COOKIE_NAMES } from '@/lib/auth/cookies';
 import {
   createIntake,
+  updateIntake,
   getDoctorByCareCode,
   getDoctorById,
   getPatientById,
@@ -169,6 +170,8 @@ export async function POST(request: NextRequest) {
     const incomingDraft = (body.draft || {}) as IntakeConversationDraft;
     const doctorInput =
       typeof body.doctorId === 'string' ? body.doctorId.trim() : '';
+    const incomingIntakeId =
+      typeof body.intakeId === 'string' ? body.intakeId.trim() : '';
     if (!transcript) {
       return NextResponse.json(
         { message: 'transcript is required' },
@@ -202,7 +205,10 @@ export async function POST(request: NextRequest) {
         email: incomingDraft.email || patient.email || '',
         phone: incomingDraft.phone || patient.phone || '',
         address: incomingDraft.address || patient.address || '',
-        allergies: mergeStringArrays(patient.allergies, incomingDraft.allergies),
+        allergies: mergeStringArrays(
+          patient.allergies,
+          incomingDraft.allergies
+        ),
         currentMedications: mergeStringArrays(
           patient.medications,
           incomingDraft.currentMedications
@@ -221,70 +227,6 @@ export async function POST(request: NextRequest) {
       draft: enrichedDraft,
     });
 
-    let savedIntake = null;
-
-    // Save completed intake to DynamoDB
-    if (result.isComplete) {
-      const finalPatientId =
-        patientId || `guest-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-
-      let resolvedDoctorId = doctorInput || patient?.doctorId || 'doctor-general';
-      if (doctorInput && !doctorInput.startsWith('doctor-')) {
-        const doc = await getDoctorByCareCode(doctorInput);
-        if (doc) resolvedDoctorId = doc.id;
-      }
-
-      try {
-        savedIntake = await createIntake({
-          patientId: finalPatientId,
-          doctorId: resolvedDoctorId,
-          chiefComplaint: result.summary,
-          summary: result.summary,
-          completed: true,
-          completedAt: Date.now(),
-          medicalHistory: [
-            result.draft.medicalConditions?.length
-              ? `Conditions: ${result.draft.medicalConditions.join(', ')}`
-              : '',
-            result.draft.familyHistory
-              ? `Family history: ${result.draft.familyHistory}`
-              : '',
-            result.draft.surgeries ? `Surgeries: ${result.draft.surgeries}` : '',
-            result.draft.smokingStatus
-              ? `Smoking: ${result.draft.smokingStatus}`
-              : '',
-            result.draft.alcoholUse ? `Alcohol: ${result.draft.alcoholUse}` : '',
-            result.draft.exerciseFrequency
-              ? `Exercise: ${result.draft.exerciseFrequency}`
-              : '',
-          ]
-            .filter(Boolean)
-            .join(' | '),
-          medications: result.draft.currentMedications || [],
-          allergies: result.draft.allergies || [],
-          surgeries: result.draft.surgeries || '',
-          familyHistory: result.draft.familyHistory || '',
-          socialHistory: [
-            result.draft.smokingStatus
-              ? `Smoking: ${result.draft.smokingStatus}`
-              : '',
-            result.draft.alcoholUse ? `Alcohol: ${result.draft.alcoholUse}` : '',
-            result.draft.exerciseFrequency
-              ? `Exercise: ${result.draft.exerciseFrequency}`
-              : '',
-            result.draft.address ? `Address: ${result.draft.address}` : '',
-            result.draft.emergencyContactName
-              ? `Emergency contact: ${result.draft.emergencyContactName}`
-              : '',
-          ]
-            .filter(Boolean)
-            .join(' | '),
-        });
-      } catch (saveError) {
-        console.error('[Intake/Conversation] Error saving intake on completion:', saveError);
-      }
-    }
-
     const responseDraft = {
       ...enrichedDraft,
       ...result.draft,
@@ -302,6 +244,93 @@ export async function POST(request: NextRequest) {
       ),
     };
 
+    let savedIntake = null;
+    let effectiveIntakeId = incomingIntakeId;
+
+    const finalPatientId =
+      patientId ||
+      `guest-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+    let resolvedDoctorId = doctorInput || patient?.doctorId || 'doctor-general';
+    if (doctorInput && !doctorInput.startsWith('doctor-')) {
+      const doc = await getDoctorByCareCode(doctorInput);
+      if (doc) resolvedDoctorId = doc.id;
+    }
+
+    const intakePayload = {
+      patientId: finalPatientId,
+      doctorId: resolvedDoctorId,
+      chiefComplaint:
+        result.summary ||
+        responseDraft.medicalConditions?.[0] ||
+        'Clinical intake in progress',
+      summary: result.summary || 'Clinical intake in progress',
+      completed: Boolean(result.isComplete),
+      completedAt: result.isComplete ? Date.now() : undefined,
+      medicalHistory: [
+        responseDraft.medicalConditions?.length
+          ? `Conditions: ${responseDraft.medicalConditions.join(', ')}`
+          : '',
+        responseDraft.familyHistory
+          ? `Family history: ${responseDraft.familyHistory}`
+          : '',
+        responseDraft.surgeries ? `Surgeries: ${responseDraft.surgeries}` : '',
+        responseDraft.smokingStatus
+          ? `Smoking: ${responseDraft.smokingStatus}`
+          : '',
+        responseDraft.alcoholUse ? `Alcohol: ${responseDraft.alcoholUse}` : '',
+        responseDraft.exerciseFrequency
+          ? `Exercise: ${responseDraft.exerciseFrequency}`
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' | '),
+      medications: responseDraft.currentMedications || [],
+      allergies: responseDraft.allergies || [],
+      surgeries: responseDraft.surgeries || '',
+      familyHistory: responseDraft.familyHistory || '',
+      socialHistory: [
+        responseDraft.smokingStatus
+          ? `Smoking: ${responseDraft.smokingStatus}`
+          : '',
+        responseDraft.alcoholUse ? `Alcohol: ${responseDraft.alcoholUse}` : '',
+        responseDraft.exerciseFrequency
+          ? `Exercise: ${responseDraft.exerciseFrequency}`
+          : '',
+        responseDraft.address ? `Address: ${responseDraft.address}` : '',
+        responseDraft.emergencyContactName
+          ? `Emergency contact: ${responseDraft.emergencyContactName}`
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' | '),
+    };
+
+    if (effectiveIntakeId) {
+      try {
+        savedIntake = await updateIntake(effectiveIntakeId, intakePayload);
+      } catch (updateErr) {
+        console.warn(
+          '[Intake/Conversation] updateIntake failed, attempting create:',
+          updateErr
+        );
+      }
+    }
+
+    if (!savedIntake) {
+      try {
+        savedIntake = await createIntake(intakePayload);
+        if (savedIntake?.id) {
+          effectiveIntakeId = savedIntake.id;
+        }
+      } catch (saveError) {
+        console.error(
+          '[Intake/Conversation] Error persisting intake:',
+          saveError
+        );
+      }
+    }
+
     return NextResponse.json({
       success: true,
       turn: {
@@ -313,6 +342,7 @@ export async function POST(request: NextRequest) {
         isComplete: result.isComplete,
         summary: result.summary,
       },
+      intakeId: effectiveIntakeId || savedIntake?.id || null,
       savedIntake,
     });
   } catch (error) {

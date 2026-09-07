@@ -145,6 +145,11 @@ export function useIntakeVoice() {
   const reconnectDelayRef = useRef(WS_RECONNECT_DELAY_BASE_MS);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionIdRef = useRef(generateSessionId());
+  const audioRemainderRef = useRef<Uint8Array | null>(null);
+  const isSpeakingRef = useRef<boolean>(false);
+  const intakeIdRef = useRef<string>('');
+  const speechBufferRef = useRef<string>('');
+  const recognitionRef = useRef<any>(null);
 
   // Submission state refs
   const isSubmittingRef = useRef(false);
@@ -254,8 +259,12 @@ export function useIntakeVoice() {
   const getPlaybackContext = useCallback((): AudioContext | null => {
     if (typeof window === 'undefined') return null;
     try {
-      if (!playbackContextRef.current || playbackContextRef.current.state === 'closed') {
-        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (
+        !playbackContextRef.current ||
+        playbackContextRef.current.state === 'closed'
+      ) {
+        const AudioCtx =
+          window.AudioContext || (window as any).webkitAudioContext;
         playbackContextRef.current = new AudioCtx({ sampleRate: SAMPLE_RATE });
         nextPlayTimeRef.current = 0;
       }
@@ -332,18 +341,48 @@ export function useIntakeVoice() {
     if (!ctx) return;
 
     setIsSpeaking(true);
+    isSpeakingRef.current = true;
 
     while (audioQueueRef.current.length > 0) {
       const rawChunk = audioQueueRef.current.shift()!;
       try {
-        // Enforce 16-bit word alignment
-        const safeLength = rawChunk.byteLength - (rawChunk.byteLength % 2);
-        if (safeLength === 0) continue;
+        let chunkBytes = new Uint8Array(rawChunk);
 
-        const pcm16 = new Int16Array(rawChunk.slice(0, safeLength));
+        // Prepend leftover byte from previous chunk if any
+        if (audioRemainderRef.current && audioRemainderRef.current.length > 0) {
+          const combined = new Uint8Array(
+            audioRemainderRef.current.length + chunkBytes.length
+          );
+          combined.set(audioRemainderRef.current, 0);
+          combined.set(chunkBytes, audioRemainderRef.current.length);
+          chunkBytes = combined;
+          audioRemainderRef.current = null;
+        }
+
+        // Keep 16-bit word alignment; save trailing odd byte for next chunk
+        if (chunkBytes.length % 2 !== 0) {
+          audioRemainderRef.current = chunkBytes.slice(chunkBytes.length - 1);
+          chunkBytes = chunkBytes.slice(0, chunkBytes.length - 1);
+        }
+
+        if (chunkBytes.length === 0) continue;
+
+        const pcm16 = new Int16Array(
+          chunkBytes.buffer,
+          chunkBytes.byteOffset,
+          chunkBytes.byteLength / 2
+        );
         const float32 = new Float32Array(pcm16.length);
         for (let i = 0; i < pcm16.length; i++) {
           float32[i] = pcm16[i] / 32768;
+        }
+
+        // Smooth 16-sample edge fade (~1ms at 16kHz) to eliminate crackles/clicks at chunk seams
+        const fadeLen = Math.min(16, Math.floor(float32.length / 4));
+        for (let i = 0; i < fadeLen; i++) {
+          const factor = i / fadeLen;
+          float32[i] *= factor;
+          float32[float32.length - 1 - i] *= factor;
         }
 
         const audioBuffer = ctx.createBuffer(1, float32.length, SAMPLE_RATE);
@@ -354,13 +393,21 @@ export function useIntakeVoice() {
         source.connect(ctx.destination);
 
         const now = ctx.currentTime;
-        const startTime = Math.max(now, nextPlayTimeRef.current);
+        // Jitter buffer: 80ms lookahead from idle or underrun to prevent micro-dropouts
+        let startTime: number;
+        if (nextPlayTimeRef.current <= now) {
+          startTime = now + 0.08;
+        } else {
+          startTime = nextPlayTimeRef.current;
+        }
+
         source.start(startTime);
         nextPlayTimeRef.current = startTime + audioBuffer.duration;
 
         source.onended = () => {
           if (ctx.currentTime >= nextPlayTimeRef.current - 0.05) {
             setIsSpeaking(false);
+            isSpeakingRef.current = false;
           }
         };
       } catch (err) {
@@ -507,13 +554,76 @@ export function useIntakeVoice() {
       workletNodeRef.current = worklet;
       source.connect(worklet);
 
+      // Reset turn speech buffer
+      speechBufferRef.current = '';
+
+      // Initialize Web Speech Recognition concurrently for live transcription & field capture
+      if (typeof window !== 'undefined') {
+        const Win = window as any;
+        const SpeechRecognitionCtor =
+          Win.SpeechRecognition || Win.webkitSpeechRecognition;
+        if (SpeechRecognitionCtor) {
+          try {
+            const recognition = new SpeechRecognitionCtor();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = detectedLanguage?.toLowerCase().startsWith('es')
+              ? 'es-ES'
+              : 'en-US';
+
+            recognition.onresult = (event: any) => {
+              let interim = '';
+              let finalTurn = '';
+              for (let i = event.resultIndex; i < event.results.length; i++) {
+                const res = event.results[i];
+                const text = res[0]?.transcript || '';
+                if (res.isFinal) {
+                  finalTurn += ' ' + text;
+                } else {
+                  interim += ' ' + text;
+                }
+              }
+              if (finalTurn.trim()) {
+                speechBufferRef.current = (
+                  speechBufferRef.current +
+                  ' ' +
+                  finalTurn
+                ).trim();
+              }
+              const display = (speechBufferRef.current + ' ' + interim).trim();
+              if (display) {
+                setTranscriptPreview(display);
+              }
+            };
+
+            recognition.onerror = (err: any) => {
+              if (err?.error !== 'no-speech') {
+                console.warn(
+                  '[Voice/WebSpeech] Recognition error:',
+                  err?.error
+                );
+              }
+            };
+
+            recognition.start();
+            recognitionRef.current = recognition;
+          } catch (srErr) {
+            console.warn(
+              '[Voice/WebSpeech] Could not start speech recognition:',
+              srErr
+            );
+          }
+        }
+      }
+
       // Tell WebSocket server that a new speaking turn has started
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: 'audio_start' }));
       }
 
-      // Forward PCM frames to WebSocket
+      // Forward PCM frames to WebSocket (mute frames when assistant is speaking to prevent feedback)
       worklet.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
+        if (isSpeakingRef.current) return;
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(event.data);
         }
@@ -524,7 +634,10 @@ export function useIntakeVoice() {
     } catch (err: any) {
       const msg = err?.message || 'Unable to access microphone';
       setError(msg);
-      if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+      if (
+        err?.name === 'NotAllowedError' ||
+        err?.name === 'PermissionDeniedError'
+      ) {
         setSupportMessage(
           'Microphone access denied. Please allow microphone permissions or use the text field.'
         );
@@ -532,9 +645,17 @@ export function useIntakeVoice() {
         setSupportMessage(msg);
       }
     }
-  }, [isRecording, getPlaybackContext]);
+  }, [isRecording, getPlaybackContext, detectedLanguage]);
 
   const stopRecording = useCallback(() => {
+    // Stop Web Speech Recognition
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+      recognitionRef.current = null;
+    }
+
     workletNodeRef.current?.disconnect();
     workletNodeRef.current = null;
     mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
@@ -543,11 +664,20 @@ export function useIntakeVoice() {
     recordingContextRef.current = null;
     setIsRecording(false);
 
+    // Capture user speech from this speaking turn
+    const turnText = speechBufferRef.current.trim();
+    speechBufferRef.current = '';
+
     // Tell WebSocket server the user finished speaking this turn -> Bedrock will process & respond
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: 'audio_end' }));
     }
-  }, []);
+
+    // If user spoke words, trigger intake field extraction and DynamoDB persistence
+    if (turnText) {
+      void sendTranscript(turnText);
+    }
+  }, [sendTranscript]);
 
   const toggleMic = useCallback(() => {
     if (isRecording) stopRecording();
@@ -585,6 +715,7 @@ export function useIntakeVoice() {
         const data = await http.post<{
           success: boolean;
           turn: IntakeTurn;
+          intakeId?: string;
           savedIntake?: any;
         }>(
           '/api/intakes/conversation',
@@ -599,9 +730,14 @@ export function useIntakeVoice() {
             draft,
             doctorId,
             patientId,
+            intakeId: intakeIdRef.current || undefined,
           },
           { skipAuthRedirect: true }
         );
+
+        if (data?.intakeId) {
+          intakeIdRef.current = data.intakeId;
+        }
 
         const nextTurn: IntakeTurn = data.turn;
         const updatedDraft = nextTurn.draft || draft;
@@ -610,10 +746,7 @@ export function useIntakeVoice() {
         setDetectedLanguage(nextTurn.detectedLanguage || detectedLanguage);
         pushHistory('assistant', nextTurn.assistantMessage);
 
-        // Vocalize response via browser speech synthesis fallback
-        speakText(nextTurn.assistantMessage);
-
-        // Request Nova Sonic vocalization over WebSocket
+        // Vocalize response: only use browser speech synthesis fallback if WebSocket is closed
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(
             JSON.stringify({
@@ -621,6 +754,8 @@ export function useIntakeVoice() {
               text: nextTurn.assistantMessage,
             })
           );
+        } else {
+          speakText(nextTurn.assistantMessage);
         }
 
         if (nextTurn.isComplete) {
@@ -641,6 +776,7 @@ export function useIntakeVoice() {
               language: nextTurn.detectedLanguage || detectedLanguage,
               doctorId,
               patientId,
+              intakeId: data?.intakeId || intakeIdRef.current,
             })
           );
 
@@ -693,6 +829,12 @@ export function useIntakeVoice() {
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+        recognitionRef.current = null;
+      }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -704,6 +846,16 @@ export function useIntakeVoice() {
     stopRecording();
     wsRef.current?.close();
     sessionIdRef.current = generateSessionId();
+    intakeIdRef.current = '';
+    speechBufferRef.current = '';
+    audioRemainderRef.current = null;
+    isSpeakingRef.current = false;
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+      recognitionRef.current = null;
+    }
     setDraft(initialDraft);
     setHistory([{ id: 'system-1', role: 'system', text: INITIAL_PROMPT }]);
     setAssistantMessage(INITIAL_PROMPT);

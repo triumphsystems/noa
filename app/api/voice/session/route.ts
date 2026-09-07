@@ -94,7 +94,10 @@ function buildPromptStart(promptId: string): Uint8Array {
   return new TextEncoder().encode(JSON.stringify(payload));
 }
 
-function buildSystemContentStart(promptId: string, systemContentId: string): Uint8Array {
+function buildSystemContentStart(
+  promptId: string,
+  systemContentId: string
+): Uint8Array {
   const payload = {
     event: {
       contentStart: {
@@ -133,7 +136,10 @@ function buildSystemTextInput(
   return new TextEncoder().encode(JSON.stringify(payload));
 }
 
-function buildUserTextContentStart(promptId: string, textContentId: string): Uint8Array {
+function buildUserTextContentStart(
+  promptId: string,
+  textContentId: string
+): Uint8Array {
   const payload = {
     event: {
       contentStart: {
@@ -186,7 +192,10 @@ function buildContentEnd(promptId: string, contentId: string): Uint8Array {
   return new TextEncoder().encode(JSON.stringify(payload));
 }
 
-function buildAudioContentStart(promptId: string, audioContentId: string): Uint8Array {
+function buildAudioContentStart(
+  promptId: string,
+  audioContentId: string
+): Uint8Array {
   const payload = {
     event: {
       contentStart: {
@@ -255,6 +264,7 @@ interface ParsedBedrockEvent {
   audio?: Buffer;
   text?: string;
   role?: string;
+  isEnd?: boolean;
 }
 
 function parseBedrockChunk(bytes: Uint8Array): ParsedBedrockEvent[] {
@@ -264,7 +274,8 @@ function parseBedrockChunk(bytes: Uint8Array): ParsedBedrockEvent[] {
   const extract = (obj: any) => {
     const ev = obj?.event || obj;
     if (!ev) return;
-    const audioData = ev.audioOutput?.content || ev.audio?.content || ev.audioOutput;
+    const audioData =
+      ev.audioOutput?.content || ev.audio?.content || ev.audioOutput;
     if (typeof audioData === 'string') {
       try {
         results.push({ audio: Buffer.from(audioData, 'base64') });
@@ -275,12 +286,17 @@ function parseBedrockChunk(bytes: Uint8Array): ParsedBedrockEvent[] {
       results.push({ audio: Buffer.from(audioData) });
     }
 
-    const textData = ev.textOutput?.content || ev.text?.content || ev.textOutput;
+    const textData =
+      ev.textOutput?.content || ev.text?.content || ev.textOutput;
     if (textData) {
       results.push({
         text: typeof textData === 'string' ? textData : String(textData),
         role: ev.textOutput?.role || ev.role || 'ASSISTANT',
       });
+    }
+
+    if (ev.contentEnd || ev.promptEnd) {
+      results.push({ isEnd: true });
     }
   };
 
@@ -289,7 +305,10 @@ function parseBedrockChunk(bytes: Uint8Array): ParsedBedrockEvent[] {
     extract(parsed);
     return results;
   } catch {
-    const lines = str.split('\n').map((l) => l.trim()).filter(Boolean);
+    const lines = str
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
     for (const line of lines) {
       try {
         const parsed = JSON.parse(line);
@@ -305,8 +324,7 @@ function parseBedrockChunk(bytes: Uint8Array): ParsedBedrockEvent[] {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const sessionId =
-    searchParams.get('sessionId') || `intake-${Date.now()}`;
+  const sessionId = searchParams.get('sessionId') || `intake-${Date.now()}`;
   const region =
     process.env.BEDROCK_REGION || process.env.AWS_REGION || 'us-east-1';
   const modelId = getSonicModelId();
@@ -336,7 +354,9 @@ export async function GET(request: Request) {
     /**
      * Async generator that yields SDK-compatible body events in correct sequence.
      */
-    async function* bodyGenerator(): AsyncIterable<{ chunk: { bytes: Uint8Array } }> {
+    async function* bodyGenerator(): AsyncIterable<{
+      chunk: { bytes: Uint8Array };
+    }> {
       // 1. Session start
       yield { chunk: { bytes: buildSessionStart() } };
 
@@ -344,8 +364,18 @@ export async function GET(request: Request) {
       yield { chunk: { bytes: buildPromptStart(promptId) } };
 
       // 3. System prompt block
-      yield { chunk: { bytes: buildSystemContentStart(promptId, systemContentId) } };
-      yield { chunk: { bytes: buildSystemTextInput(promptId, systemContentId, INTAKE_SYSTEM_PROMPT) } };
+      yield {
+        chunk: { bytes: buildSystemContentStart(promptId, systemContentId) },
+      };
+      yield {
+        chunk: {
+          bytes: buildSystemTextInput(
+            promptId,
+            systemContentId,
+            INTAKE_SYSTEM_PROMPT
+          ),
+        },
+      };
       yield { chunk: { bytes: buildContentEnd(promptId, systemContentId) } };
 
       // 4. Process dynamic events (audio input, text input, end of utterance)
@@ -367,7 +397,9 @@ export async function GET(request: Request) {
 
       // 5. If an audio content block was open, close it
       if (activeAudioContentId) {
-        yield { chunk: { bytes: buildContentEnd(promptId, activeAudioContentId) } };
+        yield {
+          chunk: { bytes: buildContentEnd(promptId, activeAudioContentId) },
+        };
       }
 
       // 6. Close prompt turn and session
@@ -388,44 +420,49 @@ export async function GET(request: Request) {
       .then(async (response) => {
         if (!response.body) {
           console.error('[Voice/WS] Bedrock returned no response body');
-          ws.send(JSON.stringify({ type: 'error', message: 'No response from voice model' }));
+          ws.send(
+            JSON.stringify({
+              type: 'error',
+              message: 'No response from voice model',
+            })
+          );
           return;
         }
-        console.log(`[Voice/WS] Bedrock stream established for session ${sessionId}`);
+        console.log(
+          `[Voice/WS] Bedrock stream established for session ${sessionId}`
+        );
 
         try {
           for await (const event of response.body) {
             if (event.chunk?.bytes) {
               const events = parseBedrockChunk(event.chunk.bytes);
-              if (events.length > 0) {
-                for (const ev of events) {
-                  if (ev.audio) {
-                    // Send raw LPCM audio bytes to browser
-                    ws.send(ev.audio);
+              for (const ev of events) {
+                if (ev.audio) {
+                  // Send raw LPCM audio bytes to browser
+                  ws.send(ev.audio);
+                }
+                if (ev.text && ev.text.trim()) {
+                  if (ev.role === 'ASSISTANT') {
+                    fullTranscript += ` ${ev.text}`;
                   }
-                  if (ev.text && ev.text.trim()) {
-                    if (ev.role === 'ASSISTANT') {
-                      fullTranscript += ` ${ev.text}`;
-                    }
+                  ws.send(
+                    JSON.stringify({
+                      type: 'transcript_chunk',
+                      payload: { text: ev.text, role: ev.role },
+                    })
+                  );
+                  if (ev.role === 'ASSISTANT') {
                     ws.send(
                       JSON.stringify({
-                        type: 'transcript_chunk',
-                        payload: { text: ev.text, role: ev.role },
+                        type: 'assistant_message',
+                        payload: { text: ev.text },
                       })
                     );
-                    if (ev.role === 'ASSISTANT') {
-                      ws.send(
-                        JSON.stringify({
-                          type: 'assistant_message',
-                          payload: { text: ev.text },
-                        })
-                      );
-                    }
                   }
                 }
-              } else {
-                // If chunk is already raw binary audio, forward directly
-                ws.send(Buffer.from(event.chunk.bytes));
+                if (ev.isEnd) {
+                  ws.send(JSON.stringify({ type: 'turn_end' }));
+                }
               }
             } else if (event.internalServerException) {
               console.error(
@@ -433,7 +470,10 @@ export async function GET(request: Request) {
                 event.internalServerException.message
               );
               ws.send(
-                JSON.stringify({ type: 'error', message: 'Bedrock internal error' })
+                JSON.stringify({
+                  type: 'error',
+                  message: 'Bedrock internal error',
+                })
               );
             } else if (event.validationException) {
               console.error(
@@ -441,11 +481,17 @@ export async function GET(request: Request) {
                 event.validationException.message
               );
               ws.send(
-                JSON.stringify({ type: 'error', message: event.validationException.message })
+                JSON.stringify({
+                  type: 'error',
+                  message: event.validationException.message,
+                })
               );
             } else if (event.throttlingException) {
               ws.send(
-                JSON.stringify({ type: 'error', message: 'Bedrock throttled — please retry' })
+                JSON.stringify({
+                  type: 'error',
+                  message: 'Bedrock throttled — please retry',
+                })
               );
             }
           }
@@ -453,14 +499,25 @@ export async function GET(request: Request) {
           if (err?.name !== 'AbortError') {
             console.error('[Voice/WS] Stream read error:', err?.message);
             ws.send(
-              JSON.stringify({ type: 'error', message: 'Voice stream interrupted' })
+              JSON.stringify({
+                type: 'error',
+                message: 'Voice stream interrupted',
+              })
             );
           }
         }
       })
       .catch((err: any) => {
-        console.error('[Voice/WS] Failed to start Bedrock stream:', err?.message);
-        ws.send(JSON.stringify({ type: 'error', message: 'Failed to connect to voice model' }));
+        console.error(
+          '[Voice/WS] Failed to start Bedrock stream:',
+          err?.message
+        );
+        ws.send(
+          JSON.stringify({
+            type: 'error',
+            message: 'Failed to connect to voice model',
+          })
+        );
       });
 
     // Notify browser that WebSocket connection is established
@@ -490,9 +547,7 @@ export async function GET(request: Request) {
           // User completed their speaking turn -> close audio block to trigger Bedrock response
           if (msg.type === 'audio_end') {
             if (activeAudioContentId) {
-              chunkQueue.push(
-                buildContentEnd(promptId, activeAudioContentId)
-              );
+              chunkQueue.push(buildContentEnd(promptId, activeAudioContentId));
               activeAudioContentId = null;
             }
             return;
@@ -509,9 +564,7 @@ export async function GET(request: Request) {
               chunkQueue.push(
                 buildUserTextInput(promptId, textContentId, textToSpeak.trim())
               );
-              chunkQueue.push(
-                buildContentEnd(promptId, textContentId)
-              );
+              chunkQueue.push(buildContentEnd(promptId, textContentId));
             }
             return;
           }
