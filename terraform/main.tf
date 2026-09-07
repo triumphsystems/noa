@@ -59,6 +59,11 @@ resource "aws_dynamodb_table" "noa_db" {
     projection_type = "KEYS_ONLY"
   }
 
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
+  }
+
   tags = merge(
     var.tags,
     {

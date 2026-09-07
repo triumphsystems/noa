@@ -166,6 +166,7 @@ export interface PatientIntake {
   socialHistory?: string;
   completed: boolean;
   completedAt?: number;
+  ttl?: number;
   createdAt: number;
   updatedAt: number;
 }

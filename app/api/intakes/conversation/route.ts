@@ -257,6 +257,13 @@ export async function POST(request: NextRequest) {
       if (doc) resolvedDoctorId = doc.id;
     }
 
+    // In healthcare, uncompleted drafts expire after 48 hours (172,800 seconds).
+    // Finalized clinical records (completed: true) NEVER expire and are permanently retained (HIPAA).
+    const DRAFT_TTL_SECONDS = 48 * 60 * 60; // 48 hours
+    const draftTtl = result.isComplete
+      ? null // REMOVE ttl attribute in DynamoDB upon completion
+      : Math.floor(Date.now() / 1000) + DRAFT_TTL_SECONDS;
+
     const intakePayload = {
       patientId: finalPatientId,
       doctorId: resolvedDoctorId,
@@ -267,6 +274,7 @@ export async function POST(request: NextRequest) {
       summary: result.summary || 'Clinical intake in progress',
       completed: Boolean(result.isComplete),
       completedAt: result.isComplete ? Date.now() : undefined,
+      ttl: draftTtl,
       medicalHistory: [
         responseDraft.medicalConditions?.length
           ? `Conditions: ${responseDraft.medicalConditions.join(', ')}`
