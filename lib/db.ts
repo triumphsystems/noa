@@ -166,6 +166,7 @@ export interface PatientIntake {
   socialHistory?: string;
   completed: boolean;
   completedAt?: number;
+  draft?: Record<string, unknown>;
   ttl?: number;
   createdAt: number;
   updatedAt: number;

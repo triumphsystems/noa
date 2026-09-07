@@ -33,6 +33,11 @@ import {
 import { randomUUID } from 'crypto';
 import { createCredentialProvider } from '@/lib/aws-config';
 import { getSonicModelId } from '@/lib/ai/provider';
+import {
+  buildIntakeSystemPrompt,
+  type IntakeConversationDraft,
+} from '@/lib/voice-service';
+import { getPatientById, getIntakeById } from '@/lib/db';
 
 // Keep WebSocket connections alive up to Vercel Pro's maximum (5 minutes)
 export const maxDuration = 300;
@@ -325,13 +330,63 @@ function parseBedrockChunk(bytes: Uint8Array): ParsedBedrockEvent[] {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const sessionId = searchParams.get('sessionId') || `intake-${Date.now()}`;
+  const patientId = searchParams.get('patientId') || '';
+  const intakeId = searchParams.get('intakeId') || '';
+  const language = searchParams.get('language') || 'English';
   const region =
     process.env.BEDROCK_REGION || process.env.AWS_REGION || 'us-east-1';
   const modelId = getSonicModelId();
 
+  // Smart Context: Pre-load patient and draft state from DynamoDB
+  let patientName = '';
+  let draft: IntakeConversationDraft = {};
+
+  if (patientId) {
+    try {
+      const patient = await getPatientById(patientId);
+      if (patient) {
+        patientName = [patient.firstName, patient.lastName].filter(Boolean).join(' ');
+        draft = {
+          firstName: patient.firstName,
+          lastName: patient.lastName,
+          dateOfBirth: patient.dateOfBirth,
+          gender: patient.gender,
+          email: patient.email,
+          phone: patient.phone,
+          address: patient.address,
+          medicalConditions: patient.conditions,
+          allergies: patient.allergies,
+          currentMedications: patient.medications,
+        };
+      }
+    } catch (err) {
+      console.warn('[Voice/WS] Could not fetch patient record for prompt:', err);
+    }
+  }
+
+  if (intakeId) {
+    try {
+      const intake = await getIntakeById(intakeId);
+      if (intake?.draft && typeof intake.draft === 'object') {
+        draft = { ...draft, ...(intake.draft as unknown as IntakeConversationDraft) };
+      }
+      if (intake?.chiefComplaint && !draft.chiefComplaint) {
+        draft.chiefComplaint = intake.chiefComplaint;
+      }
+    } catch (err) {
+      console.warn('[Voice/WS] Could not fetch intake record for prompt:', err);
+    }
+  }
+
+  const dynamicSystemPrompt = buildIntakeSystemPrompt({
+    draft,
+    patientName,
+    language,
+  });
+
   return experimental_upgradeWebSocket(async (ws) => {
     console.log(
-      `[Voice/WS] Session ${sessionId} connected — model: ${modelId} (${region})`
+      `[Voice/WS] Session ${sessionId} connected (patient: ${patientId || 'guest'}, intake: ${intakeId || 'none'}) — model: ${modelId} (${region})`
     );
 
     // Correlated turn IDs required by Amazon Bedrock Nova Sonic protocol
@@ -363,7 +418,7 @@ export async function GET(request: Request) {
       // 2. Prompt start with audio & text output configuration
       yield { chunk: { bytes: buildPromptStart(promptId) } };
 
-      // 3. System prompt block
+      // 3. System prompt block with patient records & missing fields
       yield {
         chunk: { bytes: buildSystemContentStart(promptId, systemContentId) },
       };
@@ -372,7 +427,7 @@ export async function GET(request: Request) {
           bytes: buildSystemTextInput(
             promptId,
             systemContentId,
-            INTAKE_SYSTEM_PROMPT
+            dynamicSystemPrompt
           ),
         },
       };

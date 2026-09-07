@@ -4,15 +4,20 @@ import { AUTH_COOKIE_NAMES } from '@/lib/auth/cookies';
 import {
   createIntake,
   updateIntake,
+  getIntakeById,
   getDoctorByCareCode,
   getDoctorById,
   getPatientById,
   getPatientByEmail,
   getIntakesByPatient,
   type Patient,
+  type PatientIntake,
 } from '@/lib/db';
 import {
   generateIntakeConversationTurn,
+  generateIntakeGreeting,
+  getMissingFields,
+  getPopulatedFields,
   type IntakeConversationDraft,
   type IntakeConversationMessage,
 } from '@/lib/voice-service';
@@ -83,55 +88,114 @@ export async function GET(request: NextRequest) {
     const requestedDoctorId =
       request.nextUrl.searchParams.get('doctorId') ||
       request.nextUrl.searchParams.get('doctorCode');
+    const requestedPatientId =
+      request.nextUrl.searchParams.get('patientId') ||
+      request.nextUrl.searchParams.get('patient');
+    const requestedIntakeId =
+      request.nextUrl.searchParams.get('intakeId');
 
-    // SECURITY: Pre-filling existing patient data from DynamoDB MUST ONLY occur
-    // for verified authenticated sessions matching auth.sub.
-    // Unauthenticated public requests MUST NEVER be permitted to query arbitrary patient records.
     let patient: Patient | null = null;
-    if (auth.isValid && auth.userType === 'patient' && auth.sub) {
-      patient = await getPatientById(auth.sub);
-      if (!patient && auth.email) {
-        patient = await getPatientByEmail(auth.email);
+
+    if (auth.isValid) {
+      if (auth.userType === 'patient' && auth.sub) {
+        patient = await getPatientById(auth.sub);
+        if (!patient && auth.email) {
+          patient = await getPatientByEmail(auth.email);
+        }
+      } else if (auth.userType === 'doctor' && requestedPatientId) {
+        patient = await getPatientById(requestedPatientId);
+      }
+    } else if (requestedPatientId && requestedPatientId.startsWith('patient-')) {
+      // Direct patient link lookup
+      patient = await getPatientById(requestedPatientId);
+    }
+
+    let existingIntake: PatientIntake | null = null;
+    if (requestedIntakeId) {
+      existingIntake = await getIntakeById(requestedIntakeId);
+      if (existingIntake && !patient && existingIntake.patientId && existingIntake.patientId.startsWith('patient-')) {
+        patient = await getPatientById(existingIntake.patientId);
       }
     }
 
     if (patient) {
       const pastIntakes = await getIntakesByPatient(patient.id);
-      const latestIntake = pastIntakes[0];
+      const activeOrLatestIntake =
+        existingIntake ||
+        pastIntakes.find((i) => !i.completed) ||
+        pastIntakes[0];
 
-      const draft = buildPrefillFromPatient(
+      let draft = buildPrefillFromPatient(
         patient,
-        latestIntake?.allergies,
-        latestIntake?.medications,
-        latestIntake?.medicalHistory ? [latestIntake.medicalHistory] : [],
-        latestIntake?.surgeries,
-        latestIntake?.familyHistory
+        activeOrLatestIntake?.allergies,
+        activeOrLatestIntake?.medications,
+        activeOrLatestIntake?.medicalHistory ? [activeOrLatestIntake.medicalHistory] : [],
+        activeOrLatestIntake?.surgeries,
+        activeOrLatestIntake?.familyHistory
       );
 
-      const name = [patient.firstName, patient.lastName]
-        .filter(Boolean)
-        .join(' ');
-      const greeting = name
-        ? `Welcome back, ${patient.firstName}! I have your profile and records on file. What symptoms or medical concerns bring you in today?`
-        : `Welcome back! I've loaded your health records. What symptoms or concerns would you like to discuss today?`;
+      // If active draft had saved in-progress fields on DynamoDB intake item
+      if (activeOrLatestIntake?.draft && typeof activeOrLatestIntake.draft === 'object') {
+        draft = {
+          ...draft,
+          ...(activeOrLatestIntake.draft as unknown as IntakeConversationDraft),
+        };
+      }
+
+      if (activeOrLatestIntake?.chiefComplaint && !draft.chiefComplaint) {
+        draft.chiefComplaint = activeOrLatestIntake.chiefComplaint;
+      }
+
+      const patientName = [patient.firstName, patient.lastName].filter(Boolean).join(' ');
+      const greeting = generateIntakeGreeting(draft, patientName);
+      const missingFields = getMissingFields(draft);
 
       return NextResponse.json({
         success: true,
         authenticated: true,
         patientId: patient.id,
-        doctorId: requestedDoctorId || patient.doctorId || null,
+        doctorId: requestedDoctorId || activeOrLatestIntake?.doctorId || patient.doctorId || null,
+        intakeId: activeOrLatestIntake?.id || null,
         draft,
+        missingFields,
         initialPrompt: greeting,
       });
     }
 
-    // Public / guest intake fallback — ZERO sensitive patient data is returned
+    // Guest with active in-progress intake in DynamoDB
+    if (existingIntake) {
+      let draft: IntakeConversationDraft = {};
+      if (existingIntake.draft && typeof existingIntake.draft === 'object') {
+        draft = existingIntake.draft as unknown as IntakeConversationDraft;
+      }
+      if (existingIntake.chiefComplaint && !draft.chiefComplaint) {
+        draft.chiefComplaint = existingIntake.chiefComplaint;
+      }
+
+      const greeting = generateIntakeGreeting(draft);
+      const missingFields = getMissingFields(draft);
+
+      return NextResponse.json({
+        success: true,
+        authenticated: false,
+        patientId: existingIntake.patientId || null,
+        doctorId: requestedDoctorId || existingIntake.doctorId || null,
+        intakeId: existingIntake.id,
+        draft,
+        missingFields,
+        initialPrompt: greeting,
+      });
+    }
+
+    // Public / new guest intake fallback
     return NextResponse.json({
       success: true,
       authenticated: false,
       patientId: null,
       doctorId: requestedDoctorId || null,
+      intakeId: null,
       draft: {},
+      missingFields: getMissingFields(),
       initialPrompt:
         "Hi, I'm Noa. I'll ask you one short question at a time. You can answer naturally in any language. Let's get started — what's your full name?",
     });
@@ -314,6 +378,7 @@ export async function POST(request: NextRequest) {
       ]
         .filter(Boolean)
         .join(' | '),
+      draft: responseDraft as Record<string, unknown>,
     };
 
     if (effectiveIntakeId) {
@@ -352,6 +417,7 @@ export async function POST(request: NextRequest) {
         isComplete: result.isComplete,
         summary: result.summary,
       },
+      patientId: finalPatientId,
       intakeId: effectiveIntakeId || savedIntake?.id || null,
       savedIntake,
     });

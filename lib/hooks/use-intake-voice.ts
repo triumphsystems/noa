@@ -1,34 +1,38 @@
 'use client';
 
 /**
- * useIntakeVoice — Nova 2 Sonic WebSocket Voice Intake Hook
+ * useIntakeVoice — Bedrock Nova 2 Sonic Voice Intake Hook
  *
- * Replaces the legacy browser SpeechRecognition + speechSynthesis implementation
- * with a high-fidelity, bidirectional WebSocket connection to the Vercel-hosted
- * Nova 2 Sonic relay at /api/voice/session.
- *
- * Architecture:
- *   Browser AudioWorklet (16kHz PCM)
- *     → WSS /api/voice/session
- *       → Amazon Bedrock InvokeModelWithBidirectionalStream (nova-2-sonic-v1:0)
- *     ← WSS sends Nova Sonic audio chunks back
- *   Web Audio API plays the received audio (human-quality clinical voice)
- *
- * Fallback: If WebSocket or microphone access fails, the hook surfaces a clear
- * error message and falls back gracefully (silent mode + text input).
- *
- * Text-based intake field extraction continues to run through
- * POST /api/intakes/conversation → Nova 2 Lite, unchanged.
+ * Modularized clinical voice engine for patient intake consultations.
+ * Integrates bidirectional WebSocket streaming (Nova 2 Sonic) with
+ * DynamoDB patient profile synchronization and resilient refresh recovery.
  */
 
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import type { IntakeConversationDraft } from '@/lib/voice-service';
 import { http } from '@/lib/http';
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Types
-// ──────────────────────────────────────────────────────────────────────────────
+import {
+  type IntakeConversationDraft,
+  INITIAL_DRAFT,
+  DEFAULT_INITIAL_PROMPT,
+} from '@/lib/voice/types';
+import {
+  SAMPLE_RATE,
+  WS_RECONNECT_DELAY_BASE_MS,
+  WS_RECONNECT_DELAY_MAX_MS,
+  registerPcmWorklet,
+} from '@/lib/voice/pcm-capture';
+import { AudioQueuePlayer } from '@/lib/voice/audio-queue-player';
+import {
+  speakWithBrowserSynthesis,
+  stopBrowserSynthesis,
+  startBrowserSpeechRecognition,
+} from '@/lib/voice/browser-speech';
+import {
+  saveActiveIntakeSession,
+  loadActiveIntakeSession,
+  clearActiveIntakeSession,
+} from '@/lib/voice/intake-storage';
 
 export type ConversationEntry = {
   id: string;
@@ -46,145 +50,95 @@ type IntakeTurn = {
   summary: string;
 };
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Constants
-// ──────────────────────────────────────────────────────────────────────────────
-
-const SAMPLE_RATE = 16000; // Hz — required by Nova 2 Sonic
-const SLICE_DURATION_MS = 100; // AudioWorklet flush interval
-const WS_RECONNECT_DELAY_BASE_MS = 1000;
-const WS_RECONNECT_DELAY_MAX_MS = 15000;
-
-const initialDraft: IntakeConversationDraft = {
-  firstName: '',
-  lastName: '',
-  dateOfBirth: '',
-  gender: '',
-  email: '',
-  phone: '',
-  address: '',
-  medicalConditions: [],
-  surgeries: '',
-  allergies: [],
-  currentMedications: [],
-  familyHistory: '',
-  smokingStatus: '',
-  alcoholUse: '',
-  exerciseFrequency: '',
-  emergencyContactName: '',
-  emergencyContactPhone: '',
-  emergencyContactRelation: '',
-  consentRead: false,
-};
-
-const INITIAL_PROMPT =
-  "Hi, I'm Noa. I'll ask you one short question at a time. You can answer naturally in any language. Let's get started — what's your full name?";
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────────────────────────────────────
-
-function buildWsUrl(sessionId: string): string {
-  if (typeof window === 'undefined') return '';
-  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${proto}//${window.location.host}/api/voice/session?sessionId=${encodeURIComponent(sessionId)}`;
-}
-
 function generateSessionId(): string {
   return `intake-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// AudioWorklet processor (inlined as a Blob URL to avoid a separate file)
-// Converts MediaStream Float32 PCM → 16kHz Int16 PCM binary frames
-// ──────────────────────────────────────────────────────────────────────────────
-
-const AUDIO_WORKLET_CODE = /* javascript */ `
-class PcmCapture extends AudioWorkletProcessor {
-  constructor() {
-    super();
-    this.bufferSize = 1600;
-    this.buffer = new Int16Array(this.bufferSize);
-    this.bufferIndex = 0;
-  }
-  process(inputs) {
-    const input = inputs[0]?.[0];
-    if (!input || input.length === 0) return true;
-    for (let i = 0; i < input.length; i++) {
-      const clamped = Math.max(-1, Math.min(1, input[i]));
-      this.buffer[this.bufferIndex++] = clamped < 0 ? clamped * 32768 : clamped * 32767;
-      if (this.bufferIndex >= this.bufferSize) {
-        const chunk = this.buffer.slice(0, this.bufferSize);
-        this.port.postMessage(chunk.buffer, [chunk.buffer]);
-        this.bufferIndex = 0;
-      }
-    }
-    return true;
-  }
+function buildWsUrl(
+  sessionId: string,
+  patientId?: string,
+  intakeId?: string,
+  language?: string
+): string {
+  if (typeof window === 'undefined') return '';
+  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const params = new URLSearchParams({ sessionId });
+  if (patientId) params.set('patientId', patientId);
+  if (intakeId) params.set('intakeId', intakeId);
+  if (language) params.set('language', language);
+  return `${proto}//${window.location.host}/api/voice/session?${params.toString()}`;
 }
-registerProcessor('pcm-capture', PcmCapture);
-`;
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Hook
-// ──────────────────────────────────────────────────────────────────────────────
 
 export function useIntakeVoice() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // WebSocket + audio refs
-  const wsRef = useRef<WebSocket | null>(null);
-  const recordingContextRef = useRef<AudioContext | null>(null);
-  const playbackContextRef = useRef<AudioContext | null>(null);
-  const nextPlayTimeRef = useRef<number>(0);
-  const workletNodeRef = useRef<AudioWorkletNode | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
-  const audioQueueRef = useRef<ArrayBuffer[]>([]);
-  const isPlayingRef = useRef(false);
-  const reconnectDelayRef = useRef(WS_RECONNECT_DELAY_BASE_MS);
-  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const sessionIdRef = useRef(generateSessionId());
-  const audioRemainderRef = useRef<Uint8Array | null>(null);
-  const isSpeakingRef = useRef<boolean>(false);
-  const intakeIdRef = useRef<string>('');
-  const speechBufferRef = useRef<string>('');
-  const recognitionRef = useRef<any>(null);
-  const isIdlePausedRef = useRef<boolean>(false);
-  const sendTranscriptRef = useRef<(text: string) => Promise<void>>(
-    async () => {}
+  // 1. Initial State Restoration from SessionStorage (Survives Refresh)
+  const cachedSession = useRef(loadActiveIntakeSession()).current;
+
+  const [draft, setDraft] = useState<IntakeConversationDraft>(
+    cachedSession?.draft || INITIAL_DRAFT
   );
+  const [assistantMessage, setAssistantMessage] = useState<string>(
+    cachedSession?.assistantMessage || DEFAULT_INITIAL_PROMPT
+  );
+  const [history, setHistory] = useState<ConversationEntry[]>(
+    cachedSession?.history && cachedSession.history.length > 0
+      ? cachedSession.history
+      : [{ id: 'system-1', role: 'system', text: DEFAULT_INITIAL_PROMPT }]
+  );
+  const [detectedLanguage, setDetectedLanguage] = useState(
+    cachedSession?.detectedLanguage || 'English'
+  );
+  const [doctorId, setDoctorId] = useState(cachedSession?.doctorId || '');
+  const [patientId, setPatientId] = useState(cachedSession?.patientId || '');
 
-  // Submission state refs
-  const isSubmittingRef = useRef(false);
-  const isCompleteRef = useRef(false);
-  const isVoiceOutputRef = useRef(true);
-
-  // React state
+  // UI / Connection State
   const [isRecording, setIsRecording] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true);
-  const [assistantMessage, setAssistantMessage] = useState(INITIAL_PROMPT);
-  const [detectedLanguage, setDetectedLanguage] = useState('English');
-  const [draft, setDraft] = useState<IntakeConversationDraft>(initialDraft);
-  const [history, setHistory] = useState<ConversationEntry[]>([
-    { id: 'system-1', role: 'system', text: INITIAL_PROMPT },
-  ]);
   const [error, setError] = useState('');
   const [transcriptPreview, setTranscriptPreview] = useState('');
   const [supportMessage, setSupportMessage] = useState('');
-  const [doctorId, setDoctorId] = useState('');
-  const [patientId, setPatientId] = useState('');
+
+  // Audio & WebSocket Refs
+  const wsRef = useRef<WebSocket | null>(null);
+  const sessionIdRef = useRef(generateSessionId());
+  const intakeIdRef = useRef<string>(cachedSession?.intakeId || '');
+  const recordingContextRef = useRef<AudioContext | null>(null);
+  const workletNodeRef = useRef<AudioWorkletNode | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const speechBufferRef = useRef<string>('');
+  const isIdlePausedRef = useRef(false);
+  const isSubmittingRef = useRef(false);
+  const isCompleteRef = useRef(false);
+  const isVoiceOutputRef = useRef(true);
+  const reconnectDelayRef = useRef(WS_RECONNECT_DELAY_BASE_MS);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Audio queue player for Nova Sonic neural audio
+  const audioPlayerRef = useRef<AudioQueuePlayer | null>(null);
+  if (!audioPlayerRef.current && typeof window !== 'undefined') {
+    audioPlayerRef.current = new AudioQueuePlayer({
+      onSpeakingChange: (speaking) => setIsSpeaking(speaking),
+    });
+  }
+
+  // Ref tracking forward declaration
+  const sendTranscriptRef = useRef<(text: string, isVoiceTurn?: boolean) => Promise<void>>(
+    async () => {}
+  );
 
   const chatItems = useMemo(
     () => history.filter((item) => item.role !== 'system'),
     [history]
   );
 
-  // Keep refs in sync
+  // Sync ref values
   useEffect(() => {
     isCompleteRef.current = isComplete;
   }, [isComplete]);
@@ -192,35 +146,53 @@ export function useIntakeVoice() {
     isVoiceOutputRef.current = isVoiceOutputEnabled;
   }, [isVoiceOutputEnabled]);
 
-  // Resolve IDs from query params / localStorage
+  // Persist current session state to sessionStorage on changes
   useEffect(() => {
-    const resolvedDoctorId =
+    if (!isComplete) {
+      saveActiveIntakeSession({
+        draft,
+        history,
+        assistantMessage,
+        intakeId: intakeIdRef.current || undefined,
+        patientId,
+        doctorId,
+        detectedLanguage,
+      });
+    }
+  }, [draft, history, assistantMessage, patientId, doctorId, detectedLanguage, isComplete]);
+
+  // Resolve Doctor & Patient IDs from URL query params
+  useEffect(() => {
+    const qDoctorId =
       searchParams?.get('doctorId') ||
       searchParams?.get('doctorCode') ||
       window.localStorage?.getItem('doctorId') ||
       '';
-    const resolvedPatientId =
+    const qPatientId =
       searchParams?.get('patientId') ||
       window.localStorage?.getItem('patientId') ||
       '';
-    setDoctorId(resolvedDoctorId);
-    setPatientId(resolvedPatientId);
-  }, [searchParams]);
+    const qIntakeId = searchParams?.get('intakeId') || '';
 
-  // ──────────────────────────────────────────────────────
-  // Smart Intake: Prefill known patient data from DynamoDB
-  // ──────────────────────────────────────────────────────
-  const prefillAttemptedRef = useRef(false);
+    if (qDoctorId && !doctorId) setDoctorId(qDoctorId);
+    if (qPatientId && !patientId) setPatientId(qPatientId);
+    if (qIntakeId && !intakeIdRef.current) intakeIdRef.current = qIntakeId;
+  }, [searchParams, doctorId, patientId]);
+
+  // ────────────────────────────────────────────────────────────────────────
+  // Smart Intake: Prefill & Sync with DynamoDB (No Race Condition)
+  // ────────────────────────────────────────────────────────────────────────
+  const prefillDoneRef = useRef(false);
 
   useEffect(() => {
-    if (prefillAttemptedRef.current) return;
-    prefillAttemptedRef.current = true;
+    let cancelled = false;
 
     async function fetchPrefill() {
       try {
         const queryParams = new URLSearchParams();
         if (doctorId) queryParams.set('doctorId', doctorId);
         if (patientId) queryParams.set('patientId', patientId);
+        if (intakeIdRef.current) queryParams.set('intakeId', intakeIdRef.current);
 
         const data = await http.get<{
           success: boolean;
@@ -229,18 +201,18 @@ export function useIntakeVoice() {
           initialPrompt: string;
           patientId: string | null;
           doctorId: string | null;
+          intakeId: string | null;
         }>(`/api/intakes/conversation?${queryParams.toString()}`, {
           skipAuthRedirect: true,
         });
 
+        if (cancelled) return;
+
         if (data?.draft && Object.keys(data.draft).length > 0) {
           setDraft((prev) => ({ ...prev, ...data.draft }));
         }
-        if (data?.initialPrompt) {
-          setAssistantMessage(data.initialPrompt);
-          setHistory([
-            { id: 'system-1', role: 'system', text: data.initialPrompt },
-          ]);
+        if (data?.intakeId) {
+          intakeIdRef.current = data.intakeId;
         }
         if (data?.patientId && !patientId) {
           setPatientId(data.patientId);
@@ -248,77 +220,33 @@ export function useIntakeVoice() {
         if (data?.doctorId && !doctorId) {
           setDoctorId(data.doctorId);
         }
+
+        // Only replace initial prompt if no patient speech turns have occurred yet
+        const hasUserTurns = history.some((h) => h.role === 'patient');
+        if (data?.initialPrompt && !hasUserTurns) {
+          setAssistantMessage(data.initialPrompt);
+          setHistory([
+            { id: 'system-1', role: 'system', text: data.initialPrompt },
+          ]);
+        }
       } catch (err) {
         console.warn('[Voice/Prefill] Could not load prefill data:', err);
       }
     }
 
-    void fetchPrefill();
-  }, [doctorId, patientId]);
-
-  // ──────────────────────────────────────────────────────
-  // Playback Context Provider (independent of recording)
-  // ──────────────────────────────────────────────────────
-
-  const getPlaybackContext = useCallback((): AudioContext | null => {
-    if (typeof window === 'undefined') return null;
-    try {
-      if (
-        !playbackContextRef.current ||
-        playbackContextRef.current.state === 'closed'
-      ) {
-        const AudioCtx =
-          window.AudioContext || (window as any).webkitAudioContext;
-        playbackContextRef.current = new AudioCtx({ sampleRate: SAMPLE_RATE });
-        nextPlayTimeRef.current = 0;
-      }
-      if (playbackContextRef.current.state === 'suspended') {
-        void playbackContextRef.current.resume();
-      }
-      return playbackContextRef.current;
-    } catch (e) {
-      console.warn('[Voice/Playback] Failed to init playback context:', e);
-      return null;
+    if (!prefillDoneRef.current) {
+      prefillDoneRef.current = true;
+      void fetchPrefill();
     }
-  }, []);
 
-  // ──────────────────────────────────────────────────────
-  // Web Speech API fallback for vocalization
-  // ──────────────────────────────────────────────────────
+    return () => {
+      cancelled = true;
+    };
+  }, [doctorId, patientId, history]);
 
-  const speakText = useCallback(
-    (text: string) => {
-      if (!isVoiceOutputRef.current || typeof window === 'undefined') return;
-      if (!('speechSynthesis' in window)) return;
-
-      try {
-        window.speechSynthesis.cancel();
-        const clean = text.replace(/[*#_`]/g, '').trim();
-        if (!clean) return;
-
-        const utterance = new SpeechSynthesisUtterance(clean);
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
-        utterance.lang = detectedLanguage?.toLowerCase().startsWith('es')
-          ? 'es-ES'
-          : 'en-US';
-
-        utterance.onstart = () => setIsSpeaking(true);
-        utterance.onend = () => setIsSpeaking(false);
-        utterance.onerror = () => setIsSpeaking(false);
-
-        window.speechSynthesis.speak(utterance);
-      } catch (err) {
-        console.warn('[Voice/Speech] SpeechSynthesis error:', err);
-      }
-    },
-    [detectedLanguage]
-  );
-
-  // ──────────────────────────────────────────────────────
-  // Conversation history
-  // ──────────────────────────────────────────────────────
-
+  // ────────────────────────────────────────────────────────────────────────
+  // History & Vocalization
+  // ────────────────────────────────────────────────────────────────────────
   const pushHistory = useCallback(
     (role: ConversationEntry['role'], text: string) => {
       if (!text.trim()) return;
@@ -334,100 +262,28 @@ export function useIntakeVoice() {
     []
   );
 
-  // ──────────────────────────────────────────────────────
-  // Web Audio playback of Nova Sonic neural audio chunks
-  // ──────────────────────────────────────────────────────
+  const speakText = useCallback(
+    (text: string) => {
+      if (!isVoiceOutputRef.current) return;
+      speakWithBrowserSynthesis(text, detectedLanguage, (speaking) =>
+        setIsSpeaking(speaking)
+      );
+    },
+    [detectedLanguage]
+  );
 
-  const playNextChunk = useCallback(() => {
-    if (!isVoiceOutputRef.current || audioQueueRef.current.length === 0) return;
-
-    const ctx = getPlaybackContext();
-    if (!ctx) return;
-
-    setIsSpeaking(true);
-    isSpeakingRef.current = true;
-
-    while (audioQueueRef.current.length > 0) {
-      const rawChunk = audioQueueRef.current.shift()!;
-      try {
-        let chunkBytes = new Uint8Array(rawChunk);
-
-        // Prepend leftover byte from previous chunk if any
-        if (audioRemainderRef.current && audioRemainderRef.current.length > 0) {
-          const combined = new Uint8Array(
-            audioRemainderRef.current.length + chunkBytes.length
-          );
-          combined.set(audioRemainderRef.current, 0);
-          combined.set(chunkBytes, audioRemainderRef.current.length);
-          chunkBytes = combined;
-          audioRemainderRef.current = null;
-        }
-
-        // Keep 16-bit word alignment; save trailing odd byte for next chunk
-        if (chunkBytes.length % 2 !== 0) {
-          audioRemainderRef.current = chunkBytes.slice(chunkBytes.length - 1);
-          chunkBytes = chunkBytes.slice(0, chunkBytes.length - 1);
-        }
-
-        if (chunkBytes.length === 0) continue;
-
-        const pcm16 = new Int16Array(
-          chunkBytes.buffer,
-          chunkBytes.byteOffset,
-          chunkBytes.byteLength / 2
-        );
-        const float32 = new Float32Array(pcm16.length);
-        for (let i = 0; i < pcm16.length; i++) {
-          float32[i] = pcm16[i] / 32768;
-        }
-
-        // Smooth 16-sample edge fade (~1ms at 16kHz) to eliminate crackles/clicks at chunk seams
-        const fadeLen = Math.min(16, Math.floor(float32.length / 4));
-        for (let i = 0; i < fadeLen; i++) {
-          const factor = i / fadeLen;
-          float32[i] *= factor;
-          float32[float32.length - 1 - i] *= factor;
-        }
-
-        const audioBuffer = ctx.createBuffer(1, float32.length, SAMPLE_RATE);
-        audioBuffer.copyToChannel(float32, 0);
-
-        const source = ctx.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(ctx.destination);
-
-        const now = ctx.currentTime;
-        // Jitter buffer: 80ms lookahead from idle or underrun to prevent micro-dropouts
-        let startTime: number;
-        if (nextPlayTimeRef.current <= now) {
-          startTime = now + 0.08;
-        } else {
-          startTime = nextPlayTimeRef.current;
-        }
-
-        source.start(startTime);
-        nextPlayTimeRef.current = startTime + audioBuffer.duration;
-
-        source.onended = () => {
-          if (ctx.currentTime >= nextPlayTimeRef.current - 0.05) {
-            setIsSpeaking(false);
-            isSpeakingRef.current = false;
-          }
-        };
-      } catch (err) {
-        console.warn('[Voice/Play] Chunk decode error:', err);
-      }
-    }
-  }, [getPlaybackContext]);
-
-  // ──────────────────────────────────────────────────────
-  // WebSocket connection to /api/voice/session
-  // ──────────────────────────────────────────────────────
-
+  // ────────────────────────────────────────────────────────────────────────
+  // WebSocket Connection to /api/voice/session
+  // ────────────────────────────────────────────────────────────────────────
   const connectWebSocket = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-    const url = buildWsUrl(sessionIdRef.current);
+    const url = buildWsUrl(
+      sessionIdRef.current,
+      patientId || undefined,
+      intakeIdRef.current || undefined,
+      detectedLanguage
+    );
     const ws = new WebSocket(url);
     ws.binaryType = 'arraybuffer';
     wsRef.current = ws;
@@ -436,59 +292,45 @@ export function useIntakeVoice() {
       setIsConnected(true);
       setError('');
       reconnectDelayRef.current = WS_RECONNECT_DELAY_BASE_MS;
-      ws.send(JSON.stringify({ type: 'init' }));
+      ws.send(
+        JSON.stringify({
+          type: 'init',
+          draft,
+          patientId,
+          intakeId: intakeIdRef.current,
+        })
+      );
     };
 
     ws.onmessage = (event) => {
-      // JSON control messages
       if (typeof event.data === 'string') {
         try {
-          const msg = JSON.parse(event.data) as {
-            type: string;
-            [k: string]: any;
-          };
-          if (msg.type === 'ready') {
-            // Stream ready
-          } else if (msg.type === 'transcript_chunk') {
-            if (msg.payload?.text) {
-              setTranscriptPreview((prev) =>
-                prev ? `${prev} ${msg.payload.text}` : msg.payload.text
-              );
-            }
-          } else if (msg.type === 'assistant_message') {
-            if (msg.payload?.text) {
-              setAssistantMessage(msg.payload.text);
-              pushHistory('assistant', msg.payload.text);
-              setTranscriptPreview('');
-            }
-          } else if (msg.type === 'session_complete') {
-            if (isCompleteRef.current) return;
-            if (msg.transcript) {
-              void sendTranscriptRef.current(msg.transcript);
-            }
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'transcript_chunk' && msg.payload?.text) {
+            setTranscriptPreview((prev) =>
+              prev ? `${prev} ${msg.payload.text}` : msg.payload.text
+            );
+          } else if (msg.type === 'assistant_message' && msg.payload?.text) {
+            setAssistantMessage(msg.payload.text);
+            pushHistory('assistant', msg.payload.text);
+            setTranscriptPreview('');
           } else if (msg.type === 'idle_timeout') {
             isIdlePausedRef.current = true;
             setIsRecording(false);
-            setSupportMessage(
-              'Voice paused due to inactivity. Tap mic to resume.'
-            );
+            setSupportMessage('Voice paused due to inactivity. Tap mic to resume.');
           } else if (msg.type === 'error') {
             setError(msg.message || 'Voice stream error');
           }
         } catch {
-          // Ignore malformed JSON
+          // Ignore non-JSON control messages
         }
         return;
       }
 
-      // Binary audio — Nova Sonic speech output
+      // Binary audio: Nova Sonic speech playback
       if (event.data instanceof ArrayBuffer && isVoiceOutputRef.current) {
-        // Cancel browser synthesis if neural audio is streaming
-        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-        }
-        audioQueueRef.current.push(event.data);
-        playNextChunk();
+        stopBrowserSynthesis();
+        audioPlayerRef.current?.pushChunk(event.data);
       }
     };
 
@@ -512,17 +354,15 @@ export function useIntakeVoice() {
         setSupportMessage('Voice connection interrupted. Reconnecting…');
       }
     };
-  }, [playNextChunk, pushHistory]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [detectedLanguage, draft, patientId, pushHistory]);
 
-  // ──────────────────────────────────────────────────────
-  // Microphone + AudioWorklet capture
-  // ──────────────────────────────────────────────────────
-
+  // ────────────────────────────────────────────────────────────────────────
+  // Recording Management
+  // ────────────────────────────────────────────────────────────────────────
   const startRecording = useCallback(async () => {
     if (isRecording) return;
     setError('');
 
-    // Re-open WebSocket if connection was paused due to inactivity or closed
     if (
       isIdlePausedRef.current ||
       !wsRef.current ||
@@ -535,34 +375,14 @@ export function useIntakeVoice() {
     }
 
     try {
-      // Ensure playback AudioContext is resumed on user gesture
-      getPlaybackContext();
+      audioPlayerRef.current?.getContext();
+      stopBrowserSynthesis();
 
-      // Cancel any ongoing synthetic speech when user begins speaking
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
-
-      // Initialise recording AudioContext
       const ctx = new AudioContext({ sampleRate: SAMPLE_RATE });
       recordingContextRef.current = ctx;
 
-      // Load the PCM capture AudioWorklet
-      try {
-        await ctx.audioWorklet.addModule('/pcm-worklet.js');
-      } catch {
-        const blob = new Blob([AUDIO_WORKLET_CODE], {
-          type: 'application/javascript',
-        });
-        const workletUrl = URL.createObjectURL(blob);
-        try {
-          await ctx.audioWorklet.addModule(workletUrl);
-        } finally {
-          URL.revokeObjectURL(workletUrl);
-        }
-      }
+      await registerPcmWorklet(ctx);
 
-      // Request microphone
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -578,76 +398,26 @@ export function useIntakeVoice() {
       workletNodeRef.current = worklet;
       source.connect(worklet);
 
-      // Reset turn speech buffer
       speechBufferRef.current = '';
 
-      // Initialize Web Speech Recognition concurrently for live transcription & field capture
-      if (typeof window !== 'undefined') {
-        const Win = window as any;
-        const SpeechRecognitionCtor =
-          Win.SpeechRecognition || Win.webkitSpeechRecognition;
-        if (SpeechRecognitionCtor) {
-          try {
-            const recognition = new SpeechRecognitionCtor();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = detectedLanguage?.toLowerCase().startsWith('es')
-              ? 'es-ES'
-              : 'en-US';
+      // Concurrent browser speech recognition for real-time transcription
+      recognitionRef.current = startBrowserSpeechRecognition({
+        language: detectedLanguage,
+        onInterim: (text) => {
+          const display = (speechBufferRef.current + ' ' + text).trim();
+          if (display) setTranscriptPreview(display);
+        },
+        onFinalTurn: (text) => {
+          speechBufferRef.current = (speechBufferRef.current + ' ' + text).trim();
+          setTranscriptPreview(speechBufferRef.current);
+        },
+      });
 
-            recognition.onresult = (event: any) => {
-              let interim = '';
-              let finalTurn = '';
-              for (let i = event.resultIndex; i < event.results.length; i++) {
-                const res = event.results[i];
-                const text = res[0]?.transcript || '';
-                if (res.isFinal) {
-                  finalTurn += ' ' + text;
-                } else {
-                  interim += ' ' + text;
-                }
-              }
-              if (finalTurn.trim()) {
-                speechBufferRef.current = (
-                  speechBufferRef.current +
-                  ' ' +
-                  finalTurn
-                ).trim();
-              }
-              const display = (speechBufferRef.current + ' ' + interim).trim();
-              if (display) {
-                setTranscriptPreview(display);
-              }
-            };
-
-            recognition.onerror = (err: any) => {
-              if (err?.error !== 'no-speech') {
-                console.warn(
-                  '[Voice/WebSpeech] Recognition error:',
-                  err?.error
-                );
-              }
-            };
-
-            recognition.start();
-            recognitionRef.current = recognition;
-          } catch (srErr) {
-            console.warn(
-              '[Voice/WebSpeech] Could not start speech recognition:',
-              srErr
-            );
-          }
-        }
-      }
-
-      // Tell WebSocket server that a new speaking turn has started
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: 'audio_start' }));
       }
 
-      // Forward PCM frames to WebSocket (mute frames when assistant is speaking to prevent feedback)
       worklet.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
-        if (isSpeakingRef.current) return;
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(event.data);
         }
@@ -658,21 +428,15 @@ export function useIntakeVoice() {
     } catch (err: any) {
       const msg = err?.message || 'Unable to access microphone';
       setError(msg);
-      if (
-        err?.name === 'NotAllowedError' ||
-        err?.name === 'PermissionDeniedError'
-      ) {
-        setSupportMessage(
-          'Microphone access denied. Please allow microphone permissions or use the text field.'
-        );
-      } else {
-        setSupportMessage(msg);
-      }
+      setSupportMessage(
+        err?.name === 'NotAllowedError'
+          ? 'Microphone permission denied. You can also use the keyboard below.'
+          : msg
+      );
     }
-  }, [isRecording, getPlaybackContext, detectedLanguage, connectWebSocket]);
+  }, [isRecording, connectWebSocket, detectedLanguage]);
 
   const stopRecording = useCallback(() => {
-    // Stop Web Speech Recognition
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
@@ -688,18 +452,15 @@ export function useIntakeVoice() {
     recordingContextRef.current = null;
     setIsRecording(false);
 
-    // Capture user speech from this speaking turn
     const turnText = speechBufferRef.current.trim();
     speechBufferRef.current = '';
 
-    // Tell WebSocket server the user finished speaking this turn -> Bedrock will process & respond
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: 'audio_end' }));
     }
 
-    // If user spoke words, trigger intake field extraction and DynamoDB persistence
     if (turnText) {
-      void sendTranscriptRef.current(turnText);
+      void sendTranscriptRef.current(turnText, true);
     }
   }, []);
 
@@ -708,23 +469,21 @@ export function useIntakeVoice() {
     else void startRecording();
   }, [isRecording, startRecording, stopRecording]);
 
-  // ──────────────────────────────────────────────────────
-  // Text transcript → Nova 2 Lite field extraction
-  // Uses resilient HTTP client with auto-refresh on 401
-  // ──────────────────────────────────────────────────────
-
+  // ────────────────────────────────────────────────────────────────────────
+  // Transcript Processing (Nova Lite Extraction + DynamoDB Persistence)
+  // ────────────────────────────────────────────────────────────────────────
   const sendTranscript = useCallback(
-    async (transcript: string) => {
+    async (transcript: string, isVoiceTurn = false) => {
       const trimmed = transcript.trim();
       if (!trimmed || isSubmittingRef.current || isCompleteRef.current) return;
+
       isSubmittingRef.current = true;
       setIsSubmitting(true);
       setError('');
       setTranscriptPreview('');
       pushHistory('patient', trimmed);
 
-      // Un-suspend playback context on user submission
-      getPlaybackContext();
+      audioPlayerRef.current?.getContext();
 
       const outgoingHistory = [
         ...history,
@@ -740,6 +499,7 @@ export function useIntakeVoice() {
           success: boolean;
           turn: IntakeTurn;
           intakeId?: string;
+          patientId?: string;
           savedIntake?: any;
         }>(
           '/api/intakes/conversation',
@@ -762,24 +522,29 @@ export function useIntakeVoice() {
         if (data?.intakeId) {
           intakeIdRef.current = data.intakeId;
         }
+        if (data?.patientId && !patientId) {
+          setPatientId(data.patientId);
+        }
 
-        const nextTurn: IntakeTurn = data.turn;
+        const nextTurn = data.turn;
         const updatedDraft = nextTurn.draft || draft;
         setDraft(updatedDraft);
         setAssistantMessage(nextTurn.assistantMessage);
         setDetectedLanguage(nextTurn.detectedLanguage || detectedLanguage);
         pushHistory('assistant', nextTurn.assistantMessage);
 
-        // Vocalize response: only use browser speech synthesis fallback if WebSocket is closed
-        if (wsRef.current?.readyState === WebSocket.OPEN) {
-          wsRef.current.send(
-            JSON.stringify({
-              type: 'speak',
-              text: nextTurn.assistantMessage,
-            })
-          );
-        } else {
-          speakText(nextTurn.assistantMessage);
+        // Vocalize response if submitted via text (or if WebSocket didn't stream voice)
+        if (!isVoiceTurn) {
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(
+              JSON.stringify({
+                type: 'speak',
+                text: nextTurn.assistantMessage,
+              })
+            );
+          } else {
+            speakText(nextTurn.assistantMessage);
+          }
         }
 
         if (nextTurn.isComplete) {
@@ -787,11 +552,11 @@ export function useIntakeVoice() {
           isCompleteRef.current = true;
           stopRecording();
 
-          // Signal end of intake session
           if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({ type: 'end' }));
           }
 
+          clearActiveIntakeSession();
           sessionStorage.setItem(
             'intake-completion',
             JSON.stringify({
@@ -799,12 +564,11 @@ export function useIntakeVoice() {
               draft: updatedDraft,
               language: nextTurn.detectedLanguage || detectedLanguage,
               doctorId,
-              patientId,
+              patientId: data?.patientId || patientId,
               intakeId: data?.intakeId || intakeIdRef.current,
             })
           );
 
-          // Allow patient to hear closing statement before routing to confirmation
           setTimeout(() => {
             router.push('/intake/confirmation');
           }, 1500);
@@ -826,7 +590,6 @@ export function useIntakeVoice() {
       patientId,
       router,
       pushHistory,
-      getPlaybackContext,
       speakText,
       stopRecording,
     ]
@@ -841,20 +604,17 @@ export function useIntakeVoice() {
     );
   }, [sendTranscript]);
 
-  // ──────────────────────────────────────────────────────
-  // Lifecycle: Connect WS on mount, clean up on unmount
-  // ──────────────────────────────────────────────────────
-
+  // ────────────────────────────────────────────────────────────────────────
+  // Lifecycle & Reset
+  // ────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     connectWebSocket();
     return () => {
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       wsRef.current?.close();
       stopRecording();
-      playbackContextRef.current?.close().catch(() => {});
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
+      audioPlayerRef.current?.close();
+      stopBrowserSynthesis();
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
@@ -864,18 +624,13 @@ export function useIntakeVoice() {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ──────────────────────────────────────────────────────
-  // Reset
-  // ──────────────────────────────────────────────────────
-
   const resetConversation = useCallback(() => {
+    clearActiveIntakeSession();
     stopRecording();
     wsRef.current?.close();
     sessionIdRef.current = generateSessionId();
     intakeIdRef.current = '';
     speechBufferRef.current = '';
-    audioRemainderRef.current = null;
-    isSpeakingRef.current = false;
     isIdlePausedRef.current = false;
     setSupportMessage('');
     if (recognitionRef.current) {
@@ -884,17 +639,18 @@ export function useIntakeVoice() {
       } catch {}
       recognitionRef.current = null;
     }
-    setDraft(initialDraft);
-    setHistory([{ id: 'system-1', role: 'system', text: INITIAL_PROMPT }]);
-    setAssistantMessage(INITIAL_PROMPT);
+    setDraft(INITIAL_DRAFT);
+    setHistory([
+      { id: 'system-1', role: 'system', text: DEFAULT_INITIAL_PROMPT },
+    ]);
+    setAssistantMessage(DEFAULT_INITIAL_PROMPT);
     setDetectedLanguage('English');
     setTranscriptPreview('');
     setIsComplete(false);
     setError('');
     isSubmittingRef.current = false;
     setIsSubmitting(false);
-    audioQueueRef.current = [];
-    // Reconnect with a fresh session ID
+    audioPlayerRef.current?.clear();
     setTimeout(connectWebSocket, 500);
   }, [stopRecording, connectWebSocket]);
 
@@ -914,10 +670,9 @@ export function useIntakeVoice() {
     transcriptPreview,
     supportMessage,
     toggleMic,
-    sendTranscript,
+    sendTranscript: (txt: string) => sendTranscript(txt, false),
     finalizeIntake,
     resetConversation,
-    // Additional fields for UI
     isListening: isRecording,
   };
 }
