@@ -151,6 +151,9 @@ export function useIntakeVoice() {
   const speechBufferRef = useRef<string>('');
   const recognitionRef = useRef<any>(null);
   const isIdlePausedRef = useRef<boolean>(false);
+  const sendTranscriptRef = useRef<(text: string) => Promise<void>>(
+    async () => {}
+  );
 
   // Submission state refs
   const isSubmittingRef = useRef(false);
@@ -461,7 +464,7 @@ export function useIntakeVoice() {
           } else if (msg.type === 'session_complete') {
             if (isCompleteRef.current) return;
             if (msg.transcript) {
-              void sendTranscript(msg.transcript);
+              void sendTranscriptRef.current(msg.transcript);
             }
           } else if (msg.type === 'idle_timeout') {
             isIdlePausedRef.current = true;
@@ -696,9 +699,9 @@ export function useIntakeVoice() {
 
     // If user spoke words, trigger intake field extraction and DynamoDB persistence
     if (turnText) {
-      void sendTranscript(turnText);
+      void sendTranscriptRef.current(turnText);
     }
-  }, [sendTranscript]);
+  }, []);
 
   const toggleMic = useCallback(() => {
     if (isRecording) stopRecording();
@@ -828,6 +831,8 @@ export function useIntakeVoice() {
       stopRecording,
     ]
   );
+
+  sendTranscriptRef.current = sendTranscript;
 
   const finalizeIntake = useCallback(() => {
     if (isCompleteRef.current || isSubmittingRef.current) return;
