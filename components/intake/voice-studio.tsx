@@ -7,6 +7,7 @@ type VoiceStudioProps = {
   isRecording: boolean;
   isListening: boolean;
   isSubmitting: boolean;
+  isSpeaking?: boolean;
   transcriptPreview: string;
   defaultPrompt: string;
   onToggleMic: () => void;
@@ -18,6 +19,7 @@ export function VoiceStudio({
   isRecording,
   isListening,
   isSubmitting,
+  isSpeaking = false,
   transcriptPreview,
   defaultPrompt,
   onToggleMic,
@@ -113,11 +115,15 @@ export function VoiceStudio({
       {/* Floating Bottom Action Dock */}
       <div className="border-deep-ink/5 flex items-center justify-between border-t pt-2">
         <span className="text-slate/70 text-[10px]">
-          {isRecording
-            ? isListening
-              ? '● Listening live...'
-              : '● Connecting...'
-            : '● Auto-submits on silence'}
+          {isSubmitting
+            ? '● Thinking & processing...'
+            : isSpeaking
+            ? '● Noa is speaking aloud...'
+            : isRecording
+            ? transcriptPreview && transcriptPreview !== 'Listening…'
+              ? '● Listening (auto-submits on silence)...'
+              : '● Listening live... speak when ready'
+            : '● Tap microphone to speak'}
         </span>
 
         <div className="border-deep-ink/10 flex items-center gap-1.5 rounded-full border bg-white/90 p-1 shadow-2xs backdrop-blur-xs">

@@ -7,6 +7,7 @@ type AssistantPromptBoxProps = {
   isSpeaking: boolean;
   isVoiceOutputEnabled: boolean;
   onToggleVoiceOutput: () => void;
+  onReplay?: () => void;
 };
 
 export function AssistantPromptBox({
@@ -14,6 +15,7 @@ export function AssistantPromptBox({
   isSpeaking,
   isVoiceOutputEnabled,
   onToggleVoiceOutput,
+  onReplay,
 }: AssistantPromptBoxProps) {
   return (
     <div className="bg-soft-meadow/60 border-deep-ink/8 rounded-2xl border p-4 transition-all sm:rounded-3xl sm:p-5">
@@ -33,26 +35,46 @@ export function AssistantPromptBox({
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={onToggleVoiceOutput}
-          className="text-slate hover:text-deep-ink border-deep-ink/10 inline-flex items-center gap-1.5 rounded-full border bg-white px-2.5 py-1 text-xs shadow-2xs transition-colors"
-          title={
-            isVoiceOutputEnabled ? 'Mute voice audio' : 'Enable voice audio'
-          }
-        >
-          {isVoiceOutputEnabled ? (
-            <>
-              <Volume2 className="text-moss-green h-3.5 w-3.5" />
-              <span className="text-[11px] font-medium">Voice on</span>
-            </>
-          ) : (
-            <>
-              <VolumeX className="text-slate h-3.5 w-3.5" />
-              <span className="text-[11px] font-medium">Voice muted</span>
-            </>
+        <div className="flex items-center gap-1.5">
+          {onReplay && (
+            <button
+              type="button"
+              onClick={onReplay}
+              className="text-slate hover:text-deep-ink border-deep-ink/10 inline-flex items-center gap-1.5 rounded-full border bg-white px-2.5 py-1 text-xs shadow-2xs transition-colors"
+              title={isSpeaking ? 'Stop playback' : 'Listen aloud'}
+            >
+              <Volume2
+                className={`h-3.5 w-3.5 ${
+                  isSpeaking ? 'text-moss-green animate-pulse' : 'text-slate'
+                }`}
+              />
+              <span className="text-[11px] font-medium">
+                {isSpeaking ? 'Stop' : 'Listen'}
+              </span>
+            </button>
           )}
-        </button>
+
+          <button
+            type="button"
+            onClick={onToggleVoiceOutput}
+            className="text-slate hover:text-deep-ink border-deep-ink/10 inline-flex items-center gap-1.5 rounded-full border bg-white px-2.5 py-1 text-xs shadow-2xs transition-colors"
+            title={
+              isVoiceOutputEnabled ? 'Mute voice audio' : 'Enable voice audio'
+            }
+          >
+            {isVoiceOutputEnabled ? (
+              <>
+                <Volume2 className="text-moss-green h-3.5 w-3.5" />
+                <span className="text-[11px] font-medium">Voice on</span>
+              </>
+            ) : (
+              <>
+                <VolumeX className="text-slate h-3.5 w-3.5" />
+                <span className="text-[11px] font-medium">Voice muted</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       <p className="text-deep-ink font-serif text-base leading-relaxed font-medium sm:text-xl sm:leading-8">

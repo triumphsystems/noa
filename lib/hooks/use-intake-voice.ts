@@ -113,18 +113,51 @@ export function useIntakeVoice() {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const recognitionRef = useRef<any>(null);
   const speechBufferRef = useRef<string>('');
+  const latestInterimRef = useRef<string>('');
   const isIdlePausedRef = useRef(false);
   const isSubmittingRef = useRef(false);
   const isCompleteRef = useRef(false);
   const isVoiceOutputRef = useRef(true);
+  const isRecordingRef = useRef(false);
   const reconnectDelayRef = useRef(WS_RECONNECT_DELAY_BASE_MS);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Audio queue player for Nova Sonic neural audio
+  // VAD & Turn Taking Refs
+  const silenceTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const lastSpeechTimeRef = useRef<number>(Date.now());
+  const hasSpokenInTurnRef = useRef<boolean>(false);
+  const receivedSonicAudioRef = useRef<boolean>(false);
+  const autoResumeAfterSpeechRef = useRef<boolean>(false);
+  const fallbackSpeechTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const startRecordingRef = useRef<() => Promise<void>>(async () => {});
+  const stopRecordingRef = useRef<(isAuto?: boolean) => void>(() => {});
+
+  // Continuous conversation callback when Nova Sonic or fallback audio finishes
+  const handleAssistantFinishedSpeaking = useCallback(() => {
+    if (isCompleteRef.current) return;
+    if (autoResumeAfterSpeechRef.current) {
+      setTimeout(() => {
+        if (
+          !isRecordingRef.current &&
+          !isCompleteRef.current &&
+          !isSubmittingRef.current
+        ) {
+          void startRecordingRef.current();
+        }
+      }, 500);
+    }
+  }, []);
+
+  // Audio queue player for Nova Sonic neural audio (Primary Voice Engine)
   const audioPlayerRef = useRef<AudioQueuePlayer | null>(null);
   if (!audioPlayerRef.current && typeof window !== 'undefined') {
     audioPlayerRef.current = new AudioQueuePlayer({
       onSpeakingChange: (speaking) => setIsSpeaking(speaking),
+      onPlaybackComplete: () => {
+        handleAssistantFinishedSpeaking();
+      },
     });
   }
 
@@ -265,11 +298,14 @@ export function useIntakeVoice() {
   const speakText = useCallback(
     (text: string) => {
       if (!isVoiceOutputRef.current) return;
-      speakWithBrowserSynthesis(text, detectedLanguage, (speaking) =>
-        setIsSpeaking(speaking)
-      );
+      speakWithBrowserSynthesis(text, detectedLanguage, (speaking) => {
+        setIsSpeaking(speaking);
+        if (!speaking) {
+          handleAssistantFinishedSpeaking();
+        }
+      });
     },
-    [detectedLanguage]
+    [detectedLanguage, handleAssistantFinishedSpeaking]
   );
 
   // ────────────────────────────────────────────────────────────────────────
@@ -302,7 +338,7 @@ export function useIntakeVoice() {
       );
     };
 
-    ws.onmessage = (event) => {
+    ws.onmessage = async (event) => {
       if (typeof event.data === 'string') {
         try {
           const msg = JSON.parse(event.data);
@@ -316,6 +352,7 @@ export function useIntakeVoice() {
             setTranscriptPreview('');
           } else if (msg.type === 'idle_timeout') {
             isIdlePausedRef.current = true;
+            isRecordingRef.current = false;
             setIsRecording(false);
             setSupportMessage('Voice paused due to inactivity. Tap mic to resume.');
           } else if (msg.type === 'error') {
@@ -327,10 +364,23 @@ export function useIntakeVoice() {
         return;
       }
 
-      // Binary audio: Nova Sonic speech playback
-      if (event.data instanceof ArrayBuffer && isVoiceOutputRef.current) {
+      // Binary/Blob audio: Amazon Bedrock Nova Sonic neural speech playback (Primary)
+      let audioBuffer: ArrayBuffer | null = null;
+      if (event.data instanceof ArrayBuffer) {
+        audioBuffer = event.data;
+      } else if (typeof Blob !== 'undefined' && event.data instanceof Blob) {
+        audioBuffer = await event.data.arrayBuffer();
+      }
+
+      if (audioBuffer && isVoiceOutputRef.current) {
+        receivedSonicAudioRef.current = true;
+        // Nova Sonic audio is active; cancel any pending fallback synthesis
         stopBrowserSynthesis();
-        audioPlayerRef.current?.pushChunk(event.data);
+        if (fallbackSpeechTimerRef.current) {
+          clearTimeout(fallbackSpeechTimerRef.current);
+          fallbackSpeechTimerRef.current = null;
+        }
+        audioPlayerRef.current?.pushChunk(audioBuffer);
       }
     };
 
@@ -357,10 +407,10 @@ export function useIntakeVoice() {
   }, [detectedLanguage, draft, patientId, pushHistory]);
 
   // ────────────────────────────────────────────────────────────────────────
-  // Recording Management
+  // Recording Management & VAD Silence Detection
   // ────────────────────────────────────────────────────────────────────────
   const startRecording = useCallback(async () => {
-    if (isRecording) return;
+    if (isRecordingRef.current) return;
     setError('');
 
     if (
@@ -375,7 +425,8 @@ export function useIntakeVoice() {
     }
 
     try {
-      audioPlayerRef.current?.getContext();
+      // Unblock Nova Sonic playback AudioContext on user interaction
+      await audioPlayerRef.current?.resume();
       stopBrowserSynthesis();
 
       const ctx = new AudioContext({ sampleRate: SAMPLE_RATE });
@@ -394,22 +445,51 @@ export function useIntakeVoice() {
       mediaStreamRef.current = stream;
 
       const source = ctx.createMediaStreamSource(stream);
+
+      // Web Audio AnalyserNode for Real-time Voice Activity Detection (VAD)
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.3;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+
       const worklet = new AudioWorkletNode(ctx, 'pcm-capture');
       workletNodeRef.current = worklet;
       source.connect(worklet);
 
       speechBufferRef.current = '';
+      latestInterimRef.current = '';
+      hasSpokenInTurnRef.current = false;
+      lastSpeechTimeRef.current = Date.now();
+      receivedSonicAudioRef.current = false;
 
-      // Concurrent browser speech recognition for real-time transcription
+      // Concurrent speech recognition for real-time transcription
       recognitionRef.current = startBrowserSpeechRecognition({
         language: detectedLanguage,
         onInterim: (text) => {
-          const display = (speechBufferRef.current + ' ' + text).trim();
-          if (display) setTranscriptPreview(display);
+          const trimmed = text.trim();
+          if (trimmed) {
+            hasSpokenInTurnRef.current = true;
+            lastSpeechTimeRef.current = Date.now();
+            latestInterimRef.current = trimmed;
+            setTranscriptPreview(
+              (speechBufferRef.current + ' ' + trimmed).trim()
+            );
+          }
         },
         onFinalTurn: (text) => {
-          speechBufferRef.current = (speechBufferRef.current + ' ' + text).trim();
-          setTranscriptPreview(speechBufferRef.current);
+          const trimmed = text.trim();
+          if (trimmed) {
+            hasSpokenInTurnRef.current = true;
+            lastSpeechTimeRef.current = Date.now();
+            speechBufferRef.current = (
+              speechBufferRef.current +
+              ' ' +
+              trimmed
+            ).trim();
+            latestInterimRef.current = '';
+            setTranscriptPreview(speechBufferRef.current);
+          }
         },
       });
 
@@ -423,6 +503,37 @@ export function useIntakeVoice() {
         }
       };
 
+      // VAD Silence Detection Interval: monitors microphone audio level
+      // and automatically completes the patient's turn after speech is followed by silence
+      if (silenceTimerRef.current) clearInterval(silenceTimerRef.current);
+      silenceTimerRef.current = setInterval(() => {
+        if (!analyserRef.current || !isRecordingRef.current) return;
+
+        const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+        analyserRef.current.getByteFrequencyData(dataArray);
+
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          sum += dataArray[i];
+        }
+        const avgVolume = sum / dataArray.length;
+
+        // Vocal activity threshold
+        if (avgVolume > 14) {
+          lastSpeechTimeRef.current = Date.now();
+        }
+
+        // When the patient has spoken and a 1.8-second silence pause is detected:
+        if (hasSpokenInTurnRef.current) {
+          const elapsedSilence = Date.now() - lastSpeechTimeRef.current;
+          if (elapsedSilence >= 1800) {
+            // Patient finished speaking! Auto-complete turn and notify Bedrock Nova Sonic:
+            stopRecordingRef.current(true);
+          }
+        }
+      }, 100);
+
+      isRecordingRef.current = true;
       setIsRecording(true);
       setTranscriptPreview('Listening…');
     } catch (err: any) {
@@ -434,9 +545,14 @@ export function useIntakeVoice() {
           : msg
       );
     }
-  }, [isRecording, connectWebSocket, detectedLanguage]);
+  }, [connectWebSocket, detectedLanguage]);
 
-  const stopRecording = useCallback(() => {
+  const stopRecording = useCallback((isAuto = false) => {
+    if (silenceTimerRef.current) {
+      clearInterval(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
@@ -444,36 +560,54 @@ export function useIntakeVoice() {
       recognitionRef.current = null;
     }
 
+    analyserRef.current = null;
     workletNodeRef.current?.disconnect();
     workletNodeRef.current = null;
     mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
     mediaStreamRef.current = null;
     recordingContextRef.current?.close().catch(() => {});
     recordingContextRef.current = null;
+    isRecordingRef.current = false;
     setIsRecording(false);
 
-    const turnText = speechBufferRef.current.trim();
+    const turnText = (
+      speechBufferRef.current +
+      ' ' +
+      latestInterimRef.current
+    ).trim();
     speechBufferRef.current = '';
+    latestInterimRef.current = '';
+    hasSpokenInTurnRef.current = false;
 
+    // Signal audio_end to Bedrock Nova Sonic bidirectional stream
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: 'audio_end' }));
     }
 
+    autoResumeAfterSpeechRef.current = isAuto;
+
     if (turnText) {
-      void sendTranscriptRef.current(turnText, true);
+      void sendTranscriptRef.current(turnText, true, isAuto);
     }
   }, []);
 
+  startRecordingRef.current = startRecording;
+  stopRecordingRef.current = stopRecording;
+
   const toggleMic = useCallback(() => {
-    if (isRecording) stopRecording();
-    else void startRecording();
-  }, [isRecording, startRecording, stopRecording]);
+    if (isRecordingRef.current) {
+      autoResumeAfterSpeechRef.current = false;
+      stopRecording(false);
+    } else {
+      void startRecording();
+    }
+  }, [startRecording, stopRecording]);
 
   // ────────────────────────────────────────────────────────────────────────
   // Transcript Processing (Nova Lite Extraction + DynamoDB Persistence)
   // ────────────────────────────────────────────────────────────────────────
   const sendTranscript = useCallback(
-    async (transcript: string, isVoiceTurn = false) => {
+    async (transcript: string, isVoiceTurn = false, isAuto = false) => {
       const trimmed = transcript.trim();
       if (!trimmed || isSubmittingRef.current || isCompleteRef.current) return;
 
@@ -483,7 +617,8 @@ export function useIntakeVoice() {
       setTranscriptPreview('');
       pushHistory('patient', trimmed);
 
-      audioPlayerRef.current?.getContext();
+      autoResumeAfterSpeechRef.current = isVoiceTurn && isAuto;
+      await audioPlayerRef.current?.resume();
 
       const outgoingHistory = [
         ...history,
@@ -533,24 +668,37 @@ export function useIntakeVoice() {
         setDetectedLanguage(nextTurn.detectedLanguage || detectedLanguage);
         pushHistory('assistant', nextTurn.assistantMessage);
 
-        // Vocalize response if submitted via text (or if WebSocket didn't stream voice)
-        if (!isVoiceTurn) {
-          if (wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(
-              JSON.stringify({
-                type: 'speak',
-                text: nextTurn.assistantMessage,
-              })
-            );
-          } else {
-            speakText(nextTurn.assistantMessage);
+        // If submitted via typed fallback, request Nova Sonic to speak over WebSocket
+        if (!isVoiceTurn && wsRef.current?.readyState === WebSocket.OPEN) {
+          receivedSonicAudioRef.current = false;
+          wsRef.current.send(
+            JSON.stringify({
+              type: 'speak',
+              text: nextTurn.assistantMessage,
+            })
+          );
+        }
+
+        // Amazon Bedrock Nova Sonic is the primary speech engine streaming neural audio over WebSocket.
+        // If Nova Sonic encounters an error, disconnects, or produces no audio within a 1.2s grace period,
+        // we activate the Web Speech fallback so the consultation never falls silent.
+        if (isVoiceOutputRef.current) {
+          if (fallbackSpeechTimerRef.current) {
+            clearTimeout(fallbackSpeechTimerRef.current);
           }
+
+          fallbackSpeechTimerRef.current = setTimeout(() => {
+            if (!receivedSonicAudioRef.current && !isCompleteRef.current) {
+              speakText(nextTurn.assistantMessage);
+            }
+          }, 1200);
         }
 
         if (nextTurn.isComplete) {
           setIsComplete(true);
           isCompleteRef.current = true;
-          stopRecording();
+          autoResumeAfterSpeechRef.current = false;
+          stopRecordingRef.current(false);
 
           if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({ type: 'end' }));
@@ -569,9 +717,10 @@ export function useIntakeVoice() {
             })
           );
 
+          const delay = Math.max(3000, nextTurn.assistantMessage.length * 60);
           setTimeout(() => {
             router.push('/intake/confirmation');
-          }, 1500);
+          }, delay);
           return;
         }
       } catch (err) {
@@ -591,7 +740,6 @@ export function useIntakeVoice() {
       router,
       pushHistory,
       speakText,
-      stopRecording,
     ]
   );
 
@@ -611,6 +759,8 @@ export function useIntakeVoice() {
     connectWebSocket();
     return () => {
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      if (silenceTimerRef.current) clearInterval(silenceTimerRef.current);
+      if (fallbackSpeechTimerRef.current) clearTimeout(fallbackSpeechTimerRef.current);
       wsRef.current?.close();
       stopRecording();
       audioPlayerRef.current?.close();
@@ -626,12 +776,17 @@ export function useIntakeVoice() {
 
   const resetConversation = useCallback(() => {
     clearActiveIntakeSession();
+    if (silenceTimerRef.current) clearInterval(silenceTimerRef.current);
+    if (fallbackSpeechTimerRef.current) clearTimeout(fallbackSpeechTimerRef.current);
     stopRecording();
     wsRef.current?.close();
     sessionIdRef.current = generateSessionId();
     intakeIdRef.current = '';
     speechBufferRef.current = '';
+    latestInterimRef.current = '';
     isIdlePausedRef.current = false;
+    receivedSonicAudioRef.current = false;
+    autoResumeAfterSpeechRef.current = false;
     setSupportMessage('');
     if (recognitionRef.current) {
       try {
@@ -654,6 +809,29 @@ export function useIntakeVoice() {
     setTimeout(connectWebSocket, 500);
   }, [stopRecording, connectWebSocket]);
 
+  const replayAssistantMessage = useCallback(() => {
+    if (isSpeaking) {
+      stopBrowserSynthesis();
+      audioPlayerRef.current?.clear();
+      setIsSpeaking(false);
+    } else if (assistantMessage) {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        receivedSonicAudioRef.current = false;
+        wsRef.current.send(
+          JSON.stringify({
+            type: 'speak',
+            text: assistantMessage,
+          })
+        );
+      }
+      setTimeout(() => {
+        if (!receivedSonicAudioRef.current) {
+          speakText(assistantMessage);
+        }
+      }, 1200);
+    }
+  }, [assistantMessage, isSpeaking, speakText]);
+
   return {
     isRecording,
     isConnected,
@@ -673,6 +851,7 @@ export function useIntakeVoice() {
     sendTranscript: (txt: string) => sendTranscript(txt, false),
     finalizeIntake,
     resetConversation,
+    replayAssistantMessage,
     isListening: isRecording,
   };
 }

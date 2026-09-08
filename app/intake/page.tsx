@@ -38,6 +38,7 @@ function PatientIntakeContent() {
     sendTranscript,
     finalizeIntake,
     resetConversation,
+    replayAssistantMessage,
   } = useIntakeVoice();
 
   return (
@@ -71,12 +72,14 @@ function PatientIntakeContent() {
               onToggleVoiceOutput={() =>
                 setIsVoiceOutputEnabled((prev) => !prev)
               }
+              onReplay={replayAssistantMessage}
             />
 
             <VoiceStudio
               isRecording={isRecording}
               isListening={isListening}
               isSubmitting={isSubmitting}
+              isSpeaking={isSpeaking}
               transcriptPreview={transcriptPreview}
               defaultPrompt={defaultPrompt}
               onToggleMic={toggleMic}

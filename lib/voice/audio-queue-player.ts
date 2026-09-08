@@ -6,9 +6,14 @@ export class AudioQueuePlayer {
   private audioQueue: ArrayBuffer[] = [];
   private remainder: Uint8Array | null = null;
   private onSpeakingChange?: (isSpeaking: boolean) => void;
+  private onPlaybackComplete?: () => void;
 
-  constructor(options?: { onSpeakingChange?: (isSpeaking: boolean) => void }) {
+  constructor(options?: {
+    onSpeakingChange?: (isSpeaking: boolean) => void;
+    onPlaybackComplete?: () => void;
+  }) {
     this.onSpeakingChange = options?.onSpeakingChange;
+    this.onPlaybackComplete = options?.onPlaybackComplete;
   }
 
   public getContext(): AudioContext | null {
@@ -17,7 +22,11 @@ export class AudioQueuePlayer {
       if (!this.playbackContext || this.playbackContext.state === 'closed') {
         const AudioCtx =
           window.AudioContext || (window as any).webkitAudioContext;
-        this.playbackContext = new AudioCtx({ sampleRate: SAMPLE_RATE });
+        try {
+          this.playbackContext = new AudioCtx({ sampleRate: SAMPLE_RATE });
+        } catch {
+          this.playbackContext = new AudioCtx();
+        }
         this.nextPlayTime = 0;
       }
       if (this.playbackContext.state === 'suspended') {
@@ -27,6 +36,17 @@ export class AudioQueuePlayer {
     } catch (e) {
       console.warn('[AudioQueuePlayer] Failed to init playback context:', e);
       return null;
+    }
+  }
+
+  public async resume(): Promise<void> {
+    const ctx = this.getContext();
+    if (ctx && ctx.state === 'suspended') {
+      try {
+        await ctx.resume();
+      } catch (e) {
+        console.warn('[AudioQueuePlayer] Failed to resume playback context:', e);
+      }
     }
   }
 
@@ -105,6 +125,7 @@ export class AudioQueuePlayer {
         source.onended = () => {
           if (ctx.currentTime >= this.nextPlayTime - 0.05) {
             this.onSpeakingChange?.(false);
+            this.onPlaybackComplete?.();
           }
         };
       } catch (err) {
