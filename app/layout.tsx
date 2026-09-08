@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata, Viewport } from 'next';
 import { WebMCPProvider } from '@/lib/webmcp';
+import { AuthProvider } from '@/lib/auth-context';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -59,7 +60,9 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-canvas text-deep-ink font-sans antialiased">
-        <WebMCPProvider>{children}</WebMCPProvider>
+        <WebMCPProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </WebMCPProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

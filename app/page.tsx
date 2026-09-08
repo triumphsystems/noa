@@ -14,6 +14,7 @@ import {
   FileText,
   Layers,
   Lock,
+  LogOut,
   Menu,
   Mic,
   ShieldCheck,
@@ -22,9 +23,31 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
+
+  const dashboardHref =
+    user?.userType === 'doctor'
+      ? '/dashboard/doctor'
+      : user?.userType === 'patient'
+        ? '/dashboard/patient'
+        : '/dashboard/admin';
+
+  const roleLabel =
+    user?.userType === 'doctor'
+      ? 'Doctor'
+      : user?.userType === 'patient'
+        ? 'Patient'
+        : 'Admin';
+
+  const userInitial = user?.name
+    ? user.name.trim().charAt(0).toUpperCase()
+    : user?.email
+      ? user.email.charAt(0).toUpperCase()
+      : 'U';
 
   return (
     <div className="bg-canvas text-deep-ink min-h-screen">
@@ -69,39 +92,107 @@ export default function LandingPage() {
               <UserCheck className="text-deep-ink h-3.5 w-3.5" />
               <span>Patient Check-in</span>
             </Link>
-            <div className="flex items-center gap-2.5 pl-2">
-              <Link href="/auth/login">
+            {isAuthenticated && user ? (
+              <div className="flex items-center gap-3 pl-2">
+                <Link
+                  href={dashboardHref}
+                  className="hover:border-deep-ink/20 flex items-center gap-2 rounded-xl border border-transparent p-1 transition-all"
+                >
+                  <div className="border-deep-ink/15 bg-soft-meadow flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border shadow-2xs">
+                    {user.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.name || 'User'}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-deep-ink font-serif text-xs font-bold">
+                        {userInitial}
+                      </span>
+                    )}
+                  </div>
+                  <div className="hidden flex-col text-left xl:flex">
+                    <span className="text-deep-ink max-w-[120px] truncate text-xs font-semibold">
+                      {user.name || user.email}
+                    </span>
+                    <span className="text-slate text-[10px] capitalize">
+                      {roleLabel}
+                    </span>
+                  </div>
+                </Link>
+                <Link href={dashboardHref}>
+                  <Button
+                    variant="dark"
+                    size="sm"
+                    className="bg-deep-ink hover:bg-deep-ink/90 gap-1.5 rounded-lg px-3.5 text-xs font-semibold text-white shadow-xs"
+                  >
+                    <span>Dashboard</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-deep-ink/80 hover:text-deep-ink hover:bg-deep-ink/5 h-9 rounded-lg px-3.5 text-xs font-semibold"
+                  onClick={logout}
+                  className="text-slate hover:text-deep-ink hover:bg-deep-ink/5 h-8 px-2 text-xs"
+                  title="Log Out"
                 >
-                  Log In
+                  <LogOut className="h-3.5 w-3.5" />
                 </Button>
-              </Link>
-              <Link href="/auth/signup">
-                <Button
-                  variant="dark"
-                  size="sm"
-                  className="bg-deep-ink hover:bg-deep-ink/90 h-9 rounded-lg px-4 text-xs font-semibold text-white shadow-xs transition-all hover:shadow"
-                >
-                  Get Started
-                </Button>
-              </Link>
-            </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2.5 pl-2">
+                <Link href="/auth/login">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-deep-ink/80 hover:text-deep-ink hover:bg-deep-ink/5 h-9 rounded-lg px-3.5 text-xs font-semibold"
+                  >
+                    Log In
+                  </Button>
+                </Link>
+                <Link href="/auth/signup">
+                  <Button
+                    variant="dark"
+                    size="sm"
+                    className="bg-deep-ink hover:bg-deep-ink/90 h-9 rounded-lg px-4 text-xs font-semibold text-white shadow-xs transition-all hover:shadow"
+                  >
+                    Get Started
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Mobile Navigation Toggle & Quick Actions */}
           <div className="flex items-center gap-2 md:hidden">
-            <Link href="/auth/login">
-              <Button
-                variant="outline"
-                size="xs"
-                className="h-7 rounded-lg px-2.5 text-xs"
-              >
-                Log In
-              </Button>
-            </Link>
+            {isAuthenticated && user ? (
+              <Link href={dashboardHref}>
+                <div className="border-deep-ink/15 bg-soft-meadow flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border shadow-2xs">
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name || 'User'}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-deep-ink font-serif text-xs font-bold">
+                      {userInitial}
+                    </span>
+                  )}
+                </div>
+              </Link>
+            ) : (
+              <Link href="/auth/login">
+                <Button
+                  variant="outline"
+                  size="xs"
+                  className="h-7 rounded-lg px-2.5 text-xs"
+                >
+                  Log In
+                </Button>
+              </Link>
+            )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="hover:bg-deep-ink/5 text-deep-ink cursor-pointer rounded-lg p-1.5 transition-colors"
@@ -144,18 +235,47 @@ export default function LandingPage() {
               </Link>
             </div>
             <div className="border-deep-ink/8 flex flex-col gap-2 border-t pt-2">
-              <Link
-                href="/auth/signup"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full"
-              >
-                <Button
-                  variant="dark"
-                  className="w-full rounded-lg font-medium"
+              {isAuthenticated && user ? (
+                <>
+                  <Link
+                    href={dashboardHref}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full"
+                  >
+                    <Button
+                      variant="dark"
+                      className="w-full gap-2 rounded-lg font-medium"
+                    >
+                      <span>Go to Dashboard ({roleLabel})</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      logout();
+                    }}
+                    className="w-full gap-2 rounded-lg text-xs"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    <span>Log Out</span>
+                  </Button>
+                </>
+              ) : (
+                <Link
+                  href="/auth/signup"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full"
                 >
-                  Get Started
-                </Button>
-              </Link>
+                  <Button
+                    variant="dark"
+                    className="w-full rounded-lg font-medium"
+                  >
+                    Get Started
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         )}
@@ -175,38 +295,97 @@ export default function LandingPage() {
                 naturally, synthesize accurate SOAP notes, and eliminate chart
                 documentation debt.
               </p>
-              <div className="flex flex-col gap-3 pt-2 sm:flex-row">
-                <Link
-                  href="/auth/signup?type=doctor"
-                  className="block w-full sm:w-auto"
-                >
-                  <Button
-                    variant="dark"
-                    className="h-11 w-full gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold shadow-2xs sm:w-auto"
-                  >
-                    <span>Start for Doctors</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link href="/intake" className="block w-full sm:w-auto">
-                  <Button
-                    variant="outline"
-                    className="hover:bg-soft-meadow border-deep-ink/20 h-11 w-full gap-2 rounded-lg px-6 py-2.5 text-sm font-medium sm:w-auto"
-                  >
-                    <UserCheck className="text-deep-ink h-4 w-4" />
-                    <span>Patient Check-in</span>
-                  </Button>
-                </Link>
-              </div>
-              <p className="text-slate/80 text-xs">
-                Are you a patient?{' '}
-                <Link
-                  href="/intake"
-                  className="text-deep-ink hover:text-deep-ink/80 font-semibold underline underline-offset-4"
-                >
-                  Complete your check-in &rarr;
-                </Link>
-              </p>
+              {isAuthenticated && user ? (
+                <div className="space-y-4 pt-2">
+                  <div className="border-deep-ink/10 bg-soft-meadow/70 flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs shadow-2xs">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                    <span className="text-deep-ink">
+                      Active session:{' '}
+                      <strong className="font-semibold">
+                        {user.name
+                          ? `${user.userType === 'doctor' ? 'Dr. ' : ''}${user.name}`
+                          : user.email}
+                      </strong>{' '}
+                      <Badge variant="secondary" className="ml-1 text-[10px] uppercase">
+                        {roleLabel}
+                      </Badge>
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Link
+                      href={dashboardHref}
+                      className="block w-full sm:w-auto"
+                    >
+                      <Button
+                        variant="dark"
+                        className="bg-deep-ink hover:bg-deep-ink/90 h-11 w-full gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold shadow-2xs sm:w-auto"
+                      >
+                        <span>Open {roleLabel} Dashboard</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    {user.userType === 'doctor' ? (
+                      <Link
+                        href="/dashboard/doctor/sessions/new"
+                        className="block w-full sm:w-auto"
+                      >
+                        <Button
+                          variant="outline"
+                          className="hover:bg-soft-meadow border-deep-ink/20 h-11 w-full gap-2 rounded-lg px-6 py-2.5 text-sm font-medium sm:w-auto"
+                        >
+                          <Mic className="text-deep-ink h-4 w-4" />
+                          <span>Start Voice Session</span>
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Link href="/intake" className="block w-full sm:w-auto">
+                        <Button
+                          variant="outline"
+                          className="hover:bg-soft-meadow border-deep-ink/20 h-11 w-full gap-2 rounded-lg px-6 py-2.5 text-sm font-medium sm:w-auto"
+                        >
+                          <UserCheck className="text-deep-ink h-4 w-4" />
+                          <span>Patient Check-in</span>
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+                    <Link
+                      href="/auth/signup?type=doctor"
+                      className="block w-full sm:w-auto"
+                    >
+                      <Button
+                        variant="dark"
+                        className="h-11 w-full gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold shadow-2xs sm:w-auto"
+                      >
+                        <span>Start for Doctors</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <Link href="/intake" className="block w-full sm:w-auto">
+                      <Button
+                        variant="outline"
+                        className="hover:bg-soft-meadow border-deep-ink/20 h-11 w-full gap-2 rounded-lg px-6 py-2.5 text-sm font-medium sm:w-auto"
+                      >
+                        <UserCheck className="text-deep-ink h-4 w-4" />
+                        <span>Patient Check-in</span>
+                      </Button>
+                    </Link>
+                  </div>
+                  <p className="text-slate/80 text-xs">
+                    Are you a patient?{' '}
+                    <Link
+                      href="/intake"
+                      className="text-deep-ink hover:text-deep-ink/80 font-semibold underline underline-offset-4"
+                    >
+                      Complete your check-in &rarr;
+                    </Link>
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Interactive Hero Card Preview */}

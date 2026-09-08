@@ -55,6 +55,22 @@ function getHomeForRole(role: Role | null): string {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // 0. Landing Page Direct Workspace Navigation
+  if (pathname === '/') {
+    const isPublicRequested =
+      request.nextUrl.searchParams.get('public') === 'true';
+    if (!isPublicRequested) {
+      const auth = getAuthenticatedUserSync(request);
+      if (auth.isValid && auth.userType) {
+        const destination = getHomeForRole(auth.userType as Role);
+        if (destination && destination !== '/auth/login') {
+          return NextResponse.redirect(new URL(destination, request.url));
+        }
+      }
+    }
+    return NextResponse.next();
+  }
+
   // Find matching protected route guard
   const guard = ROUTE_GUARDS.find((g) => pathname.startsWith(g.prefix));
   if (!guard) {
@@ -98,6 +114,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/',
     '/dashboard/doctor/:path*',
     '/dashboard/patient/:path*',
     '/dashboard/admin/:path*',

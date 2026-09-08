@@ -310,8 +310,18 @@ export default function DashboardLayout({
                     </span>
                   </Link>
                 )}
-              <div className="bg-soft-meadow border-deep-ink/15 text-deep-ink flex h-9 w-9 items-center justify-center rounded-full border font-serif text-sm font-bold shadow-2xs sm:h-10 sm:w-10 sm:text-base">
-                {doctorInitial}
+              <div className="border-deep-ink/15 flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border shadow-2xs sm:h-10 sm:w-10">
+                {doctor?.avatar ? (
+                  <img
+                    src={doctor.avatar}
+                    alt={doctor.name || 'Doctor'}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="bg-soft-meadow text-deep-ink flex h-full w-full items-center justify-center font-serif text-sm font-bold sm:text-base">
+                    {doctorInitial}
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -16,20 +16,23 @@ export async function GET(request: NextRequest) {
 
     let name = '';
     let email = auth.email || '';
+    let avatar: string | undefined = undefined;
 
-    // Fetch canonical display name from DynamoDB profile
+    // Fetch canonical display name and avatar from DynamoDB profile
     try {
       if (auth.userType === 'doctor') {
         const doctor = await getDoctorById(auth.sub);
         if (doctor) {
           name = doctor.name || '';
           email = doctor.email || email;
+          avatar = doctor.avatar;
         }
       } else if (auth.userType === 'patient') {
         const patient = await getPatientById(auth.sub);
         if (patient) {
           name = `${patient.firstName || ''} ${patient.lastName || ''}`.trim();
           email = patient.email || email;
+          avatar = patient.avatar;
         }
       }
     } catch {
@@ -42,6 +45,7 @@ export async function GET(request: NextRequest) {
         email,
         name,
         userType: auth.userType,
+        avatar: avatar || null,
       },
     });
   } catch (error) {

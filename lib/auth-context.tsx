@@ -8,24 +8,25 @@ export interface UserSession {
   id: string;
   email: string;
   name: string;
-  userType: 'doctor' | 'patient';
+  userType: 'doctor' | 'patient' | 'admin';
+  avatar?: string | null;
 }
 
 interface AuthContextType {
   user: UserSession | null;
   isAuthenticated: boolean;
-  userType: 'doctor' | 'patient' | null;
+  userType: 'doctor' | 'patient' | 'admin' | null;
   loading: boolean;
   login: (
     email: string,
     password: string,
-    userType: 'doctor' | 'patient'
+    userType: 'doctor' | 'patient' | 'admin'
   ) => Promise<void>;
   logout: () => void;
   signup: (
     email: string,
     password: string,
-    userType: 'doctor' | 'patient',
+    userType: 'doctor' | 'patient' | 'admin',
     userData: Record<string, unknown>
   ) => Promise<void>;
   verifyCode: (email: string, code: string) => Promise<void>;
@@ -36,7 +37,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserSession | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userType, setUserType] = useState<'doctor' | 'patient' | null>(null);
+  const [userType, setUserType] = useState<'doctor' | 'patient' | 'admin' | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -76,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (
     email: string,
     password: string,
-    type: 'doctor' | 'patient'
+    type: 'doctor' | 'patient' | 'admin'
   ) => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
@@ -96,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== 'undefined') {
         if (type === 'doctor') {
           window.localStorage.setItem('doctorId', data.user.id);
-        } else {
+        } else if (type === 'patient') {
           window.localStorage.setItem('patientId', data.user.id);
         }
         window.localStorage.setItem('userType', type);
@@ -114,11 +115,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         'doctorId',
         'patientId',
         'userType',
-        'accessToken',
-        'idToken',
-        'refreshToken',
+        'active_intake_session',
+        'intake-completion',
       ].forEach((key) => {
         window.localStorage.removeItem(key);
+        window.sessionStorage.removeItem(key);
       });
     }
 
@@ -133,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = async (
     email: string,
     password: string,
-    type: 'doctor' | 'patient',
+    type: 'doctor' | 'patient' | 'admin',
     userData: Record<string, unknown>
   ) => {
     const res = await fetch('/api/auth/signup', {

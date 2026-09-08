@@ -25,7 +25,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useDoctorStore } from '@/lib/stores/doctor.store';
-import type { Patient, Session } from '@/lib/db';
+import type { Patient, PatientIntake, Session } from '@/lib/db';
 
 export default function PatientProfilePage({
   params,
@@ -42,6 +42,7 @@ export default function PatientProfilePage({
   const storeSessions = useDoctorStore((state) => state.sessions);
 
   const [patient, setPatient] = React.useState<Patient | null>(null);
+  const [intake, setIntake] = React.useState<PatientIntake | null>(null);
   const [sessions, setSessions] = React.useState<Session[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -70,6 +71,9 @@ export default function PatientProfilePage({
         const data = await res.json();
         if (res.ok && data.patient) {
           setPatient(data.patient);
+          if (data.intake) {
+            setIntake(data.intake);
+          }
         } else if (!cached) {
           throw new Error(
             data.error || data.message || 'Failed to fetch patient record'
@@ -169,9 +173,17 @@ export default function PatientProfilePage({
           .toUpperCase()
       : fullName.slice(0, 2).toUpperCase();
 
-  const medicalHistory = patient.conditions || [];
-  const allergies = patient.allergies || [];
-  const currentMedications = patient.medications || [];
+  const medicalHistory = patient.conditions?.length
+    ? patient.conditions
+    : intake?.medicalHistory
+      ? [intake.medicalHistory]
+      : [];
+  const allergies = patient.allergies?.length
+    ? patient.allergies
+    : intake?.allergies || [];
+  const currentMedications = patient.medications?.length
+    ? patient.medications
+    : intake?.medications || [];
 
   // Compute age from DOB if present
   let ageDisplay = '—';
@@ -216,10 +228,18 @@ export default function PatientProfilePage({
       <Card className="border-deep-ink/10 space-y-5 border bg-white p-5 shadow-2xs sm:p-7">
         <div className="border-deep-ink/8 flex flex-col justify-between gap-4 border-b pb-5 sm:flex-row sm:items-center">
           <div className="flex min-w-0 items-center gap-4">
-            {/* Avatar Initials Badge */}
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-teal-200/80 bg-teal-100 font-serif text-xl font-bold text-teal-800 shadow-2xs">
-              {initials}
-            </div>
+            {/* Avatar Badge */}
+            {patient.avatar ? (
+              <img
+                src={patient.avatar}
+                alt={fullName}
+                className="h-14 w-14 shrink-0 rounded-2xl border border-teal-200/80 object-cover shadow-2xs"
+              />
+            ) : (
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-teal-200/80 bg-teal-100 font-serif text-xl font-bold text-teal-800 shadow-2xs">
+                {initials}
+              </div>
+            )}
 
             <div className="min-w-0 space-y-1">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -374,6 +394,137 @@ export default function PatientProfilePage({
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
         {/* Main Column (2 cols) */}
         <div className="space-y-6 lg:col-span-2">
+          {/* AI Clinical Intake Record (Visible when doctor has consent/link) */}
+          {isLinked && (
+            <Card className="border-deep-ink/10 space-y-4 border bg-white p-5 shadow-2xs sm:p-6">
+              <div className="border-deep-ink/6 flex flex-wrap items-center justify-between gap-3 border-b pb-3.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="bg-hi-yellow/40 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-amber-300 shadow-2xs">
+                    <Sparkles className="h-4 w-4 text-amber-900" />
+                  </div>
+                  <div>
+                    <h3 className="text-deep-ink font-serif text-sm font-bold sm:text-base">
+                      AI Clinical Intake Record
+                    </h3>
+                    <p className="text-slate text-[11px]">
+                      Synthesized patient intake consultation
+                    </p>
+                  </div>
+                </div>
+                {intake ? (
+                  <Badge
+                    variant="outline"
+                    className="border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800"
+                  >
+                    <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
+                    <span>Intake Completed</span>
+                    {intake.completedAt && (
+                      <span className="text-emerald-700/80">
+                        {' '}
+                        •{' '}
+                        {new Date(intake.completedAt).toLocaleDateString(
+                          'en-US',
+                          {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          }
+                        )}
+                      </span>
+                    )}
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-xs">
+                    No Intake Submitted
+                  </Badge>
+                )}
+              </div>
+
+              {!intake ? (
+                <div className="bg-soft-meadow/30 border-deep-ink/10 rounded-xl border border-dashed p-6 text-center text-xs">
+                  <FileText className="text-slate/40 mx-auto mb-2 h-7 w-7" />
+                  <p className="text-deep-ink font-medium">
+                    No intake record on file for this patient.
+                  </p>
+                  <p className="text-slate mt-1 text-[11px]">
+                    When the patient completes their voice check-in or health form,
+                    the AI-extracted clinical notes will appear here.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4 pt-1 text-xs sm:text-sm">
+                  {/* Chief Complaint */}
+                  {intake.chiefComplaint && (
+                    <div className="rounded-xl border border-amber-200/80 bg-amber-50/70 p-3.5 sm:p-4">
+                      <span className="text-slate block text-[11px] font-bold tracking-wider uppercase text-amber-900/90">
+                        Primary Chief Complaint
+                      </span>
+                      <p className="text-deep-ink mt-1 font-medium leading-relaxed">
+                        {intake.chiefComplaint}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Synthesized Summary */}
+                  {intake.summary && (
+                    <div className="space-y-1.5">
+                      <span className="text-slate block text-[11px] font-bold tracking-wider uppercase">
+                        Intake Summary & Present Illness
+                      </span>
+                      <p className="text-deep-ink bg-soft-meadow/40 border-deep-ink/5 rounded-xl border p-3.5 leading-relaxed text-xs sm:text-sm">
+                        {intake.summary}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Medical, Surgeries, Family, Social Grid */}
+                  <div className="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-2">
+                    {intake.surgeries && (
+                      <div className="bg-soft-meadow/40 border-deep-ink/5 rounded-xl border p-3">
+                        <span className="text-slate block text-[11px] font-semibold">
+                          Surgical & Hospitalization History
+                        </span>
+                        <p className="text-deep-ink mt-1 text-xs leading-relaxed">
+                          {intake.surgeries}
+                        </p>
+                      </div>
+                    )}
+                    {intake.familyHistory && (
+                      <div className="bg-soft-meadow/40 border-deep-ink/5 rounded-xl border p-3">
+                        <span className="text-slate block text-[11px] font-semibold">
+                          Family Medical History
+                        </span>
+                        <p className="text-deep-ink mt-1 text-xs leading-relaxed">
+                          {intake.familyHistory}
+                        </p>
+                      </div>
+                    )}
+                    {intake.socialHistory && (
+                      <div className="bg-soft-meadow/40 border-deep-ink/5 rounded-xl border p-3 sm:col-span-2">
+                        <span className="text-slate block text-[11px] font-semibold">
+                          Social & Lifestyle Factors
+                        </span>
+                        <p className="text-deep-ink mt-1 text-xs leading-relaxed">
+                          {intake.socialHistory}
+                        </p>
+                      </div>
+                    )}
+                    {intake.medicalHistory && (
+                      <div className="bg-soft-meadow/40 border-deep-ink/5 rounded-xl border p-3 sm:col-span-2">
+                        <span className="text-slate block text-[11px] font-semibold">
+                          Patient-Stated Medical History
+                        </span>
+                        <p className="text-deep-ink mt-1 text-xs leading-relaxed">
+                          {intake.medicalHistory}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </Card>
+          )}
+
           {/* Clinical Profile Grid (Conditions, Allergies, Meds) */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* Active Conditions */}

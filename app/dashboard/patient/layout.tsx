@@ -49,8 +49,18 @@ export default function PatientDashboardLayout({
             >
               <Bell className="h-4 w-4" />
             </button>
-            <div className="bg-hi-yellow border-deep-ink/10 text-deep-ink flex h-8 w-8 items-center justify-center rounded-lg border font-serif text-xs font-bold shadow-2xs">
-              {initial}
+            <div className="border-deep-ink/10 flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border shadow-2xs">
+              {patient?.avatar ? (
+                <img
+                  src={patient.avatar}
+                  alt={patient.firstName || 'Patient'}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="bg-hi-yellow text-deep-ink flex h-full w-full items-center justify-center font-serif text-xs font-bold">
+                  {initial}
+                </div>
+              )}
             </div>
             <Link
               href="/auth/logout"
