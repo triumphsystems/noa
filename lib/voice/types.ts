@@ -86,19 +86,19 @@ export function getPopulatedFields(draft?: IntakeConversationDraft): string[] {
   const fullName = [draft.firstName, draft.lastName].filter(Boolean).join(' ');
   if (fullName) populated.push(`Full Name (${fullName})`);
   if (draft.dateOfBirth) populated.push(`Date of Birth (${draft.dateOfBirth})`);
-  if (draft.gender) populated.push(`Gender (${draft.gender})`);
-  if (draft.email) populated.push(`Email (${draft.email})`);
   if (draft.phone) populated.push(`Phone (${draft.phone})`);
+  if (draft.email) populated.push(`Email (${draft.email})`);
+  if (draft.gender) populated.push(`Gender (${draft.gender})`);
   if (draft.address) populated.push(`Address (${draft.address})`);
   if (draft.chiefComplaint) populated.push(`Reason for visit (${draft.chiefComplaint})`);
-  if (draft.allergies && draft.allergies.length > 0) {
-    populated.push(`Allergies (${draft.allergies.join(', ')})`);
+  if (draft.medicalConditions && draft.medicalConditions.length > 0) {
+    populated.push(`Medical Conditions (${draft.medicalConditions.join(', ')})`);
   }
   if (draft.currentMedications && draft.currentMedications.length > 0) {
     populated.push(`Medications (${draft.currentMedications.join(', ')})`);
   }
-  if (draft.medicalConditions && draft.medicalConditions.length > 0) {
-    populated.push(`Medical Conditions (${draft.medicalConditions.join(', ')})`);
+  if (draft.allergies && draft.allergies.length > 0) {
+    populated.push(`Allergies (${draft.allergies.join(', ')})`);
   }
   if (draft.surgeries) populated.push(`Surgeries (${draft.surgeries})`);
   if (draft.familyHistory) populated.push(`Family History (${draft.familyHistory})`);
@@ -122,10 +122,11 @@ export function getMissingFields(draft?: IntakeConversationDraft): string[] {
     return [
       'full name',
       'date of birth',
+      'contact phone or email',
       'symptoms or reason for visit',
-      'allergies',
-      'medications',
-      'medical history',
+      'medical conditions',
+      'current medications',
+      'known allergies',
       'emergency contact',
       'consent',
     ];
@@ -136,18 +137,30 @@ export function getMissingFields(draft?: IntakeConversationDraft): string[] {
   if (!hasName) missing.push('full name');
 
   if (!draft.dateOfBirth?.trim()) missing.push('date of birth');
-  if (!draft.chiefComplaint?.trim() && (!draft.medicalConditions || draft.medicalConditions.length === 0)) {
+
+  const hasContact = Boolean(draft.phone?.trim() || draft.email?.trim());
+  if (!hasContact) missing.push('contact phone or email');
+
+  if (!draft.chiefComplaint?.trim()) {
     missing.push('symptoms or reason for visit');
   }
-  if (!draft.allergies || draft.allergies.length === 0) {
-    missing.push('known allergies');
+
+  if (!draft.medicalConditions || draft.medicalConditions.length === 0) {
+    missing.push('medical conditions');
   }
+
   if (!draft.currentMedications || draft.currentMedications.length === 0) {
     missing.push('current medications');
   }
+
+  if (!draft.allergies || draft.allergies.length === 0) {
+    missing.push('known allergies');
+  }
+
   if (!draft.emergencyContactName?.trim()) {
     missing.push('emergency contact');
   }
+
   if (!draft.consentRead) {
     missing.push('consent to submit');
   }

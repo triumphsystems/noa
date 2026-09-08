@@ -50,9 +50,24 @@ export function ClinicalIntakeCard({
         `${safeFormatText(draft?.firstName)} ${safeFormatText(draft?.lastName)}`.trim(),
     },
     { label: 'Date of Birth', value: safeFormatText(draft?.dateOfBirth) },
-    { label: 'Email', value: safeFormatText(draft?.email) },
-    { label: 'Phone', value: safeFormatText(draft?.phone) },
+    {
+      label: 'Phone',
+      value:
+        safeFormatText(draft?.phone) ||
+        (draft?.email ? 'Optional / Not provided' : ''),
+    },
+    {
+      label: 'Email',
+      value:
+        safeFormatText(draft?.email) ||
+        (draft?.phone ? 'Optional / Not provided' : ''),
+    },
+    {
+      label: 'Reason for Visit',
+      value: safeFormatText(draft?.chiefComplaint),
+    },
     { label: 'Conditions', value: safeFormatList(draft?.medicalConditions) },
+    { label: 'Medications', value: safeFormatList(draft?.currentMedications) },
     { label: 'Allergies', value: safeFormatList(draft?.allergies) },
     {
       label: 'Emergency Contact',

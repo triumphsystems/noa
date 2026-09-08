@@ -334,10 +334,16 @@ export async function POST(request: NextRequest) {
       if (doc) resolvedDoctorId = doc.id;
     }
 
+    // Ensure completion strictly requires all clinical fields to be resolved
+    const finalMissingFields = getMissingFields(responseDraft);
+    const strictlyComplete = Boolean(
+      result.isComplete && finalMissingFields.length === 0
+    );
+
     // In healthcare, uncompleted drafts expire after 48 hours (172,800 seconds).
     // Finalized clinical records (completed: true) NEVER expire and are permanently retained (HIPAA).
     const DRAFT_TTL_SECONDS = 48 * 60 * 60; // 48 hours
-    const draftTtl = result.isComplete
+    const draftTtl = strictlyComplete
       ? null // REMOVE ttl attribute in DynamoDB upon completion
       : Math.floor(Date.now() / 1000) + DRAFT_TTL_SECONDS;
 
@@ -346,11 +352,12 @@ export async function POST(request: NextRequest) {
       doctorId: resolvedDoctorId,
       chiefComplaint:
         result.summary ||
+        responseDraft.chiefComplaint ||
         responseDraft.medicalConditions?.[0] ||
         'Clinical intake in progress',
       summary: result.summary || 'Clinical intake in progress',
-      completed: Boolean(result.isComplete),
-      completedAt: result.isComplete ? Date.now() : undefined,
+      completed: strictlyComplete,
+      completedAt: strictlyComplete ? Date.now() : undefined,
       ttl: draftTtl,
       medicalHistory: [
         responseDraft.medicalConditions?.length
@@ -424,8 +431,8 @@ export async function POST(request: NextRequest) {
         detectedLanguage: result.detectedLanguage,
         normalizedTranscript: result.normalizedTranscript,
         draft: responseDraft,
-        missingFields: result.missingFields,
-        isComplete: result.isComplete,
+        missingFields: finalMissingFields,
+        isComplete: strictlyComplete,
         summary: result.summary,
       },
       patientId: finalPatientId,
