@@ -2,9 +2,6 @@
  * Canonical Role & Routing Utility
  * Single source of truth for the Role type, getDashboardPath(), isValidRole(),
  * and Cognito group name constants.
- *
- * Every file in the codebase must import Role-related logic from here.
- * Never inline the 'doctor' | 'patient' | 'admin' union anywhere else.
  */
 
 export const ROLES = ['doctor', 'patient', 'admin'] as const;

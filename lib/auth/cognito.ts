@@ -1,9 +1,5 @@
 ﻿/**
  * Modern Server-Side AWS Cognito Authentication Engine
- * Powered by AWS SDK v3 (@aws-sdk/client-cognito-identity-provider)
- *
- * Replaces legacy amazon-cognito-identity-js with server-side SDK commands
- * and strict password verification.
  */
 
 import {
@@ -104,7 +100,7 @@ export async function signInWithCognito(
       !response.AuthenticationResult?.AccessToken ||
       !response.AuthenticationResult?.IdToken
     ) {
-      throw new Error('Authentication failed: No tokens returned by Cognito');
+      throw new Error('Authentication failed');
     }
 
     return {
@@ -160,7 +156,7 @@ export async function refreshCognitoTokens(
       !response.AuthenticationResult?.IdToken
     ) {
       throw new Error(
-        'Failed to refresh tokens: No tokens returned by Cognito'
+        'Failed to refresh tokens'
       );
     }
 
@@ -202,7 +198,7 @@ export async function signUpWithCognito({
 
   if (!isConfigured) {
     throw new Error(
-      'AWS Cognito is not configured. Please set COGNITO_USER_POOL_ID and COGNITO_CLIENT_ID.'
+      'AWS Cognito is not configured.'
     );
   }
 
@@ -498,4 +494,3 @@ export async function removeUserFromCognitoGroup(
     throw error;
   }
 }
-

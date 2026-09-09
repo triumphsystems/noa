@@ -3,7 +3,6 @@
  * Operates in Edge Runtime without external heavy dependencies.
  *
  * SECURITY: Verifies the RS256 signature of Cognito JWTs using the public JWKS endpoint.
- * Raw base64-decode-only verification has been removed — all tokens must pass signature check.
  */
 
 import { NextRequest } from 'next/server';

@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     const { isConfigured } = getCognitoConfig();
     if (!isConfigured) {
       return NextResponse.json(
-        { message: 'Authentication service is not configured' },
+        { message: 'Authentication service is not available' },
         { status: 503 }
       );
     }
@@ -38,11 +38,10 @@ export async function POST(request: NextRequest) {
     const tokens = await refreshCognitoTokens(refreshToken);
     const cognitoUser = await getCognitoUser(tokens.accessToken);
 
-    const userId = cognitoUser?.sub || 'user';
+    const userId = cognitoUser?.sub;
     const userRole: Role =
       cognitoUser?.userType && isValidRole(cognitoUser.userType)
         ? cognitoUser.userType
-        : 'doctor';
 
     const profile = await resolveUserProfile(userId, userRole, {
       email: cognitoUser?.email || '',

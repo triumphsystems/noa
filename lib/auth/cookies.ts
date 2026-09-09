@@ -63,9 +63,6 @@ export function setAuthCookies(
       email: sessionUser.email,
       name: sessionUser.name,
       userType: sessionUser.userType,
-      doctorId: sessionUser.userType === 'doctor' ? sessionUser.sub : undefined,
-      patientId:
-        sessionUser.userType === 'patient' ? sessionUser.sub : undefined,
     }),
     {
       httpOnly: true,

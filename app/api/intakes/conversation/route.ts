@@ -340,7 +340,6 @@ export async function POST(request: NextRequest) {
       result.isComplete && finalMissingFields.length === 0
     );
 
-    // In healthcare, uncompleted drafts expire after 48 hours (172,800 seconds).
     // Finalized clinical records (completed: true) NEVER expire and are permanently retained (HIPAA).
     const DRAFT_TTL_SECONDS = 48 * 60 * 60; // 48 hours
     const draftTtl = strictlyComplete

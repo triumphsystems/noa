@@ -2,8 +2,6 @@
  * Canonical Server-Side Auth Guard
  *
  * Every protected API route must call requireAuth() at the top of its handler.
- * This eliminates the 10-line boilerplate that was copy-pasted across 20+ routes.
- *
  * NEVER call getAuthenticatedUser() directly in route handlers. Use requireAuth().
  */
 
