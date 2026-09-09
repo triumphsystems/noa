@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Canonical Session Storage Keys
  *
  * All client-side localStorage reads and writes for auth identifiers
@@ -13,6 +13,7 @@
 import type { Role } from './roles';
 
 export const AUTH_STORAGE_KEYS = {
+  USER_ID: 'userId',
   USER_TYPE: 'userType',
   DOCTOR_ID: 'doctorId',
   PATIENT_ID: 'patientId',
@@ -34,11 +35,10 @@ export function clearAuthStorage(): void {
 }
 
 /**
- * Writes the role-scoped user ID and userType into localStorage.
- * Replaces the if/else-if chains in login-form.tsx, signup-form.tsx, and auth-context.tsx.
+ * Writes the user ID and userType into localStorage.
+ * Writes canonical 'userId' as well as the role-scoped key for full backward compatibility.
  *
  * @example setStoredUserId('doctor', 'abc-123')
- * // writes: localStorage.doctorId = 'abc-123', localStorage.userType = 'doctor'
  */
 export function setStoredUserId(role: Role, id: string): void {
   if (typeof window === 'undefined') return;
@@ -47,8 +47,17 @@ export function setStoredUserId(role: Role, id: string): void {
     patient: AUTH_STORAGE_KEYS.PATIENT_ID,
     admin: AUTH_STORAGE_KEYS.ADMIN_ID,
   };
+  window.localStorage.setItem(AUTH_STORAGE_KEYS.USER_ID, id);
   window.localStorage.setItem(keyMap[role], id);
   window.localStorage.setItem(AUTH_STORAGE_KEYS.USER_TYPE, role);
+}
+
+/**
+ * Reads the stored active user ID from localStorage.
+ */
+export function getStoredCurrentUserId(): string | null {
+  if (typeof window === 'undefined') return null;
+  return window.localStorage.getItem(AUTH_STORAGE_KEYS.USER_ID);
 }
 
 /**
@@ -62,5 +71,5 @@ export function getStoredUserId(role: Role): string | null {
     patient: AUTH_STORAGE_KEYS.PATIENT_ID,
     admin: AUTH_STORAGE_KEYS.ADMIN_ID,
   };
-  return window.localStorage.getItem(keyMap[role]);
+  return window.localStorage.getItem(keyMap[role]) || window.localStorage.getItem(AUTH_STORAGE_KEYS.USER_ID);
 }
