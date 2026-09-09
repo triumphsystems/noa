@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Modern Server-Side AWS Cognito Authentication Engine
  */
 
@@ -55,6 +55,14 @@ export function getCognitoConfig() {
   };
 }
 
+function ensureCognitoConfigured(): { userPoolId: string; clientId: string } {
+  const config = getCognitoConfig();
+  if (!config.isConfigured) {
+    throw new Error('Authentication service is currently unavailable.');
+  }
+  return config;
+}
+
 export interface CognitoTokens {
   accessToken: string;
   idToken: string;
@@ -76,13 +84,7 @@ export async function signInWithCognito(
   email: string,
   password: string
 ): Promise<CognitoTokens> {
-  const { clientId, isConfigured } = getCognitoConfig();
-
-  if (!isConfigured) {
-    throw new Error(
-      'AWS Cognito is not configured. Please set COGNITO_USER_POOL_ID and COGNITO_CLIENT_ID.'
-    );
-  }
+  const { clientId } = ensureCognitoConfigured();
 
   try {
     const command = new InitiateAuthCommand({
@@ -134,11 +136,7 @@ export async function signInWithCognito(
 export async function refreshCognitoTokens(
   refreshToken: string
 ): Promise<CognitoTokens> {
-  const { clientId, isConfigured } = getCognitoConfig();
-
-  if (!isConfigured) {
-    throw new Error('AWS Cognito is not configured.');
-  }
+  const { clientId } = ensureCognitoConfigured();
 
   try {
     const command = new InitiateAuthCommand({
@@ -194,13 +192,7 @@ export async function signUpWithCognito({
   firstName: string;
   lastName: string;
 }): Promise<{ userSub: string; isConfirmed: boolean }> {
-  const { clientId, isConfigured } = getCognitoConfig();
-
-  if (!isConfigured) {
-    throw new Error(
-      'AWS Cognito is not configured.'
-    );
-  }
+  const { clientId } = ensureCognitoConfigured();
 
   try {
     const command = new SignUpCommand({
@@ -242,11 +234,7 @@ export async function confirmCognitoSignUp(
   email: string,
   code: string
 ): Promise<{ success: boolean }> {
-  const { clientId, isConfigured } = getCognitoConfig();
-
-  if (!isConfigured) {
-    throw new Error('AWS Cognito is not configured.');
-  }
+  const { clientId } = ensureCognitoConfigured();
 
   try {
     const command = new ConfirmSignUpCommand({
@@ -330,11 +318,7 @@ export async function getCognitoUser(
 export async function forgotPasswordWithCognito(
   email: string
 ): Promise<{ destination?: string }> {
-  const { clientId, isConfigured } = getCognitoConfig();
-
-  if (!isConfigured) {
-    throw new Error('AWS Cognito is not configured.');
-  }
+  const { clientId } = ensureCognitoConfigured();
 
   try {
     const command = new ForgotPasswordCommand({
@@ -379,11 +363,7 @@ export async function confirmForgotPasswordWithCognito({
   code: string;
   newPassword: string;
 }): Promise<{ success: boolean }> {
-  const { clientId, isConfigured } = getCognitoConfig();
-
-  if (!isConfigured) {
-    throw new Error('AWS Cognito is not configured.');
-  }
+  const { clientId } = ensureCognitoConfigured();
 
   try {
     const command = new ConfirmForgotPasswordCommand({

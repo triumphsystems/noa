@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     } else {
       return NextResponse.json(
         {
-          message: 'AWS Cognito User Pool is not configured for registration.',
+          message: 'Registration service is currently unavailable.',
         },
         { status: 503 }
       );

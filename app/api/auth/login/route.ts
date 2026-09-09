@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import {
   signInWithCognito,
   getCognitoConfig,
@@ -73,8 +73,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        message:
-          'AWS Cognito User Pool is not configured. Please provision Cognito via Terraform or set COGNITO_USER_POOL_ID and COGNITO_CLIENT_ID.',
+        message: 'Authentication service is currently unavailable.',
       },
       { status: 503 }
     );
