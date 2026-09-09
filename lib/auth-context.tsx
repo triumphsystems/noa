@@ -1,33 +1,48 @@
-'use client';
+﻿'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useDoctorStore } from '@/lib/stores/doctor.store';
 import { useSessionStore } from '@/lib/stores/session.store';
+import { http } from '@/lib/http';
+import { type Role } from '@/lib/auth/roles';
+import { clearAuthStorage, setStoredUserId } from '@/lib/auth/storage';
 
 export interface UserSession {
   id: string;
   email: string;
   name: string;
-  userType: 'doctor' | 'patient' | 'admin';
+  userType: Role;
   avatar?: string | null;
+}
+
+export interface SignupInput {
+  firstName: string;
+  lastName: string;
+  specialty?: string;
+  clinic?: string;
+  license?: string;
+  issuingAuthority?: string;
+  licenseDocumentUrl?: string;
+  dateOfBirth?: string;
+  doctorId?: string;
 }
 
 interface AuthContextType {
   user: UserSession | null;
   isAuthenticated: boolean;
-  userType: 'doctor' | 'patient' | 'admin' | null;
+  userType: Role | null;
   loading: boolean;
   login: (
     email: string,
     password: string,
-    userType: 'doctor' | 'patient' | 'admin'
+    userType: Role
   ) => Promise<void>;
   logout: () => void;
   signup: (
     email: string,
     password: string,
-    userType: 'doctor' | 'patient' | 'admin',
-    userData: Record<string, unknown>
+    userType: Role,
+    userData: SignupInput
   ) => Promise<void>;
   verifyCode: (email: string, code: string) => Promise<void>;
 }
@@ -37,47 +52,35 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserSession | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userType, setUserType] = useState<'doctor' | 'patient' | 'admin' | null>(null);
+  const [userType, setUserType] = useState<Role | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Verify the session by calling /api/auth/me on mount.
-    // This is the authoritative check — localStorage is only used as a hint
-    // for UX (e.g., redirect target) but never to construct the user object.
+    // Using resilient http client ensures transparent 401 token refresh on mount.
     const verifySession = async () => {
       try {
-        const res = await fetch('/api/auth/me', { cache: 'no-store' });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.user) {
-            setUser(data.user);
-            setIsAuthenticated(true);
-            setUserType(data.user.userType);
-            // Sync localStorage for downstream store hydration (doctorId / patientId)
-            if (typeof window !== 'undefined') {
-              if (data.user.userType === 'doctor') {
-                window.localStorage.setItem('doctorId', data.user.id);
-              } else {
-                window.localStorage.setItem('patientId', data.user.id);
-              }
-              window.localStorage.setItem('userType', data.user.userType);
-            }
-          }
+        const data = await http.get<{ user: UserSession | null }>('/api/auth/me');
+        if (data?.user) {
+          setUser(data.user);
+          setIsAuthenticated(true);
+          setUserType(data.user.userType);
+          setStoredUserId(data.user.userType, data.user.id);
         }
       } catch {
-        // Network error on mount — session stays null, user sees login
+        // Network or auth error on mount — session stays null, user sees login
       } finally {
         setLoading(false);
       }
     };
 
-    verifySession();
+    void verifySession();
   }, []);
 
   const login = async (
     email: string,
     password: string,
-    type: 'doctor' | 'patient' | 'admin'
+    type: Role
   ) => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
@@ -93,15 +96,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (data.user) {
       setUser(data.user);
       setIsAuthenticated(true);
-      setUserType(type);
-      if (typeof window !== 'undefined') {
-        if (type === 'doctor') {
-          window.localStorage.setItem('doctorId', data.user.id);
-        } else if (type === 'patient') {
-          window.localStorage.setItem('patientId', data.user.id);
-        }
-        window.localStorage.setItem('userType', type);
-      }
+      setUserType(data.user.userType || type);
+      setStoredUserId(data.user.userType || type, data.user.id);
     }
   };
 
@@ -110,18 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('[AuthContext] Logout error:', err);
     });
 
-    if (typeof window !== 'undefined') {
-      [
-        'doctorId',
-        'patientId',
-        'userType',
-        'active_intake_session',
-        'intake-completion',
-      ].forEach((key) => {
-        window.localStorage.removeItem(key);
-        window.sessionStorage.removeItem(key);
-      });
-    }
+    clearAuthStorage();
 
     useDoctorStore.getState().clearDashboard();
     useSessionStore.getState().resetSession();
@@ -134,8 +119,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = async (
     email: string,
     password: string,
-    type: 'doctor' | 'patient' | 'admin',
-    userData: Record<string, unknown>
+    type: Role,
+    userData: SignupInput
   ) => {
     const res = await fetch('/api/auth/signup', {
       method: 'POST',

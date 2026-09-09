@@ -6,14 +6,13 @@ import {
   updatePatient,
   computeDoctorCareCode,
 } from '@/lib/db';
-import { getAuthenticatedUser } from '@/lib/auth/jwt';
+import { requireAuth } from '@/lib/auth/guard';
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await getAuthenticatedUser(request);
-    if (!auth.isValid) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+    const guard = await requireAuth(request, ['patient']);
+    if (!guard.ok) return guard.response;
+    const { auth } = guard;
 
     const body = await request.json();
     const { doctorId, careCode } = body || {};

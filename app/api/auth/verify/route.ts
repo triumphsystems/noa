@@ -44,10 +44,11 @@ export async function POST(request: NextRequest) {
       { message: 'Authentication service is not configured' },
       { status: 503 }
     );
-  } catch (error: any) {
-    console.error('[API] Verification error:', error?.message);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Verification failed';
+    console.error('[API] Verification error:', msg);
     return NextResponse.json(
-      { message: error?.message || 'Verification failed' },
+      { message: msg },
       { status: 400 }
     );
   }

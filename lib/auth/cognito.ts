@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Modern Server-Side AWS Cognito Authentication Engine
  * Powered by AWS SDK v3 (@aws-sdk/client-cognito-identity-provider)
  *
@@ -35,6 +35,18 @@ export const cognitoClient = new CognitoIdentityProviderClient({
     ? { credentials: createCredentialProvider(region) }
     : {}),
 });
+
+export function getCognitoErrorName(error: unknown): string | undefined {
+  if (error && typeof error === 'object' && 'name' in error) {
+    return String((error as { name: unknown }).name);
+  }
+  return undefined;
+}
+
+export function getCognitoErrorMessage(error: unknown, fallback = 'Authentication failed'): string {
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
 
 export function getCognitoConfig() {
   const userPoolId = process.env.COGNITO_USER_POOL_ID || '';
@@ -101,20 +113,22 @@ export async function signInWithCognito(
       refreshToken: response.AuthenticationResult.RefreshToken,
       expiresIn: response.AuthenticationResult.ExpiresIn || 3600,
     };
-  } catch (error: any) {
-    console.error('[Cognito] Sign-in error:', error?.name, error?.message);
+  } catch (error) {
+    const errorName = getCognitoErrorName(error);
+    const errorMsg = getCognitoErrorMessage(error);
+    console.error('[Cognito] Sign-in error:', errorName, errorMsg);
     if (
-      error?.name === 'NotAuthorizedException' ||
-      error?.name === 'UserNotFoundException'
+      errorName === 'NotAuthorizedException' ||
+      errorName === 'UserNotFoundException'
     ) {
       throw new Error('Incorrect email or password.');
     }
-    if (error?.name === 'UserNotConfirmedException') {
+    if (errorName === 'UserNotConfirmedException') {
       throw new Error(
         'Account email is not verified yet. Please check your verification code.'
       );
     }
-    throw new Error(error?.message || 'Authentication failed');
+    throw new Error(errorMsg);
   }
 }
 
@@ -156,15 +170,15 @@ export async function refreshCognitoTokens(
       refreshToken: response.AuthenticationResult.RefreshToken || refreshToken,
       expiresIn: response.AuthenticationResult.ExpiresIn || 3600,
     };
-  } catch (error: any) {
+  } catch (error) {
+    const errorName = getCognitoErrorName(error);
+    const errorMsg = getCognitoErrorMessage(error, 'Failed to refresh authentication session');
     console.error(
       '[Cognito] Refresh token error:',
-      error?.name,
-      error?.message
+      errorName,
+      errorMsg
     );
-    throw new Error(
-      error?.message || 'Failed to refresh authentication session'
-    );
+    throw new Error(errorMsg);
   }
 }
 
@@ -211,15 +225,17 @@ export async function signUpWithCognito({
       userSub: response.UserSub || '',
       isConfirmed: Boolean(response.UserConfirmed),
     };
-  } catch (error: any) {
-    console.error('[Cognito] Sign-up error:', error?.name, error?.message);
-    if (error?.name === 'UsernameExistsException') {
+  } catch (error) {
+    const errorName = getCognitoErrorName(error);
+    const errorMsg = getCognitoErrorMessage(error, 'Registration failed');
+    console.error('[Cognito] Sign-up error:', errorName, errorMsg);
+    if (errorName === 'UsernameExistsException') {
       throw new Error('An account with this email already exists.');
     }
-    if (error?.name === 'InvalidPasswordException') {
+    if (errorName === 'InvalidPasswordException') {
       throw new Error('Password must be at least 6 characters long.');
     }
-    throw new Error(error?.message || 'Registration failed');
+    throw new Error(errorMsg);
   }
 }
 
@@ -245,17 +261,19 @@ export async function confirmCognitoSignUp(
 
     await cognitoClient.send(command);
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
+    const errorName = getCognitoErrorName(error);
+    const errorMsg = getCognitoErrorMessage(error, 'Verification failed');
     console.error('[Cognito] Confirmation error:', error);
-    if (error?.name === 'CodeMismatchException') {
+    if (errorName === 'CodeMismatchException') {
       throw new Error('Invalid verification code.');
     }
-    if (error?.name === 'ExpiredCodeException') {
+    if (errorName === 'ExpiredCodeException') {
       throw new Error(
         'Verification code has expired. Please request a new code.'
       );
     }
-    throw new Error(error?.message || 'Verification failed');
+    throw new Error(errorMsg);
   }
 }
 
@@ -332,23 +350,24 @@ export async function forgotPasswordWithCognito(
     return {
       destination: response.CodeDeliveryDetails?.Destination,
     };
-  } catch (error: any) {
+  } catch (error) {
+    const errorName = getCognitoErrorName(error);
+    const errorMsg = getCognitoErrorMessage(error, 'Failed to request password reset.');
     console.error(
       '[Cognito] Forgot-password error:',
-      error?.name,
-      error?.message
+      errorName,
+      errorMsg
     );
-    if (error?.name === 'UserNotFoundException') {
-      // In security practices, still respond gracefully or give standard error
+    if (errorName === 'UserNotFoundException') {
       throw new Error('No account found with this email address.');
     }
-    if (error?.name === 'LimitExceededException') {
+    if (errorName === 'LimitExceededException') {
       throw new Error('Attempt limit exceeded. Please try again later.');
     }
-    if (error?.name === 'InvalidParameterException') {
+    if (errorName === 'InvalidParameterException') {
       throw new Error('Invalid email parameter.');
     }
-    throw new Error(error?.message || 'Failed to request password reset.');
+    throw new Error(errorMsg);
   }
 }
 
@@ -380,29 +399,31 @@ export async function confirmForgotPasswordWithCognito({
 
     await cognitoClient.send(command);
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
+    const errorName = getCognitoErrorName(error);
+    const errorMsg = getCognitoErrorMessage(error, 'Failed to reset password.');
     console.error(
       '[Cognito] Confirm-forgot-password error:',
-      error?.name,
-      error?.message
+      errorName,
+      errorMsg
     );
-    if (error?.name === 'CodeMismatchException') {
+    if (errorName === 'CodeMismatchException') {
       throw new Error('Invalid verification code. Please check and try again.');
     }
-    if (error?.name === 'ExpiredCodeException') {
+    if (errorName === 'ExpiredCodeException') {
       throw new Error(
         'Verification code has expired. Please request a new one.'
       );
     }
-    if (error?.name === 'InvalidPasswordException') {
+    if (errorName === 'InvalidPasswordException') {
       throw new Error(
         'Password does not meet requirements (must be at least 6 characters).'
       );
     }
-    if (error?.name === 'UserNotFoundException') {
+    if (errorName === 'UserNotFoundException') {
       throw new Error('No user found for this email address.');
     }
-    throw new Error(error?.message || 'Failed to reset password.');
+    throw new Error(errorMsg);
   }
 }
 
@@ -441,10 +462,11 @@ export async function addUserToCognitoGroup(
       GroupName: groupName,
     });
     await cognitoClient.send(command);
-  } catch (error: any) {
+  } catch (error) {
+    const errorMsg = getCognitoErrorMessage(error);
     console.error(
       `[Cognito] Failed to add user ${username} to group ${groupName}:`,
-      error?.message
+      errorMsg
     );
     throw error;
   }
@@ -467,11 +489,13 @@ export async function removeUserFromCognitoGroup(
       GroupName: groupName,
     });
     await cognitoClient.send(command);
-  } catch (error: any) {
+  } catch (error) {
+    const errorMsg = getCognitoErrorMessage(error);
     console.error(
       `[Cognito] Failed to remove user ${username} from group ${groupName}:`,
-      error?.message
+      errorMsg
     );
     throw error;
   }
 }
+

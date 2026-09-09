@@ -1,122 +1,79 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getAuthenticatedUserSync } from '@/lib/auth/jwt';
-
-type Role = 'doctor' | 'patient' | 'admin';
-
-interface RouteGuard {
-  prefix: string;
-  allowedRoles: Role[];
-  loginType: 'doctor' | 'patient';
-  defaultDashboard: string;
-}
-
-const ROUTE_GUARDS: RouteGuard[] = [
-  {
-    prefix: '/dashboard/doctor',
-    allowedRoles: ['doctor'],
-    loginType: 'doctor',
-    defaultDashboard: '/dashboard/doctor',
-  },
-  {
-    prefix: '/dashboard/patient',
-    allowedRoles: ['patient'],
-    loginType: 'patient',
-    defaultDashboard: '/dashboard/patient',
-  },
-  {
-    prefix: '/dashboard/admin',
-    allowedRoles: ['admin'],
-    loginType: 'doctor',
-    defaultDashboard: '/dashboard/admin',
-  },
-];
-
-function getHomeForRole(role: Role | null): string {
-  switch (role) {
-    case 'doctor':
-      return '/dashboard/doctor';
-    case 'patient':
-      return '/dashboard/patient';
-    case 'admin':
-      return '/dashboard/admin';
-    default:
-      return '/auth/login';
-  }
-}
+import { getDashboardPath, getRoleFromPath, isValidRole } from '@/lib/auth/roles';
+import { AUTH_COOKIE_NAMES } from '@/lib/auth/cookies';
 
 /**
- * Next.js Edge Middleware for Role-Based Access Control (RBAC).
- * Enforces strict, zero-trust role segregation (Doctor, Patient, Admin).
+ * Next.js Edge Middleware — Role-Based Access Control
  *
- * Uses getAuthenticatedUserSync for fast expiry/issuer checks in the edge.
- * Full RS256 signature verification happens in each API route via getAuthenticatedUser.
+ * Two-pattern enforcement:
+ * 1. Landing page (/): Redirect authenticated users to their dashboard.
+ *    Falls back to noa_session cookie if access token is expired but refresh token exists.
+ * 2. Protected routes (/dashboard/:role/*): Verify the token role matches the path role.
+ *    If token is expired but refresh token exists, allow through — client will refresh silently.
+ *
+ * Never add per-route ROUTE_GUARDS tables. The URL path segment IS the guard.
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 0. Landing Page Direct Workspace Navigation
+  // ─── Landing Page ──────────────────────────────────────────────────────────
   if (pathname === '/') {
-    const isPublicRequested =
-      request.nextUrl.searchParams.get('public') === 'true';
+    const isPublicRequested = request.nextUrl.searchParams.get('public') === 'true';
     if (!isPublicRequested) {
       const auth = getAuthenticatedUserSync(request);
-      if (auth.isValid && auth.userType) {
-        const destination = getHomeForRole(auth.userType as Role);
-        if (destination && destination !== '/auth/login') {
-          return NextResponse.redirect(new URL(destination, request.url));
+
+      if (auth.isValid && isValidRole(auth.userType)) {
+        // Active valid token — redirect immediately
+        return NextResponse.redirect(new URL(getDashboardPath(auth.userType), request.url));
+      }
+
+      // Token expired or absent — try the 30-day session hint cookie
+      const hasRefreshToken = Boolean(request.cookies.get(AUTH_COOKIE_NAMES.REFRESH_TOKEN)?.value);
+      const sessionMeta = request.cookies.get(AUTH_COOKIE_NAMES.SESSION_META)?.value;
+      if (hasRefreshToken && sessionMeta) {
+        try {
+          const parsed = JSON.parse(sessionMeta) as Record<string, unknown>;
+          const hintedRole = parsed.userType;
+          if (isValidRole(hintedRole)) {
+            // Redirect to dashboard — it will silently refresh the token on load
+            return NextResponse.redirect(new URL(getDashboardPath(hintedRole), request.url));
+          }
+        } catch {
+          // Malformed session cookie — fall through to landing page
         }
       }
     }
     return NextResponse.next();
   }
 
-  // Find matching protected route guard
-  const guard = ROUTE_GUARDS.find((g) => pathname.startsWith(g.prefix));
-  if (!guard) {
+  // ─── Protected Dashboard Routes ─────────────────────────────────────────────
+  const targetRole = getRoleFromPath(pathname);
+  if (!targetRole) {
     return NextResponse.next();
   }
 
   const auth = getAuthenticatedUserSync(request);
-  const hasRefreshToken = Boolean(
-    request.cookies.get('noa_refresh_token')?.value
-  );
+  const hasRefreshToken = Boolean(request.cookies.get(AUTH_COOKIE_NAMES.REFRESH_TOKEN)?.value);
 
-  // 1. Unauthenticated Check
   if (!auth.isValid) {
-    // If client has an active 30-day refresh token, allow page load so
-    // the client-side http interceptor can refresh silently
-    if (hasRefreshToken) {
-      return NextResponse.next();
-    }
-
-    const loginUrl = new URL('/auth/login', request.url);
-    loginUrl.searchParams.set('userType', guard.loginType);
-    loginUrl.searchParams.set('from', pathname);
-    return NextResponse.redirect(loginUrl);
+    // Expired token with active refresh token — let the client-side http interceptor refresh
+    if (hasRefreshToken) return NextResponse.next();
+    // Fully unauthenticated — redirect to login
+    return NextResponse.redirect(
+      new URL(`/auth/login?from=${encodeURIComponent(pathname)}`, request.url),
+    );
   }
 
-  // 2. Strict Role Segregation
-  const userRole = (auth.userType as Role) || null;
-
-  if (!userRole || !guard.allowedRoles.includes(userRole)) {
-    const destination = getHomeForRole(userRole);
-    if (destination === '/auth/login') {
-      const loginUrl = new URL('/auth/login', request.url);
-      loginUrl.searchParams.set('from', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-    return NextResponse.redirect(new URL(destination, request.url));
+  // Valid token but wrong role for this path — send to their own dashboard
+  if (auth.userType !== targetRole) {
+    return NextResponse.redirect(new URL(getDashboardPath(auth.userType), request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    '/',
-    '/dashboard/doctor/:path*',
-    '/dashboard/patient/:path*',
-    '/dashboard/admin/:path*',
-  ],
+  matcher: ['/', '/dashboard/doctor/:path*', '/dashboard/patient/:path*', '/dashboard/admin/:path*'],
 };

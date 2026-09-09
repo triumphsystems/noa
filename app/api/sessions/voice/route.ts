@@ -11,7 +11,7 @@ import {
   updateSession,
   isDoctorVerified,
 } from '@/lib/db';
-import { getAuthenticatedUser } from '@/lib/auth/jwt';
+import { requireAuth } from '@/lib/auth/guard';
 import {
   checkRateLimit,
   getClientIdentifier,
@@ -20,10 +20,9 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await getAuthenticatedUser(request);
-    if (!auth.isValid || !auth.sub) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const guard = await requireAuth(request, ['doctor']);
+    if (!guard.ok) return guard.response;
+    const { auth } = guard;
 
     // Rate limiting: max 30 voice chunks per minute per authenticated user
     const clientId = `voice:${auth.sub}`;

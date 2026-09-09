@@ -6,17 +6,15 @@ import type {
   DoctorProfileUpdateInput,
 } from '@/lib/types/doctor.types';
 import { getDoctorById, updateDoctor, type Doctor } from '@/lib/db';
-import { getAuthenticatedUser } from '@/lib/auth/jwt';
+import { requireAuth } from '@/lib/auth/guard';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await getAuthenticatedUser(request);
-    if (!auth.isValid) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+    const guard = await requireAuth(request);
+    if (!guard.ok) return guard.response;
 
     const { id } = await params;
 
@@ -59,10 +57,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await getAuthenticatedUser(request);
-    if (!auth.isValid) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+    const guard = await requireAuth(request);
+    if (!guard.ok) return guard.response;
+    const { auth } = guard;
 
     const { id } = await params;
 

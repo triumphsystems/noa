@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import {
   refreshCognitoTokens,
   getCognitoUser,
@@ -9,14 +9,13 @@ import {
   setAuthCookies,
   clearAuthCookies,
 } from '@/lib/auth/cookies';
+import { isValidRole, type Role } from '@/lib/auth/roles';
+import { resolveUserProfile } from '@/lib/auth/profile';
 
 export async function POST(request: NextRequest) {
   try {
     const refreshToken = request.cookies.get(
       AUTH_COOKIE_NAMES.REFRESH_TOKEN
-    )?.value;
-    const sessionMeta = request.cookies.get(
-      AUTH_COOKIE_NAMES.SESSION_META
     )?.value;
 
     if (!refreshToken) {
@@ -40,49 +39,33 @@ export async function POST(request: NextRequest) {
     const cognitoUser = await getCognitoUser(tokens.accessToken);
 
     const userId = cognitoUser?.sub || 'user';
-    const userName = cognitoUser?.name || 'User';
-    // userType comes exclusively from Cognito — session cookie is non-authoritative
-    const userType: 'doctor' | 'patient' | 'admin' =
-      cognitoUser?.userType || 'doctor';
+    const userRole: Role =
+      cognitoUser?.userType && isValidRole(cognitoUser.userType)
+        ? cognitoUser.userType
+        : 'doctor';
 
-    // Session metadata cookie supplements display name if Cognito doesn't have it
-    // but NEVER overrides the userType from the verified token
-    let displayName = userName;
-    if (!displayName || displayName === 'User') {
-      const sessionMeta = request.cookies.get(
-        AUTH_COOKIE_NAMES.SESSION_META
-      )?.value;
-      if (sessionMeta) {
-        try {
-          const parsed = JSON.parse(sessionMeta);
-          if (parsed.name) displayName = parsed.name;
-        } catch {}
-      }
-    }
-
-    const sessionUser = {
-      id: userId,
+    const profile = await resolveUserProfile(userId, userRole, {
       email: cognitoUser?.email || '',
-      name: displayName,
-      userType,
-    };
+      name: cognitoUser?.name || 'User',
+    });
 
     const response = NextResponse.json({
       success: true,
       message: 'Tokens refreshed successfully',
-      user: sessionUser,
+      user: profile,
     });
 
     return setAuthCookies(response, tokens, {
-      sub: sessionUser.id,
-      email: sessionUser.email,
-      name: sessionUser.name,
-      userType: sessionUser.userType,
+      sub: profile.id,
+      email: profile.email,
+      name: profile.name,
+      userType: profile.userType,
     });
-  } catch (error: any) {
-    console.error('[Auth] Token refresh error:', error?.message);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Failed to refresh authentication session';
+    console.error('[Auth] Token refresh error:', msg);
     const response = NextResponse.json(
-      { message: error?.message || 'Failed to refresh authentication session' },
+      { message: msg },
       { status: 401 }
     );
     return clearAuthCookies(response);

@@ -8,12 +8,13 @@
 
 import { NextRequest } from 'next/server';
 import { AUTH_COOKIE_NAMES } from './cookies';
+import { ADMIN_COGNITO_GROUPS, DOCTOR_COGNITO_GROUPS, type Role } from './roles';
 
 export interface VerifiedAuthPayload {
   isValid: boolean;
   sub?: string;
   email?: string;
-  userType?: 'doctor' | 'patient' | 'admin';
+  userType?: Role;
   groups?: string[];
 }
 
@@ -193,7 +194,7 @@ function buildPayload(payload: Record<string, unknown>): VerifiedAuthPayload {
     ? (payload['cognito:groups'] as string[])
     : [];
 
-  let userType: 'doctor' | 'patient' | 'admin' | undefined = undefined;
+  let userType: Role | undefined = undefined;
 
   const customType = payload['custom:user_type'];
   if (
@@ -204,11 +205,15 @@ function buildPayload(payload: Record<string, unknown>): VerifiedAuthPayload {
     userType = customType;
   } else if (
     groups.some((g) =>
-      ['Admins', 'Superadmins', 'admins', 'superadmins'].includes(g)
+      (ADMIN_COGNITO_GROUPS as ReadonlyArray<string>).includes(g)
     )
   ) {
     userType = 'admin';
-  } else if (groups.includes('Doctors')) {
+  } else if (
+    groups.some((g) =>
+      (DOCTOR_COGNITO_GROUPS as ReadonlyArray<string>).includes(g)
+    )
+  ) {
     userType = 'doctor';
   } else if (groups.includes('Patients')) {
     userType = 'patient';

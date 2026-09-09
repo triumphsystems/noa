@@ -128,9 +128,7 @@ export const useDoctorStore = create<DoctorState>((set, get) => ({
         updates
       );
 
-      const updatedDoctor =
-        ((res as Record<string, unknown>)?.data as DoctorProfile) ||
-        (res as unknown as DoctorProfile);
+      const updatedDoctor = res as DoctorProfile;
 
       set({
         doctor: updatedDoctor,

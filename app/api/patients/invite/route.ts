@@ -6,21 +6,13 @@ import {
   createPatient,
   updatePatient,
 } from '@/lib/db';
-import { getAuthenticatedUser } from '@/lib/auth/jwt';
+import { requireAuth } from '@/lib/auth/guard';
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await getAuthenticatedUser(request);
-    if (!auth.isValid) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (auth.userType && auth.userType !== 'doctor') {
-      return NextResponse.json(
-        { message: 'Forbidden: Doctor role required' },
-        { status: 403 }
-      );
-    }
+    const guard = await requireAuth(request, ['doctor']);
+    if (!guard.ok) return guard.response;
+    const { auth } = guard;
 
     const doctorId = auth.sub;
     if (!doctorId) {

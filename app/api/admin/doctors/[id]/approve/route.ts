@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/lib/auth/jwt';
+import { requireAuth } from '@/lib/auth/guard';
 import { getDoctorById, updateDoctorVerification } from '@/lib/db';
 import { addUserToCognitoGroup } from '@/lib/auth/cognito';
 import {
@@ -18,27 +18,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await getAuthenticatedUser(request);
-    if (!auth.isValid) {
-      return NextResponse.json(
-        { message: 'Unauthorized: Authentication required.' },
-        { status: 401 }
-      );
-    }
-
-    const isAdmin =
-      auth.userType === 'admin' ||
-      (auth.groups &&
-        auth.groups.some((g) =>
-          ['Admins', 'Superadmins', 'admins', 'superadmins'].includes(g)
-        ));
-
-    if (!isAdmin) {
-      return NextResponse.json(
-        { message: 'Forbidden: Administrator privileges required.' },
-        { status: 403 }
-      );
-    }
+    const guard = await requireAuth(request, ['admin']);
+    if (!guard.ok) return guard.response;
+    const { auth } = guard;
 
     const clientId = getClientIdentifier(request, auth.sub || auth.email);
     const rateCheck = await checkRateLimit(`admin:action:${clientId}`, {

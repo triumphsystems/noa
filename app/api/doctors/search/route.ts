@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchDoctors, getAllDoctors } from '@/lib/db';
-import { getAuthenticatedUser } from '@/lib/auth/jwt';
+import { requireAuth } from '@/lib/auth/guard';
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await getAuthenticatedUser(request);
-    if (!auth.isValid) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+    const guard = await requireAuth(request);
+    if (!guard.ok) return guard.response;
 
     const q = request.nextUrl.searchParams.get('q')?.trim() || '';
 

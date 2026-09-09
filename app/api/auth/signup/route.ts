@@ -6,6 +6,7 @@ import {
   migratePatientId,
   getDoctorByEmail,
   getPatientByEmail,
+  type Patient,
 } from '@/lib/db';
 import { signUpWithCognito, getCognitoConfig } from '@/lib/auth/cognito';
 import {
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
       });
     } else {
       const existing = await getPatientByEmail(email);
-      let patient: any = null;
+      let patient: Patient | null = null;
 
       if (existing) {
         // Check if existing record was a pre-created invitation (i.e. starts with patient- and no registered user)
@@ -188,10 +189,11 @@ export async function POST(request: NextRequest) {
         },
       });
     }
-  } catch (error: any) {
-    console.error('[Auth] Signup error:', error?.message);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Registration failed';
+    console.error('[Auth] Signup error:', msg);
     return NextResponse.json(
-      { message: error?.message || 'Registration failed' },
+      { message: msg },
       { status: 400 }
     );
   }

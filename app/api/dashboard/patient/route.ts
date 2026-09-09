@@ -8,14 +8,13 @@ import {
   getIntakeById,
   getIntakesByPatient,
 } from '@/lib/db';
-import { getAuthenticatedUser } from '@/lib/auth/jwt';
+import { requireAuth } from '@/lib/auth/guard';
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await getAuthenticatedUser(request);
-    if (!auth.isValid || !auth.sub) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+    const guard = await requireAuth(request);
+    if (!guard.ok) return guard.response;
+    const { auth } = guard;
 
     const requestedPatientId = request.nextUrl.searchParams.get('patientId');
     const canonicalPatientId = auth.sub;

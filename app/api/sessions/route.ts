@@ -8,14 +8,13 @@ import {
   isDoctorVerified,
   Session,
 } from '@/lib/db';
-import { getAuthenticatedUser } from '@/lib/auth/jwt';
+import { requireAuth } from '@/lib/auth/guard';
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await getAuthenticatedUser(request);
-    if (!auth.isValid) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const guard = await requireAuth(request);
+    if (!guard.ok) return guard.response;
+    const { auth } = guard;
 
     const body = await request.json();
     const { doctorId, patientId, transcript, soapNote, sessionId, id } = body;
@@ -102,10 +101,9 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await getAuthenticatedUser(request);
-    if (!auth.isValid) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const guard = await requireAuth(request);
+    if (!guard.ok) return guard.response;
+    const { auth } = guard;
 
     const sessionId = request.nextUrl.searchParams.get('sessionId');
     const doctorId = request.nextUrl.searchParams.get('doctorId');

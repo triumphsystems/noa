@@ -58,10 +58,11 @@ export async function POST(request: NextRequest) {
           success: true,
           message: 'Password has been reset successfully. You can now log in.',
         });
-      } catch (err: any) {
-        console.error('[API] Reset password error:', err?.message);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Failed to reset password';
+        console.error('[API] Reset password error:', msg);
         return NextResponse.json(
-          { message: err?.message || 'Failed to reset password' },
+          { message: msg },
           { status: 400 }
         );
       }
@@ -71,10 +72,11 @@ export async function POST(request: NextRequest) {
       { message: 'Authentication service is not configured' },
       { status: 503 }
     );
-  } catch (error: any) {
-    console.error('[API] Reset password route error:', error?.message);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'An unexpected error occurred';
+    console.error('[API] Reset password route error:', msg);
     return NextResponse.json(
-      { message: error?.message || 'An unexpected error occurred' },
+      { message: msg },
       { status: 500 }
     );
   }

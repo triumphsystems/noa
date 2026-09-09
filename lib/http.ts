@@ -8,6 +8,7 @@
 import { useDoctorStore } from '@/lib/stores/doctor.store';
 import { usePatientStore } from '@/lib/stores/patient.store';
 import { useSessionStore } from '@/lib/stores/session.store';
+import { clearAuthStorage } from '@/lib/auth/storage';
 
 let refreshPromise: Promise<boolean> | null = null;
 
@@ -20,16 +21,8 @@ export function handleAuthExpiration() {
   // 1. Identify user role before clearing for accurate redirect
   const storedUserType = window.localStorage.getItem('userType') || '';
 
-  // 2. Clear all local storage authentication items
-  const keysToRemove = [
-    'doctorId',
-    'patientId',
-    'userType',
-    'accessToken',
-    'idToken',
-    'refreshToken',
-  ];
-  keysToRemove.forEach((key) => window.localStorage.removeItem(key));
+  // 2. Clear all local storage authentication items using canonical utility
+  clearAuthStorage();
 
   // 3. Clear Zustand application stores
   try {

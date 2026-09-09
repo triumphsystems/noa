@@ -13,6 +13,8 @@ import {
   Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/auth-context';
+import { getDashboardPath } from '@/lib/auth/roles';
 
 type LoginFormProps = {
   userType: 'doctor' | 'patient';
@@ -23,6 +25,7 @@ export default function LoginForm({
 }: LoginFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { login } = useAuth();
   const [userType, setUserType] = useState<'doctor' | 'patient'>(
     initialUserType
   );
@@ -65,48 +68,9 @@ export default function LoginForm({
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          userType,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-
-      const actualUserType = data.user?.userType || userType;
-
-      if (typeof window !== 'undefined') {
-        if (data.user?.id) {
-          if (actualUserType === 'doctor') {
-            window.localStorage.setItem('doctorId', data.user.id);
-          } else if (actualUserType === 'admin') {
-            window.localStorage.setItem('adminId', data.user.id);
-          } else {
-            window.localStorage.setItem('patientId', data.user.id);
-          }
-        }
-        window.localStorage.setItem('userType', actualUserType);
-      }
-
+      await login(formData.email, formData.password, userType);
       const returnUrl = searchParams?.get('from');
-      if (returnUrl && returnUrl.startsWith('/')) {
-        router.push(returnUrl);
-      } else if (actualUserType === 'admin') {
-        router.push('/dashboard/admin');
-      } else {
-        router.push(
-          actualUserType === 'doctor'
-            ? '/dashboard/doctor'
-            : '/dashboard/patient'
-        );
-      }
+      router.push(returnUrl && returnUrl.startsWith('/') ? returnUrl : getDashboardPath(userType));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {

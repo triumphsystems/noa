@@ -10,25 +10,13 @@ import {
   computeDoctorCareCode,
   type Patient,
 } from '@/lib/db';
-import { getAuthenticatedUser } from '@/lib/auth/jwt';
+import { requireAuth } from '@/lib/auth/guard';
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await getAuthenticatedUser(request);
-    if (!auth.isValid || !auth.sub) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (
-      auth.userType &&
-      auth.userType !== 'doctor' &&
-      auth.userType !== 'admin'
-    ) {
-      return NextResponse.json(
-        { message: 'Forbidden: Doctor role required' },
-        { status: 403 }
-      );
-    }
+    const guard = await requireAuth(request, ['doctor', 'admin']);
+    if (!guard.ok) return guard.response;
+    const { auth } = guard;
 
     // Canonical doctor ID is the Cognito Auth ID
     const requestedDoctorId = request.nextUrl.searchParams.get('doctorId');

@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getDoctorById, getPatientById, getAdminByEmail } from '@/lib/db';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import {
   signInWithCognito,
   getCognitoConfig,
   getCognitoUser,
 } from '@/lib/auth/cognito';
 import { setAuthCookies } from '@/lib/auth/cookies';
+import { isValidRole, type Role } from '@/lib/auth/roles';
+import { resolveUserProfile } from '@/lib/auth/profile';
 import {
   checkRateLimit,
   getClientIdentifier,
@@ -43,44 +44,30 @@ export async function POST(request: NextRequest) {
       const cognitoUser = await getCognitoUser(tokens.accessToken);
 
       const canonicalId = cognitoUser?.sub || `user-${Date.now()}`;
-      let resolvedUser = {
-        id: canonicalId,
+      const resolvedRole: Role =
+        cognitoUser?.userType && isValidRole(cognitoUser.userType)
+          ? cognitoUser.userType
+          : isValidRole(userType)
+            ? userType
+            : 'doctor';
+
+      const profile = await resolveUserProfile(canonicalId, resolvedRole, {
         email: email.trim().toLowerCase(),
         name: cognitoUser?.name || email,
-        userType: (cognitoUser?.userType || userType || 'doctor') as
-          'doctor' | 'patient' | 'admin',
-      };
-
-      // Populate display name directly from canonical profile
-      if (resolvedUser.userType === 'doctor') {
-        const doctor = await getDoctorById(resolvedUser.id);
-        if (doctor) {
-          resolvedUser.name = doctor.name;
-        }
-      } else if (resolvedUser.userType === 'admin') {
-        const admin = await getAdminByEmail(resolvedUser.email);
-        if (admin) {
-          resolvedUser.name = admin.name;
-        }
-      } else {
-        const patient = await getPatientById(resolvedUser.id);
-        if (patient) {
-          resolvedUser.name = `${patient.firstName} ${patient.lastName}`.trim();
-        }
-      }
+      });
 
       const response = NextResponse.json({
         success: true,
         message: 'Login successful',
-        user: resolvedUser,
+        user: profile,
       });
 
       // Set tamper-proof httpOnly secure session cookies
       return setAuthCookies(response, tokens, {
-        sub: resolvedUser.id,
-        email: resolvedUser.email,
-        name: resolvedUser.name,
-        userType: resolvedUser.userType,
+        sub: profile.id,
+        email: profile.email,
+        name: profile.name,
+        userType: profile.userType,
       });
     }
 
@@ -91,10 +78,11 @@ export async function POST(request: NextRequest) {
       },
       { status: 503 }
     );
-  } catch (error: any) {
-    console.error('[Auth] Login error:', error?.message);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Login failed';
+    console.error('[Auth] Login error:', msg);
     return NextResponse.json(
-      { message: error?.message || 'Login failed' },
+      { message: msg },
       { status: 401 }
     );
   }

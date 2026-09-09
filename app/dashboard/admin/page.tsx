@@ -37,6 +37,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { BottomNav } from '@/components/navigation/bottom-nav';
+import { http } from '@/lib/http';
 
 interface DoctorItem {
   id: string;
@@ -118,12 +119,9 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     async function fetchMe() {
       try {
-        const res = await fetch('/api/auth/me');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.authenticated && data.user) {
-            setAdminUser(data.user);
-          }
+        const data = await http.get<{ user: AdminUser | null }>('/api/auth/me');
+        if (data?.user) {
+          setAdminUser(data.user);
         }
       } catch {
         // Fallback gracefully
@@ -136,15 +134,8 @@ export default function AdminDashboardPage() {
     try {
       setRefreshing(true);
       // Fetch full directory so metric counts remain persistent & accurate across all tabs
-      const res = await fetch('/api/admin/doctors');
-
-      if (res.status === 401 || res.status === 403) {
-        router.push('/auth/login?from=/dashboard/admin');
-        return;
-      }
-
-      const data = await res.json();
-      if (data.success && Array.isArray(data.doctors)) {
+      const data = await http.get<{ success: boolean; doctors: DoctorItem[] }>('/api/admin/doctors');
+      if (data?.success && Array.isArray(data.doctors)) {
         setDoctors(data.doctors);
         setLastUpdated(new Date());
       } else {

@@ -24,24 +24,17 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { getDashboardPath } from '@/lib/auth/roles';
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
 
-  const dashboardHref =
-    user?.userType === 'doctor'
-      ? '/dashboard/doctor'
-      : user?.userType === 'patient'
-        ? '/dashboard/patient'
-        : '/dashboard/admin';
+  const dashboardHref = getDashboardPath(user?.userType);
 
-  const roleLabel =
-    user?.userType === 'doctor'
-      ? 'Doctor'
-      : user?.userType === 'patient'
-        ? 'Patient'
-        : 'Admin';
+  const roleLabel = user?.userType
+    ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1)
+    : '';
 
   const userInitial = user?.name
     ? user.name.trim().charAt(0).toUpperCase()

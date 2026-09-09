@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { Stethoscope, User, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth, type SignupInput } from '@/lib/auth-context';
 
 type SignupFormProps = {
   userType: 'doctor' | 'patient';
@@ -17,6 +18,7 @@ export default function SignupForm({
 }: SignupFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { signup } = useAuth();
   const [userType, setUserType] = useState<'doctor' | 'patient'>(
     initialUserType
   );
@@ -68,40 +70,20 @@ export default function SignupForm({
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          userType,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Signup failed');
-      }
-
-      if (typeof window !== 'undefined') {
-        if (data.doctor?.id) {
-          window.localStorage.setItem('doctorId', data.doctor.id);
-        }
-        if (data.patient?.id) {
-          window.localStorage.setItem('patientId', data.patient.id);
-        }
-        window.localStorage.setItem('userType', userType);
-      }
-
-      if (data.isConfirmed) {
-        router.push(
-          `/auth/login?verified=true&email=${encodeURIComponent(formData.email)}&type=${userType}`
-        );
-      } else {
-        router.push(
-          `/auth/login?registered=true&email=${encodeURIComponent(formData.email)}&type=${userType}`
-        );
-      }
+      const signupData: SignupInput = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        specialty: formData.specialty || undefined,
+        clinic: formData.clinic || undefined,
+        license: formData.license || undefined,
+        issuingAuthority: formData.issuingAuthority || undefined,
+        dateOfBirth: formData.dateOfBirth || undefined,
+        doctorId: formData.doctorId || undefined,
+      };
+      await signup(formData.email, formData.password, userType, signupData);
+      router.push(
+        `/auth/login?registered=true&email=${encodeURIComponent(formData.email)}&type=${userType}`
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {

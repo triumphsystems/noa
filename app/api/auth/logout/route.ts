@@ -18,8 +18,9 @@ export async function POST(request: NextRequest) {
     });
 
     return clearAuthCookies(response);
-  } catch (error: any) {
-    console.error('[Auth] Logout error:', error?.message);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Auth] Logout error:', msg);
     const response = NextResponse.json({
       success: true,
       message: 'Local session cleared',
