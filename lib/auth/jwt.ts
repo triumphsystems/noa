@@ -134,8 +134,12 @@ async function verifyTokenWithSignature(
   const userPoolId = process.env.COGNITO_USER_POOL_ID;
   const region = process.env.AWS_REGION || 'us-east-1';
 
-  // If Cognito is not configured, fall back to expiry-only check (local dev)
+  // In production, require COGNITO_USER_POOL_ID to prevent forged tokens
   if (!userPoolId) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[JWT] COGNITO_USER_POOL_ID is not configured in production. Rejecting verification.');
+      return { isValid: false };
+    }
     const payload = decodeJwtPayload(token);
     if (!payload) return { isValid: false };
     const now = Math.floor(Date.now() / 1000);
@@ -233,7 +237,6 @@ function buildPayload(payload: Record<string, unknown>): VerifiedAuthPayload {
 
 /**
  * Fully verifies a Cognito JWT (RS256 signature + expiry + issuer).
- * Falls back to expiry-only when COGNITO_USER_POOL_ID is not set (local dev).
  */
 export async function verifyToken(
   idToken?: string,
@@ -246,7 +249,7 @@ export async function verifyToken(
 
 /**
  * Extract and fully verify the authenticated user session from a NextRequest.
- * NOTE: This is async — callers (API routes) must await it.
+ * Authoritative claims (sub, userType) are strictly derived from the verified token.
  */
 export async function getAuthenticatedUser(
   request: NextRequest
@@ -263,19 +266,18 @@ export async function getAuthenticatedUser(
   const verified = await verifyToken(idToken, accessToken);
   if (!verified.isValid) return verified;
 
-  // Supplement with session metadata cookie (non-authoritative — only fills gaps)
+  // Supplement optional display email if absent from token payload, but NEVER userType or sub
   const sessionMeta = request.cookies.get(
     AUTH_COOKIE_NAMES.SESSION_META
   )?.value;
   if (sessionMeta) {
     try {
       const parsed = JSON.parse(sessionMeta);
-      if (!verified.sub && parsed.id) verified.sub = parsed.id;
-      if (!verified.userType && parsed.userType)
-        verified.userType = parsed.userType;
-      if (!verified.email && parsed.email) verified.email = parsed.email;
+      if (!verified.email && typeof parsed.email === 'string') {
+        verified.email = parsed.email;
+      }
     } catch {
-      // Ignore parse failure — session meta is non-authoritative
+      // Ignore parse failure — session meta is strictly informational
     }
   }
 
