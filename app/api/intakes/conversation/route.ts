@@ -75,15 +75,6 @@ function buildPrefillFromPatient(
 export async function GET(request: NextRequest) {
   try {
     const auth = await getAuthenticatedUser(request);
-    const hasRefreshToken = Boolean(
-      request.cookies.get(AUTH_COOKIE_NAMES.REFRESH_TOKEN)?.value
-    );
-
-    // If credentials were provided but expired, and a refresh token exists,
-    // return 401 so the client-side http wrapper transparently refreshes tokens.
-    if (!auth.isValid && hasRefreshToken) {
-      return NextResponse.json({ message: 'Session expired' }, { status: 401 });
-    }
 
     const requestedDoctorId =
       request.nextUrl.searchParams.get('doctorId') ||
@@ -225,14 +216,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const auth = await getAuthenticatedUser(request);
-    const hasRefreshToken = Boolean(
-      request.cookies.get(AUTH_COOKIE_NAMES.REFRESH_TOKEN)?.value
-    );
-
-    // If an authenticated session has expired, trigger client HTTP auto-refresh via 401
-    if (!auth.isValid && hasRefreshToken) {
-      return NextResponse.json({ message: 'Session expired' }, { status: 401 });
-    }
 
     const body = await request.json();
     const transcript =

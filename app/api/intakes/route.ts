@@ -7,14 +7,6 @@ import { AUTH_COOKIE_NAMES } from '@/lib/auth/cookies';
 export async function POST(request: NextRequest) {
   try {
     const auth = await getAuthenticatedUser(request);
-    const hasRefreshToken = Boolean(
-      request.cookies.get(AUTH_COOKIE_NAMES.REFRESH_TOKEN)?.value
-    );
-
-    // If an authenticated session has expired, trigger client HTTP auto-refresh via 401
-    if (!auth.isValid && hasRefreshToken) {
-      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
-    }
 
     const body = await request.json();
     const {
