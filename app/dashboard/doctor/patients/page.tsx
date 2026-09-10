@@ -150,7 +150,7 @@ export default function PatientsPage() {
     setActionNotification(null);
 
     try {
-      const res = await fetch('/api/doctors/respond-link', {
+      const res = await fetch('/api/doctors/link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ patientId, action }),

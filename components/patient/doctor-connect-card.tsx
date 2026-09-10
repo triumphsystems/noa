@@ -40,7 +40,7 @@ export function DoctorConnectCard({
     setIsSubmitting(true);
     setFeedback(null);
     try {
-      const res = await fetch('/api/patients/respond-link', {
+      const res = await fetch('/api/patients/link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),

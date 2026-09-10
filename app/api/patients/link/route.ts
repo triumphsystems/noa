@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error(
-      '[API /patients/respond-link] Error responding to doctor invitation:',
+      '[API /patients/link] Error responding to doctor invitation:',
       error
     );
     return NextResponse.json(

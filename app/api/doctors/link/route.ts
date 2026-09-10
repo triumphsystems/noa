@@ -3,7 +3,7 @@ import { getPatientById, getDoctorById, updatePatient } from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
 
 /**
- * POST /api/doctors/respond-link
+ * POST /api/doctors/link
  * Allows a doctor to accept or decline a connection request initiated by a patient.
  */
 export async function POST(request: NextRequest) {
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error(
-      '[API /doctors/respond-link] Error processing patient connection:',
+      '[API /doctors/link] Error processing patient connection:',
       error
     );
     return NextResponse.json(
