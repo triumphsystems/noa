@@ -8,4 +8,4 @@ export { TranscriptFeed, type TranscriptItem } from './transcript-feed';
 export { SessionHeader } from './header';
 export { SessionSuccessAlert } from './alert';
 export { PatientContextCard } from './context';
-export { SessionConsole } from './session-console';
+export { SessionConsole } from './console';

@@ -43,6 +43,7 @@ Noa is an AI-Powered Medical Intelligence Platform that transforms medical consu
 - **Formatting:**
   - Apply formatting: `pnpm format` (uses Prettier)
   - Check formatting: `pnpm format:check`
+- **File Naming Convention:** As much as possible, keep file names to **one word** (e.g., `console.tsx`, `view.tsx`, `dossier.tsx`, `detail.tsx`, `shell.tsx`, `form.tsx`, `status.tsx`). Avoid multi-word hyphenated filenames unless absolutely necessary for clarity or domain disambiguation.
 - **TypeScript:** `tsconfig.json` is configured for Next.js and modern JS standards. The `compilerOptions.paths` alias `@/*` is used for imports (e.g., `import {...} from '@/lib/utils'`).
 
 ### Testing

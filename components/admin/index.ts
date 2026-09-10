@@ -4,4 +4,4 @@ export { AdminMetrics } from './metrics';
 export { AdminToolbar } from './toolbar';
 export { AdminTable } from './table';
 export { ApprovalDialog, RejectionDialog, DossierDialog } from './dialog';
-export { AdminDashboardView } from './dashboard-view';
+export { AdminDashboardView } from './view';
