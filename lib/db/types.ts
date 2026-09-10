@@ -26,8 +26,8 @@ export interface Doctor {
 export interface Patient {
   id: string;
   type: 'patient';
-  doctorId?: string;
-  pendingDoctorId?: string;
+  doctorId?: string | null;
+  pendingDoctorId?: string | null;
   linkStatus?:
     | 'linked'
     | 'pending_patient_approval'

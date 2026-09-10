@@ -10,7 +10,7 @@
     "seed:admin": "node scripts/seed-admin.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --test tests/webmcp.test.mjs tests/auth.test.mjs tests/ratelimit.test.mjs tests/intake-voice.test.mjs"
+    "test": "node --test tests/webmcp.test.mjs tests/auth.test.mjs tests/ratelimit.test.mjs tests/intake-voice.test.mjs tests/actions.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1124.0",

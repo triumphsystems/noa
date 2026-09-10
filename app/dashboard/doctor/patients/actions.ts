@@ -19,15 +19,31 @@ export interface PatientActionResult {
   patient?: unknown;
 }
 
-export async function invitePatientAction(input: {
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-}): Promise<PatientActionResult> {
+export type InvitePatientInput =
+  | FormData
+  | {
+      email: string;
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+    };
+
+export async function invitePatient(
+  input: InvitePatientInput
+): Promise<PatientActionResult> {
   try {
     const auth = await requireServerAuth(['doctor']);
     const doctorId = auth.sub;
+
+    const rawData =
+      input instanceof FormData
+        ? {
+            email: (input.get('email') as string) || '',
+            firstName: (input.get('firstName') as string) || undefined,
+            lastName: (input.get('lastName') as string) || undefined,
+            phone: (input.get('phone') as string) || undefined,
+          }
+        : input;
 
     const doctor = await getDoctorById(doctorId);
     if (!doctor) {
@@ -42,7 +58,7 @@ export async function invitePatientAction(input: {
       };
     }
 
-    const parseResult = patientInviteSchema.safeParse(input);
+    const parseResult = patientInviteSchema.safeParse(rawData);
     if (!parseResult.success) {
       return {
         success: false,
@@ -144,13 +160,13 @@ export async function respondToPatientLinkAction(
     if (action === 'accept') {
       await updatePatient(patient.id, {
         doctorId: doctorId,
-        pendingDoctorId: null as unknown as string,
+        pendingDoctorId: null,
         linkStatus: 'linked',
         linkRequestedAt: Date.now(),
       });
     } else {
       await updatePatient(patient.id, {
-        pendingDoctorId: null as unknown as string,
+        pendingDoctorId: null,
         linkStatus: 'unlinked',
       });
     }
@@ -176,3 +192,7 @@ export async function respondToPatientLinkAction(
     };
   }
 }
+
+export const invitePatientAction = invitePatient;
+export const respondToPatientLink = respondToPatientLinkAction;
+

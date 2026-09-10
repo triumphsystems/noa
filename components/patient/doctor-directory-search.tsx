@@ -5,7 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Search, Loader2, Stethoscope, Building2 } from 'lucide-react';
-import type { Doctor } from '@/lib/db';
+import {
+  searchDoctorsAction,
+  type SanitizedDoctorDirectoryItem,
+} from '@/app/dashboard/patient/actions';
 
 interface DoctorDirectorySearchProps {
   onConnect: (doctorId: string) => Promise<void>;
@@ -17,7 +20,7 @@ export function DoctorDirectorySearch({
   isSubmitting,
 }: DoctorDirectorySearchProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Doctor[]>([]);
+  const [searchResults, setSearchResults] = useState<SanitizedDoctorDirectoryItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
@@ -26,11 +29,12 @@ export function DoctorDirectorySearch({
     setIsSearching(true);
     setHasSearched(true);
     try {
-      const res = await fetch(
-        `/api/doctors/search?q=${encodeURIComponent(searchQuery.trim())}`
-      );
-      const data = await res.json();
-      setSearchResults(data.data || []);
+      const res = await searchDoctorsAction(searchQuery.trim());
+      if (res.success && res.data) {
+        setSearchResults(res.data);
+      } else {
+        setSearchResults([]);
+      }
     } catch {
       setSearchResults([]);
     } finally {

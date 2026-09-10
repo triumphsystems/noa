@@ -10,10 +10,12 @@ import { buildUpdateExpression } from './update-expression';
 import type { PatientIntake } from './types';
 
 export async function createIntake(
-  data: Omit<PatientIntake, 'id' | 'type' | 'createdAt' | 'updatedAt'>
+  data: Omit<PatientIntake, 'id' | 'type' | 'createdAt' | 'updatedAt'> & {
+    id?: string;
+  }
 ): Promise<PatientIntake> {
   const intake: PatientIntake = {
-    id: `intake-${nanoid()}`,
+    id: data.id || `intake-${nanoid()}`,
     type: 'intake',
     ...data,
     createdAt: Date.now(),

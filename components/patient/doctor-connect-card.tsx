@@ -16,6 +16,11 @@ import type { Doctor } from '@/lib/db';
 import { DoctorInvitationBanner } from './doctor-invitation-banner';
 import { DoctorDirectorySearch } from './doctor-directory-search';
 
+import {
+  respondToDoctorLink,
+  linkDoctorCareCode,
+} from '@/app/dashboard/patient/actions';
+
 interface DoctorConnectCardProps {
   pendingDoctor?: Doctor | null;
   linkStatus?: string;
@@ -40,19 +45,17 @@ export function DoctorConnectCard({
     setIsSubmitting(true);
     setFeedback(null);
     try {
-      const res = await fetch('/api/patients/link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to respond to invitation');
+      const res = await respondToDoctorLink(action);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to respond to invitation');
       }
-      setFeedback({ type: 'success', message: data.message });
+      setFeedback({ type: 'success', message: res.data?.message || 'Invitation processed.' });
       await onRefresh();
-    } catch (err: any) {
-      setFeedback({ type: 'error', message: err.message || 'Action failed' });
+    } catch (err: unknown) {
+      setFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Action failed',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -66,25 +69,20 @@ export function DoctorConnectCard({
     setIsSubmitting(true);
     setFeedback(null);
     try {
-      const res = await fetch('/api/doctors/connect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ careCode: careCodeInput.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Doctor not found with this code');
+      const res = await linkDoctorCareCode({ careCode: careCodeInput.trim() });
+      if (!res.success) {
+        throw new Error(res.error || 'Doctor not found with this code');
       }
       setFeedback({
         type: 'success',
-        message: data.message || 'Connected successfully!',
+        message: res.data?.message || 'Connected successfully!',
       });
       setCareCodeInput('');
       await onRefresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setFeedback({
         type: 'error',
-        message: err.message || 'Connection failed',
+        message: err instanceof Error ? err.message : 'Connection failed',
       });
     } finally {
       setIsSubmitting(false);
@@ -96,22 +94,17 @@ export function DoctorConnectCard({
     setIsSubmitting(true);
     setFeedback(null);
     try {
-      const res = await fetch('/api/doctors/connect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ doctorId }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Connection failed');
+      const res = await linkDoctorCareCode({ doctorId });
+      if (!res.success) throw new Error(res.error || 'Connection failed');
       setFeedback({
         type: 'success',
-        message: data.message || 'Connected successfully!',
+        message: res.data?.message || 'Connected successfully!',
       });
       await onRefresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setFeedback({
         type: 'error',
-        message: err.message || 'Connection failed',
+        message: err instanceof Error ? err.message : 'Connection failed',
       });
     } finally {
       setIsSubmitting(false);

@@ -13,7 +13,7 @@ import {
   type DoctorOnboardingFormData,
   type StatusMessage,
 } from '@/components/doctor/onboarding';
-import { updateDoctorProfileAction } from '@/app/dashboard/doctor/actions';
+import { submitLicensure } from '@/app/dashboard/doctor/actions';
 import type { Doctor } from '@/lib/db';
 
 interface DoctorOnboardingViewProps {
@@ -43,7 +43,6 @@ export function DoctorOnboardingView({
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadingFile, setUploadingFile] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [certified, setCertified] = useState(false);
   const [statusMessage, setStatusMessage] = useState<StatusMessage | null>(
@@ -82,39 +81,6 @@ export function DoctorOnboardingView({
     }
   };
 
-  const handleUploadDocument = async (): Promise<string | null> => {
-    if (!selectedFile) return formData.licenseDocumentUrl || null;
-    setUploadingFile(true);
-
-    try {
-      const uploadData = new FormData();
-      uploadData.append('file', selectedFile);
-
-      const response = await fetch(
-        `/api/doctors/${encodeURIComponent(currentDoctor.id)}/license`,
-        {
-          method: 'POST',
-          body: uploadData,
-        }
-      );
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to upload document');
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        licenseDocumentUrl: data.licenseDocumentUrl,
-      }));
-      return data.licenseDocumentUrl;
-    } catch (err) {
-      console.error('Document upload error:', err);
-      throw err;
-    } finally {
-      setUploadingFile(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,32 +113,28 @@ export function DoctorOnboardingView({
     setStatusMessage(null);
 
     try {
-      let finalDocUrl = formData.licenseDocumentUrl;
-      if (selectedFile) {
-        const uploadedUrl = await handleUploadDocument();
-        if (uploadedUrl) finalDocUrl = uploadedUrl;
-      }
-
-      const res = await updateDoctorProfileAction({
+      const res = await submitLicensure({
         name: formData.name,
         specialty: formData.specialty,
         clinic: formData.clinic,
         phone: formData.phone,
         license: formData.license,
         issuingAuthority: formData.issuingAuthority,
-        licenseDocumentUrl: finalDocUrl,
-        verificationStatus: 'pending',
+        licenseDocumentUrl: formData.licenseDocumentUrl,
+        file: selectedFile,
       });
 
-      if (res.success && res.data) {
+      if (res.success && res.doctor) {
         setStatusMessage({
           type: 'success',
-          text: 'Credentials submitted successfully. Your application is now queued for clinical administration review.',
+          text:
+            res.message ||
+            'Credentials submitted successfully. Your application is now queued for clinical administration review.',
         });
         setSelectedFile(null);
         setShowEditForm(false);
-        setCurrentDoctor(res.data);
-        setDoctor(res.data);
+        setCurrentDoctor(res.doctor);
+        setDoctor(res.doctor);
         startTransition(() => {
           router.refresh();
         });
@@ -253,7 +215,7 @@ export function DoctorOnboardingView({
           certified={certified}
           onCertifiedChange={setCertified}
           submitting={submitting || isPendingAction}
-          uploadingFile={uploadingFile}
+          uploadingFile={false}
           isRejected={isRejected}
           isPending={isPending}
           isVerified={isVerified}

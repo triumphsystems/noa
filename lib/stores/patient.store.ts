@@ -49,9 +49,19 @@ export const usePatientStore = create<PatientState>((set, get) => ({
     set({ isLoading: true, error: null, patientId: activeId });
 
     try {
-      const payload = await http<PatientDashboardPayload>(
-        `/api/dashboard/patient?patientId=${encodeURIComponent(activeId)}`
+      const { getPatientDashboardDataAction } = await import(
+        '@/app/dashboard/patient/actions'
       );
+      const res = await getPatientDashboardDataAction();
+
+      let payload: PatientDashboardPayload;
+      if (res.success && res.data) {
+        payload = res.data;
+      } else {
+        payload = await http<PatientDashboardPayload>(
+          `/api/dashboard/patient?patientId=${encodeURIComponent(activeId)}`
+        );
+      }
 
       const canonicalId = payload.patient?.id || activeId;
       if (
