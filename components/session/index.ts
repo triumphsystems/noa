@@ -9,3 +9,4 @@ export { SessionHeader } from './header';
 export { SessionSuccessAlert } from './alert';
 export { PatientContextCard } from './context';
 export { SessionConsole } from './console';
+export { SessionDetail } from './detail';
