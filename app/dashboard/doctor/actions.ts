@@ -63,3 +63,108 @@ export async function updateDoctorProfileAction(
     };
   }
 }
+
+export interface SaveSessionInput {
+  sessionId?: string;
+  patientId: string;
+  transcript?: string;
+  soapNote?: {
+    subjective?: string;
+    objective?: string;
+    assessment?: string;
+    plan?: string;
+  };
+}
+
+/**
+ * Server Action to save or complete a clinical consultation session.
+ */
+export async function saveSessionAction(
+  input: SaveSessionInput
+): Promise<ActionResult<{ sessionId: string }>> {
+  try {
+    const auth = await requireServerAuth(['doctor']);
+
+    const { getSessionById, createSession, updateSession } = await import('@/lib/db');
+
+    const targetId = input.sessionId;
+    let savedSessionId = targetId || '';
+
+    if (targetId) {
+      const existing = await getSessionById(targetId);
+      if (existing) {
+        if (existing.doctorId !== auth.sub) {
+          return { success: false, error: 'Unauthorized to modify this consultation' };
+        }
+        await updateSession(targetId, {
+          patientId: input.patientId,
+          transcript: input.transcript || existing.transcript,
+          status: 'completed',
+          endedAt: Date.now(),
+          soapNote: input.soapNote
+            ? {
+                subjective: input.soapNote.subjective || '',
+                objective: input.soapNote.objective || '',
+                assessment: input.soapNote.assessment || '',
+                plan: input.soapNote.plan || '',
+                generatedAt: Date.now(),
+              }
+            : existing.soapNote,
+        });
+      } else {
+        const created = await createSession({
+          id: targetId,
+          doctorId: auth.sub,
+          patientId: input.patientId,
+          startedAt: Date.now(),
+          endedAt: Date.now(),
+          transcript: input.transcript,
+          status: 'completed',
+          soapNote: input.soapNote
+            ? {
+                subjective: input.soapNote.subjective || '',
+                objective: input.soapNote.objective || '',
+                assessment: input.soapNote.assessment || '',
+                plan: input.soapNote.plan || '',
+                generatedAt: Date.now(),
+              }
+            : undefined,
+        });
+        savedSessionId = created.id;
+      }
+    } else {
+      const created = await createSession({
+        doctorId: auth.sub,
+        patientId: input.patientId,
+        startedAt: Date.now(),
+        endedAt: Date.now(),
+        transcript: input.transcript,
+        status: 'completed',
+        soapNote: input.soapNote
+          ? {
+              subjective: input.soapNote.subjective || '',
+              objective: input.soapNote.objective || '',
+              assessment: input.soapNote.assessment || '',
+              plan: input.soapNote.plan || '',
+              generatedAt: Date.now(),
+            }
+          : undefined,
+      });
+      savedSessionId = created.id;
+    }
+
+    revalidatePath('/dashboard/doctor');
+    revalidatePath('/dashboard/doctor/summaries');
+    revalidatePath(`/dashboard/doctor/patients/${input.patientId}`);
+    revalidatePath('/dashboard/patient');
+
+    return { success: true, data: { sessionId: savedSessionId } };
+  } catch (error) {
+    console.error('[Actions] Failed to save clinical session:', error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : 'Failed to save session',
+    };
+  }
+}
