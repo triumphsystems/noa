@@ -23,7 +23,12 @@ import { transcribeClient, s3Client, awsConfig } from '@/lib/aws-config';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { dynamodbClient } from '@/lib/aws-config';
 import { transcribeSliceSchema } from '@/lib/validations';
-import { apiError, apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import {
+  apiError,
+  apiSuccess,
+  handleApiError,
+  zodValidationError,
+} from '@/lib/api/response';
 import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export const dynamic = 'force-dynamic';
@@ -31,7 +36,6 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 const docClient = DynamoDBDocumentClient.from(dynamodbClient);
-
 
 /**
  * Wait for a Transcribe Medical job to complete (up to 55 seconds with polling).
@@ -173,7 +177,11 @@ export async function POST(request: NextRequest) {
 
     const bucket = awsConfig.s3.bucket;
     if (!bucket) {
-      return apiError(API_ERROR_CODES.SERVICE_UNAVAILABLE, 'Service unavailable', 503);
+      return apiError(
+        API_ERROR_CODES.SERVICE_UNAVAILABLE,
+        'Service unavailable',
+        503
+      );
     }
 
     // Transcribe Medical requires a unique job name per request

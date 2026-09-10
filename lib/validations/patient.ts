@@ -36,4 +36,6 @@ export const patientProfileUpdateSchema = z
     message: 'At least one field is required for update',
   });
 
-export type PatientProfileUpdateInput = z.infer<typeof patientProfileUpdateSchema>;
+export type PatientProfileUpdateInput = z.infer<
+  typeof patientProfileUpdateSchema
+>;

@@ -30,11 +30,7 @@ export async function POST(
 
     const doctor = await getDoctorById(id);
     if (!doctor) {
-      return apiError(
-        API_ERROR_CODES.NOT_FOUND,
-        'Doctor not found.',
-        404
-      );
+      return apiError(API_ERROR_CODES.NOT_FOUND, 'Doctor not found.', 404);
     }
 
     // 1. Update verification state in DynamoDB

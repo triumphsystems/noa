@@ -3,7 +3,11 @@ import { generateSOAPWithNova } from '@/lib/bedrock';
 import { updateSession } from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
 import { soapGenerateSchema } from '@/lib/validations';
-import { apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import {
+  apiSuccess,
+  handleApiError,
+  zodValidationError,
+} from '@/lib/api/response';
 
 export async function POST(request: NextRequest) {
   try {

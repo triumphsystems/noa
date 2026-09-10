@@ -45,7 +45,8 @@ export function SessionHeader({
             Clinical Voice Consultation
           </h1>
           <p className="text-slate text-xs sm:text-sm">
-            Live doctor-patient encounter with ambient speech recognition, clinical guidance, and automated SOAP documentation
+            Live doctor-patient encounter with ambient speech recognition,
+            clinical guidance, and automated SOAP documentation
           </p>
         </div>
 

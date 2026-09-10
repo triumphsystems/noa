@@ -2,7 +2,11 @@ import { NextRequest } from 'next/server';
 import { generatePatientSummary } from '@/lib/bedrock';
 import { requireAuth } from '@/lib/auth/guard';
 import { summaryGenerateSchema } from '@/lib/validations';
-import { apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import {
+  apiSuccess,
+  handleApiError,
+  zodValidationError,
+} from '@/lib/api/response';
 
 export async function POST(request: NextRequest) {
   try {

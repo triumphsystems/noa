@@ -141,9 +141,7 @@ export function AdminToolbar({
           {searchQuery && ` matching "${searchQuery}"`}
           {activeTab !== 'all' && ` with status "${activeTab}"`}
         </span>
-        {(searchQuery ||
-          specialtyFilter !== 'all' ||
-          activeTab !== 'all') && (
+        {(searchQuery || specialtyFilter !== 'all' || activeTab !== 'all') && (
           <Button
             variant="link"
             size="xs"

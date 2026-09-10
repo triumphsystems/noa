@@ -50,9 +50,9 @@ export function VerificationStatusBanner({
                 Your credentials are under clinical compliance review
               </h2>
               <p className="text-slate max-w-2xl text-xs leading-relaxed sm:text-sm">
-                Our credentialing committee validates license numbers against state medical
-                boards and international councils. Applications are typically processed
-                within 24 business hours.
+                Our credentialing committee validates license numbers against
+                state medical boards and international councils. Applications
+                are typically processed within 24 business hours.
               </p>
               {license && license !== 'LICENSE-PENDING' && (
                 <div className="text-deep-ink/80 flex flex-wrap items-center gap-3 pt-2 text-xs">
@@ -96,7 +96,9 @@ export function VerificationStatusBanner({
                 <Badge variant="danger" className="text-xs font-semibold">
                   Verification Rejected
                 </Badge>
-                <span className="font-mono text-xs text-rose-700">Action Required</span>
+                <span className="font-mono text-xs text-rose-700">
+                  Action Required
+                </span>
               </div>
               <h2 className="font-serif text-lg font-bold text-rose-950 sm:text-xl">
                 Your medical verification request requires revision
@@ -110,7 +112,9 @@ export function VerificationStatusBanner({
                   <span className="block text-[10px] font-bold tracking-wider text-rose-950 uppercase">
                     Administrator Feedback:
                   </span>
-                  <p className="leading-relaxed font-medium">{rejectionReason}</p>
+                  <p className="leading-relaxed font-medium">
+                    {rejectionReason}
+                  </p>
                 </div>
               )}
             </div>
@@ -150,8 +154,8 @@ export function VerificationStatusBanner({
                 Your medical license has been verified
               </h2>
               <p className="text-slate max-w-2xl text-xs leading-relaxed sm:text-sm">
-                Your account has full clinical documentation privileges, ambient voice
-                consultation access, and EHR export capabilities.
+                Your account has full clinical documentation privileges, ambient
+                voice consultation access, and EHR export capabilities.
               </p>
             </div>
           </div>

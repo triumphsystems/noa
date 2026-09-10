@@ -11,7 +11,10 @@ export async function POST(request: NextRequest) {
     const parseResult = verifyCodeSchema.safeParse(rawBody);
 
     if (!parseResult.success) {
-      return zodValidationError(parseResult.error, 'Email and verification code are required');
+      return zodValidationError(
+        parseResult.error,
+        'Email and verification code are required'
+      );
     }
 
     const { email, code } = parseResult.data;

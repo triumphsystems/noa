@@ -2,7 +2,12 @@ import { NextRequest } from 'next/server';
 import { getPatientById, getDoctorById, updatePatient } from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
 import { patientLinkActionSchema } from '@/lib/validations';
-import { apiError, apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import {
+  apiError,
+  apiSuccess,
+  handleApiError,
+  zodValidationError,
+} from '@/lib/api/response';
 import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function POST(request: NextRequest) {
@@ -17,7 +22,10 @@ export async function POST(request: NextRequest) {
     const parseResult = patientLinkActionSchema.safeParse(rawBody);
 
     if (!parseResult.success) {
-      return zodValidationError(parseResult.error, 'Valid action (accept or decline) is required');
+      return zodValidationError(
+        parseResult.error,
+        'Valid action (accept or decline) is required'
+      );
     }
 
     const { action } = parseResult.data;

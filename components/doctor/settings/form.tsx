@@ -6,7 +6,9 @@ import type { SettingsFormState } from './types';
 
 interface DoctorSettingsFormProps {
   formState: SettingsFormState;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  onChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => void;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   onReload: () => void;
   isSaving: boolean;
@@ -27,13 +29,19 @@ export function DoctorSettingsForm({
       className="border-deep-ink/10 space-y-5 rounded-3xl border bg-white p-4 sm:p-6"
     >
       <div>
-        <h2 className="mb-1 font-serif text-lg font-semibold sm:text-xl">Edit profile</h2>
-        <p className="text-slate text-xs sm:text-sm">Change how you appear across the dashboard.</p>
+        <h2 className="mb-1 font-serif text-lg font-semibold sm:text-xl">
+          Edit profile
+        </h2>
+        <p className="text-slate text-xs sm:text-sm">
+          Change how you appear across the dashboard.
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="md:col-span-2">
-          <label className="text-deep-ink mb-1 block text-sm font-medium">Name</label>
+          <label className="text-deep-ink mb-1 block text-sm font-medium">
+            Name
+          </label>
           <input
             name="name"
             value={formState.name}
@@ -45,7 +53,9 @@ export function DoctorSettingsForm({
         </div>
 
         <div>
-          <label className="text-deep-ink mb-1 block text-sm font-medium">Specialty</label>
+          <label className="text-deep-ink mb-1 block text-sm font-medium">
+            Specialty
+          </label>
           <select
             name="specialty"
             value={formState.specialty}
@@ -64,7 +74,9 @@ export function DoctorSettingsForm({
         </div>
 
         <div>
-          <label className="text-deep-ink mb-1 block text-sm font-medium">Clinic</label>
+          <label className="text-deep-ink mb-1 block text-sm font-medium">
+            Clinic
+          </label>
           <input
             name="clinic"
             value={formState.clinic}
@@ -75,7 +87,9 @@ export function DoctorSettingsForm({
         </div>
 
         <div>
-          <label className="text-deep-ink mb-1 block text-sm font-medium">Phone</label>
+          <label className="text-deep-ink mb-1 block text-sm font-medium">
+            Phone
+          </label>
           <input
             name="phone"
             value={formState.phone}
@@ -86,7 +100,9 @@ export function DoctorSettingsForm({
         </div>
 
         <div className="md:col-span-2">
-          <label className="text-deep-ink mb-1 block text-sm font-medium">Avatar URL</label>
+          <label className="text-deep-ink mb-1 block text-sm font-medium">
+            Avatar URL
+          </label>
           <input
             name="avatar"
             value={formState.avatar}

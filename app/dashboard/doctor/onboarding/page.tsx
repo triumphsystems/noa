@@ -20,7 +20,9 @@ export default function DoctorOnboardingPage() {
   const doctorId = useDoctorStore((state) => state.doctorId);
   const setDoctorId = useDoctorStore((state) => state.setDoctorId);
   const loadDashboard = useDoctorStore((state) => state.loadDashboard);
-  const updateDoctorProfile = useDoctorStore((state) => state.updateDoctorProfile);
+  const updateDoctorProfile = useDoctorStore(
+    (state) => state.updateDoctorProfile
+  );
 
   const [formData, setFormData] = useState<DoctorOnboardingFormData>({
     name: '',
@@ -36,12 +38,16 @@ export default function DoctorOnboardingPage() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [certified, setCertified] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<StatusMessage | null>(null);
+  const [statusMessage, setStatusMessage] = useState<StatusMessage | null>(
+    null
+  );
   const [showEditForm, setShowEditForm] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const storedDoctorId = window.localStorage.getItem('userId') || window.localStorage.getItem('doctorId');
+    const storedDoctorId =
+      window.localStorage.getItem('userId') ||
+      window.localStorage.getItem('doctorId');
     const activeId = storedDoctorId || doctorId;
     if (activeId) {
       if (activeId !== doctorId) {
@@ -58,7 +64,10 @@ export default function DoctorOnboardingPage() {
         specialty: doctor.specialty || '',
         clinic: doctor.clinic || '',
         phone: doctor.phone || '',
-        license: doctor.license && doctor.license !== 'LICENSE-PENDING' ? doctor.license : '',
+        license:
+          doctor.license && doctor.license !== 'LICENSE-PENDING'
+            ? doctor.license
+            : '',
         issuingAuthority: doctor.issuingAuthority || '',
         licenseDocumentUrl: doctor.licenseDocumentUrl || '',
       });
@@ -74,7 +83,9 @@ export default function DoctorOnboardingPage() {
     }
   }, [doctor]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -102,10 +113,13 @@ export default function DoctorOnboardingPage() {
       const uploadData = new FormData();
       uploadData.append('file', selectedFile);
 
-      const response = await fetch(`/api/doctors/${encodeURIComponent(doctorId)}/license`, {
-        method: 'POST',
-        body: uploadData,
-      });
+      const response = await fetch(
+        `/api/doctors/${encodeURIComponent(doctorId)}/license`,
+        {
+          method: 'POST',
+          body: uploadData,
+        }
+      );
 
       const data = await response.json();
       if (!response.ok) {
@@ -191,12 +205,17 @@ export default function DoctorOnboardingPage() {
           void loadDashboard(doctorId);
         }
       } else {
-        throw new Error('Failed to update credentials. Please check your connection and try again.');
+        throw new Error(
+          'Failed to update credentials. Please check your connection and try again.'
+        );
       }
     } catch (err) {
       setStatusMessage({
         type: 'error',
-        text: err instanceof Error ? err.message : 'An error occurred during submission',
+        text:
+          err instanceof Error
+            ? err.message
+            : 'An error occurred during submission',
       });
     } finally {
       setSubmitting(false);
@@ -243,7 +262,10 @@ export default function DoctorOnboardingPage() {
         </div>
       )}
 
-      {(showEditForm || isRejected || !doctor?.license || doctor?.license === 'LICENSE-PENDING') && (
+      {(showEditForm ||
+        isRejected ||
+        !doctor?.license ||
+        doctor?.license === 'LICENSE-PENDING') && (
         <OnboardingForm
           formData={formData}
           onChange={handleInputChange}

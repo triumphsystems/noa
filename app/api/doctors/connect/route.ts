@@ -8,7 +8,12 @@ import {
 } from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
 import { doctorConnectSchema } from '@/lib/validations';
-import { apiError, apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import {
+  apiError,
+  apiSuccess,
+  handleApiError,
+  zodValidationError,
+} from '@/lib/api/response';
 import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function POST(request: NextRequest) {
@@ -21,7 +26,10 @@ export async function POST(request: NextRequest) {
     const parseResult = doctorConnectSchema.safeParse(rawBody);
 
     if (!parseResult.success) {
-      return zodValidationError(parseResult.error, 'Either doctorId or careCode is required');
+      return zodValidationError(
+        parseResult.error,
+        'Either doctorId or careCode is required'
+      );
     }
 
     const { doctorId, careCode } = parseResult.data;
@@ -78,8 +86,7 @@ export async function POST(request: NextRequest) {
         name: targetDoctor.name,
         specialty: targetDoctor.specialty,
         clinic: targetDoctor.clinic,
-        careCode:
-          targetDoctor.careCode || computeDoctorCareCode(targetDoctor),
+        careCode: targetDoctor.careCode || computeDoctorCareCode(targetDoctor),
         email: targetDoctor.email,
       },
       message: `Connection request submitted to Dr. ${targetDoctor.name}. Your care relationship will be active once reviewed by the clinician.`,

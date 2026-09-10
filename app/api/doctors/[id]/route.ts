@@ -7,7 +7,12 @@ import type {
 import { getDoctorById, updateDoctor, type Doctor } from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
 import { doctorProfileUpdateSchema } from '@/lib/validations';
-import { apiError, apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import {
+  apiError,
+  apiSuccess,
+  handleApiError,
+  zodValidationError,
+} from '@/lib/api/response';
 import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function GET(
@@ -31,11 +36,7 @@ export async function GET(
     const doctor = await getDoctorById(id);
 
     if (!doctor) {
-      return apiError(
-        API_ERROR_CODES.NOT_FOUND,
-        'Doctor not found',
-        404
-      );
+      return apiError(API_ERROR_CODES.NOT_FOUND, 'Doctor not found', 404);
     }
 
     return apiSuccess<DoctorProfile>(doctor);
@@ -68,7 +69,10 @@ export async function PUT(
     const parseResult = doctorProfileUpdateSchema.safeParse(rawBody);
 
     if (!parseResult.success) {
-      return zodValidationError(parseResult.error, 'At least one profile field is required');
+      return zodValidationError(
+        parseResult.error,
+        'At least one profile field is required'
+      );
     }
 
     const body = parseResult.data;
@@ -103,11 +107,7 @@ export async function PUT(
     const updatedDoctor = await updateDoctor(id, updates);
 
     if (!updatedDoctor) {
-      return apiError(
-        API_ERROR_CODES.NOT_FOUND,
-        'Doctor not found',
-        404
-      );
+      return apiError(API_ERROR_CODES.NOT_FOUND, 'Doctor not found', 404);
     }
 
     return apiSuccess<DoctorProfile>(updatedDoctor);

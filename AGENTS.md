@@ -274,6 +274,7 @@ All API route responses must use the canonical response helpers (`apiSuccess`, `
 #### 3. Request Validation with Zod — `lib/validations/index.ts`
 
 All API endpoints that accept request bodies must validate using canonical Zod schemas from `lib/validations`:
+
 - Parse with `schema.safeParse(rawBody)`.
 - If invalid, return `zodValidationError(parseResult.error, fallbackMessage)`.
 - If a `ZodError` is thrown inside a handler, `handleApiError(error)` automatically converts it into a `400 VALIDATION_ERROR` with structured `{ field, issue }` details.
@@ -291,6 +292,7 @@ const { email, password } = parseResult.data;
 #### 4. Client HTTP Layer — `lib/http.ts`
 
 `http` throws a typed `ApiClientError` on non-2xx responses. Consume with `instanceof ApiClientError`:
+
 ```typescript
 try {
   await http.post('/api/endpoint', payload);
@@ -376,7 +378,7 @@ export async function resolveUserProfile(
           ? `${user.firstName} ${user.lastName || ''}`.trim()
           : 'User';
 
-    const avatar = 'avatar' in user ? user.avatar ?? null : null;
+    const avatar = 'avatar' in user ? (user.avatar ?? null) : null;
 
     return {
       id: user.id,

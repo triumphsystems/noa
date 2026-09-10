@@ -1,11 +1,12 @@
 import { NextRequest } from 'next/server';
-import {
-  generateClinicalInsights,
-  generateFollowUpPlan,
-} from '@/lib/bedrock';
+import { generateClinicalInsights, generateFollowUpPlan } from '@/lib/bedrock';
 import { requireAuth } from '@/lib/auth/guard';
 import { insightsGenerateSchema } from '@/lib/validations';
-import { apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import {
+  apiSuccess,
+  handleApiError,
+  zodValidationError,
+} from '@/lib/api/response';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +22,10 @@ export async function POST(request: NextRequest) {
     const parseResult = insightsGenerateSchema.safeParse(rawBody);
 
     if (!parseResult.success) {
-      return zodValidationError(parseResult.error, 'Current presentation is required');
+      return zodValidationError(
+        parseResult.error,
+        'Current presentation is required'
+      );
     }
 
     const {

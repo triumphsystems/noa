@@ -10,7 +10,12 @@ import {
 } from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
 import { sessionCreateOrUpdateSchema } from '@/lib/validations';
-import { apiError, apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import {
+  apiError,
+  apiSuccess,
+  handleApiError,
+  zodValidationError,
+} from '@/lib/api/response';
 import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function POST(request: NextRequest) {
@@ -23,10 +28,14 @@ export async function POST(request: NextRequest) {
     const parseResult = sessionCreateOrUpdateSchema.safeParse(rawBody);
 
     if (!parseResult.success) {
-      return zodValidationError(parseResult.error, 'doctorId and patientId are required');
+      return zodValidationError(
+        parseResult.error,
+        'doctorId and patientId are required'
+      );
     }
 
-    const { doctorId, patientId, transcript, soapNote, sessionId, id } = parseResult.data;
+    const { doctorId, patientId, transcript, soapNote, sessionId, id } =
+      parseResult.data;
 
     if (auth.userType === 'doctor') {
       if (doctorId !== auth.sub) {
@@ -104,11 +113,7 @@ export async function GET(request: NextRequest) {
     if (sessionId) {
       const session = await getSessionById(sessionId);
       if (!session) {
-        return apiError(
-          API_ERROR_CODES.NOT_FOUND,
-          'Session not found',
-          404
-        );
+        return apiError(API_ERROR_CODES.NOT_FOUND, 'Session not found', 404);
       }
       // BOLA check: only the session's doctor or patient can view it
       if (

@@ -55,11 +55,15 @@ export function DoctorVerificationNotice({
                     : 'border-rose-300 bg-rose-100 text-rose-900'
                 )}
               >
-                {status === 'pending' ? 'Verification In Progress' : 'Action Required'}
+                {status === 'pending'
+                  ? 'Verification In Progress'
+                  : 'Action Required'}
               </Badge>
               <span className="text-slate/80 font-mono text-xs">
                 License:{' '}
-                {license && license !== 'LICENSE-PENDING' ? license : 'Pending submission'}
+                {license && license !== 'LICENSE-PENDING'
+                  ? license
+                  : 'Pending submission'}
               </span>
             </div>
             <h3 className="text-deep-ink font-serif text-base font-bold">
@@ -75,14 +79,19 @@ export function DoctorVerificationNotice({
           </div>
         </div>
 
-        <Link href="/dashboard/doctor/onboarding" className="w-full shrink-0 sm:w-auto">
+        <Link
+          href="/dashboard/doctor/onboarding"
+          className="w-full shrink-0 sm:w-auto"
+        >
           <Button
             variant="dark"
             size="sm"
             className="w-full gap-2 rounded-lg text-xs font-semibold sm:w-auto"
           >
             <span>
-              {status === 'pending' ? 'View Credential Details' : 'Update & Resubmit'}
+              {status === 'pending'
+                ? 'View Credential Details'
+                : 'Update & Resubmit'}
             </span>
             <ArrowRight className="h-3.5 w-3.5" />
           </Button>

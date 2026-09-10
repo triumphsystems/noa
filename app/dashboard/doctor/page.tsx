@@ -22,7 +22,9 @@ export default function DashboardPage() {
 
   const handleRefresh = () => {
     if (typeof window === 'undefined') return;
-    const storedDoctorId = window.localStorage.getItem('userId') || window.localStorage.getItem('doctorId');
+    const storedDoctorId =
+      window.localStorage.getItem('userId') ||
+      window.localStorage.getItem('doctorId');
     if (storedDoctorId) {
       void loadDashboard(storedDoctorId);
     }
@@ -37,17 +39,20 @@ export default function DashboardPage() {
         onRefresh={handleRefresh}
       />
 
-      {doctor?.verificationStatus && doctor.verificationStatus !== 'verified' && (
-        <DoctorVerificationNotice
-          status={doctor.verificationStatus}
-          license={doctor.license}
-          rejectionReason={doctor.rejectionReason}
-        />
-      )}
+      {doctor?.verificationStatus &&
+        doctor.verificationStatus !== 'verified' && (
+          <DoctorVerificationNotice
+            status={doctor.verificationStatus}
+            license={doctor.license}
+            rejectionReason={doctor.rejectionReason}
+          />
+        )}
 
-      {error && (!doctor?.verificationStatus || doctor.verificationStatus === 'verified') && (
-        <ErrorAlert message={error} />
-      )}
+      {error &&
+        (!doctor?.verificationStatus ||
+          doctor.verificationStatus === 'verified') && (
+          <ErrorAlert message={error} />
+        )}
 
       <DoctorMetrics
         todaySessions={stats?.todaySessions || 0}

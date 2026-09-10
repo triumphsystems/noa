@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
         });
       } catch (err) {
         const errObj = err as Record<string, unknown> | undefined;
-        const errMsg = err instanceof Error ? err.message : 'Failed to send reset code';
+        const errMsg =
+          err instanceof Error ? err.message : 'Failed to send reset code';
         console.error('[API] Forgot password error:', errMsg);
         // Prevent user enumeration: if user is not found, respond with generic success
         if (

@@ -107,4 +107,3 @@ export class ApiClientError extends Error {
     Object.setPrototypeOf(this, ApiClientError.prototype);
   }
 }
-

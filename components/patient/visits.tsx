@@ -15,7 +15,9 @@ interface PatientVisitsProps {
 }
 
 export function PatientVisits({ sessions, doctor }: PatientVisitsProps) {
-  const [visitFilter, setVisitFilter] = useState<'all' | 'completed' | 'active'>('all');
+  const [visitFilter, setVisitFilter] = useState<
+    'all' | 'completed' | 'active'
+  >('all');
 
   const filteredSessions = sessions.filter((session) => {
     if (visitFilter === 'completed') return session.status === 'completed';
@@ -29,12 +31,18 @@ export function PatientVisits({ sessions, doctor }: PatientVisitsProps) {
       <div className="border-deep-ink/10 space-y-3 rounded-2xl border bg-white p-4 shadow-2xs">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-deep-ink font-serif text-lg font-bold">Your Consultations</h2>
+            <h2 className="text-deep-ink font-serif text-lg font-bold">
+              Your Consultations
+            </h2>
             <p className="text-slate text-xs">
-              Summaries, assessment findings, and treatment plans from your clinical visits.
+              Summaries, assessment findings, and treatment plans from your
+              clinical visits.
             </p>
           </div>
-          <Badge variant="secondary" className="px-2 py-0.5 text-xs font-semibold">
+          <Badge
+            variant="secondary"
+            className="px-2 py-0.5 text-xs font-semibold"
+          >
             {sessions.length} total
           </Badge>
         </div>
@@ -68,7 +76,9 @@ export function PatientVisits({ sessions, doctor }: PatientVisitsProps) {
       {filteredSessions.length === 0 ? (
         <Card className="space-y-3 rounded-2xl border-dashed bg-white p-8 text-center">
           <Clock className="text-slate/30 mx-auto h-10 w-10" />
-          <h4 className="text-deep-ink font-serif text-base font-bold">No visits found</h4>
+          <h4 className="text-deep-ink font-serif text-base font-bold">
+            No visits found
+          </h4>
           <p className="text-slate mx-auto max-w-xs text-xs">
             {visitFilter !== 'all'
               ? `You don't have any visits with status "${visitFilter}".`
@@ -95,7 +105,9 @@ export function PatientVisits({ sessions, doctor }: PatientVisitsProps) {
             const summary =
               session.soapNote?.assessment ||
               session.soapNote?.plan ||
-              (session.transcript ? `${session.transcript.slice(0, 140)}...` : 'Clinical encounter recorded.');
+              (session.transcript
+                ? `${session.transcript.slice(0, 140)}...`
+                : 'Clinical encounter recorded.');
 
             return (
               <Card
@@ -106,13 +118,18 @@ export function PatientVisits({ sessions, doctor }: PatientVisitsProps) {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h4 className="text-deep-ink font-serif text-base font-semibold">
-                        Consultation {doctor?.name ? `with Dr. ${doctor.name}` : ''}
+                        Consultation{' '}
+                        {doctor?.name ? `with Dr. ${doctor.name}` : ''}
                       </h4>
                       <Badge
-                        variant={session.status === 'completed' ? 'success' : 'default'}
+                        variant={
+                          session.status === 'completed' ? 'success' : 'default'
+                        }
                         className="text-[10px]"
                       >
-                        {session.status === 'completed' ? 'Completed' : 'Active'}
+                        {session.status === 'completed'
+                          ? 'Completed'
+                          : 'Active'}
                       </Badge>
                     </div>
                     <div className="text-slate mt-1 flex flex-wrap items-center gap-3 text-xs">
@@ -131,10 +148,15 @@ export function PatientVisits({ sessions, doctor }: PatientVisitsProps) {
                 </div>
 
                 <div className="bg-soft-meadow/40 border-deep-ink/5 rounded-xl border p-3">
-                  <p className="text-deep-ink/90 line-clamp-3 text-xs leading-relaxed">{summary}</p>
+                  <p className="text-deep-ink/90 line-clamp-3 text-xs leading-relaxed">
+                    {summary}
+                  </p>
                 </div>
 
-                <Link href={`/dashboard/patient/consultations/${session.id}`} className="block">
+                <Link
+                  href={`/dashboard/patient/consultations/${session.id}`}
+                  className="block"
+                >
                   <Button className="bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 h-9 w-full cursor-pointer gap-1.5 rounded-xl text-xs font-semibold shadow-2xs">
                     <span>View Full Clinical Summary & Care Plan</span>
                     <ChevronRight className="h-3.5 w-3.5" />

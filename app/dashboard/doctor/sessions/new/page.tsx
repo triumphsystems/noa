@@ -30,7 +30,8 @@ function SessionPageContent() {
   const [isRecording, setIsRecording] = useState(false);
   const [transcripts, setTranscripts] = useState<TranscriptItem[]>([]);
   const [soapNote, setSoapNote] = useState<SOAPNoteData | null>(null);
-  const [selectedPatient, setSelectedPatient] = useState<string>(initialPatientId);
+  const [selectedPatient, setSelectedPatient] =
+    useState<string>(initialPatientId);
   const [sessionDuration, setSessionDuration] = useState(0);
   const [suggestions, setSuggestions] = useState<ClinicalSuggestionItem[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -62,7 +63,10 @@ function SessionPageContent() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const storedDoctorId = window.localStorage.getItem('userId') || window.localStorage.getItem('doctorId') || doctorId;
+    const storedDoctorId =
+      window.localStorage.getItem('userId') ||
+      window.localStorage.getItem('doctorId') ||
+      doctorId;
     if (storedDoctorId && patients.length === 0) {
       void loadDashboard(storedDoctorId);
     }
@@ -88,11 +92,18 @@ function SessionPageContent() {
 
   const activePatientName = useMemo(() => {
     if (!activePatient) return '';
-    const parts = [activePatient.firstName, activePatient.lastName].filter(Boolean);
-    return parts.length > 0 ? parts.join(' ') : activePatient.email || `Patient #${activePatient.id.slice(-6)}`;
+    const parts = [activePatient.firstName, activePatient.lastName].filter(
+      Boolean
+    );
+    return parts.length > 0
+      ? parts.join(' ')
+      : activePatient.email || `Patient #${activePatient.id.slice(-6)}`;
   }, [activePatient]);
 
-  const getAISuggestions = async (transcript: string, activeSessionId?: string) => {
+  const getAISuggestions = async (
+    transcript: string,
+    activeSessionId?: string
+  ) => {
     setIsGenerating(true);
     try {
       const response = await fetch('/api/clinical/suggestions', {
@@ -120,7 +131,9 @@ function SessionPageContent() {
                 typeof (s as { text: unknown }).text === 'string'
               ) {
                 const text = (s as { text: string }).text;
-                const priority = (s as { priority?: 'high' | 'medium' | 'low' }).priority || 'medium';
+                const priority =
+                  (s as { priority?: 'high' | 'medium' | 'low' }).priority ||
+                  'medium';
                 if (!existingTexts.has(text)) {
                   newItems.push({ text, priority });
                 }
@@ -167,7 +180,11 @@ function SessionPageContent() {
     [selectedPatient, sessionId]
   );
 
-  const uploadAndTranscribeAudioSlice = async (audioBlob: Blob, chunkIdx: number, activeSessionId: string) => {
+  const uploadAndTranscribeAudioSlice = async (
+    audioBlob: Blob,
+    chunkIdx: number,
+    activeSessionId: string
+  ) => {
     try {
       const uploadFormData = new FormData();
       uploadFormData.append('file', audioBlob, `chunk_${chunkIdx}.webm`);
@@ -225,7 +242,11 @@ function SessionPageContent() {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
       });
       audioStreamRef.current = stream;
 
@@ -245,7 +266,11 @@ function SessionPageContent() {
         if (event.data.size > 0) {
           const currentChunk = chunkIndexRef.current;
           chunkIndexRef.current += 1;
-          void uploadAndTranscribeAudioSlice(event.data, currentChunk, newSessionId);
+          void uploadAndTranscribeAudioSlice(
+            event.data,
+            currentChunk,
+            newSessionId
+          );
         }
       };
 
@@ -266,7 +291,8 @@ function SessionPageContent() {
 
       if (typeof window !== 'undefined') {
         const SpeechRecognition =
-          (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+          (window as any).SpeechRecognition ||
+          (window as any).webkitSpeechRecognition;
 
         if (SpeechRecognition) {
           try {
@@ -291,7 +317,10 @@ function SessionPageContent() {
                 setTranscripts((prev) => [
                   ...prev,
                   {
-                    role: prev.filter((p) => p.role !== 'system').length % 2 === 0 ? 'doctor' : 'patient',
+                    role:
+                      prev.filter((p) => p.role !== 'system').length % 2 === 0
+                        ? 'doctor'
+                        : 'patient',
                     text,
                     timestamp: now.toLocaleTimeString([], {
                       hour: '2-digit',
@@ -314,7 +343,10 @@ function SessionPageContent() {
             recognition.start();
             recognitionRef.current = recognition;
           } catch (speechErr) {
-            console.warn('[Web Speech] Could not start speech recognition:', speechErr);
+            console.warn(
+              '[Web Speech] Could not start speech recognition:',
+              speechErr
+            );
           }
         }
       }
@@ -338,7 +370,9 @@ function SessionPageContent() {
       ]);
     } catch (error) {
       console.error('Microphone access error:', error);
-      alert('Unable to access microphone. Please check your browser audio permissions.');
+      alert(
+        'Unable to access microphone. Please check your browser audio permissions.'
+      );
     }
   };
 
@@ -381,7 +415,9 @@ function SessionPageContent() {
 
   const handleSaveSession = async (customNote?: SOAPNoteData) => {
     if (!selectedPatient || transcripts.length === 0) {
-      alert('Please ensure a patient is selected and transcript data has been captured.');
+      alert(
+        'Please ensure a patient is selected and transcript data has been captured.'
+      );
       return;
     }
 
@@ -391,7 +427,9 @@ function SessionPageContent() {
       const activeDoctorId =
         doctorId ||
         (typeof window !== 'undefined'
-          ? window.localStorage.getItem('userId') || window.localStorage.getItem('doctorId') || ''
+          ? window.localStorage.getItem('userId') ||
+            window.localStorage.getItem('doctorId') ||
+            ''
           : '');
 
       const response = await fetch('/api/sessions', {

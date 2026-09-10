@@ -68,7 +68,9 @@ export function PatientCare({
             {/* Doctor practice info grid */}
             <div className="bg-soft-meadow/50 border-deep-ink/5 grid grid-cols-1 gap-3 rounded-xl border p-3.5 text-xs sm:grid-cols-2 sm:p-4 lg:grid-cols-3">
               <div>
-                <span className="text-slate block text-[11px]">Clinic / Hospital</span>
+                <span className="text-slate block text-[11px]">
+                  Clinic / Hospital
+                </span>
                 <span className="text-deep-ink block truncate font-semibold">
                   {doctor?.clinic || 'Independent Practice'}
                 </span>
@@ -106,7 +108,9 @@ export function PatientCare({
             <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-900">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
               <p className="leading-relaxed">
-                Dr. {doctor?.name} has authorized access to review your AI intake submissions, session transcripts, and SOAP clinical care plans.
+                Dr. {doctor?.name} has authorized access to review your AI
+                intake submissions, session transcripts, and SOAP clinical care
+                plans.
               </p>
             </div>
 
@@ -130,7 +134,9 @@ export function PatientCare({
         <div className="space-y-3">
           {isChangingDoctor && (
             <div className="flex items-center justify-between px-1">
-              <span className="text-slate text-xs">Connect with new healthcare provider</span>
+              <span className="text-slate text-xs">
+                Connect with new healthcare provider
+              </span>
               <Button
                 variant="link"
                 size="xs"

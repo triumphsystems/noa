@@ -45,10 +45,16 @@ export function PatientsSearch({
 
       {/* Patient Stats Badges */}
       <div className="flex flex-wrap gap-2.5 sm:gap-3">
-        <Badge variant="secondary" className="px-3 py-1.5 text-xs font-medium sm:px-4">
+        <Badge
+          variant="secondary"
+          className="px-3 py-1.5 text-xs font-medium sm:px-4"
+        >
           Total Patients: {totalCount}
         </Badge>
-        <Badge variant="success" className="px-3 py-1.5 text-xs font-medium sm:px-4">
+        <Badge
+          variant="success"
+          className="px-3 py-1.5 text-xs font-medium sm:px-4"
+        >
           With Conditions: {withConditionsCount}
         </Badge>
       </div>

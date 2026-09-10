@@ -15,15 +15,21 @@ export default function SummariesPage() {
   const patients = useDoctorStore((state) => state.patients);
   const isLoading = useDoctorStore((state) => state.isLoading);
   const error = useDoctorStore((state) => state.error);
-  const lastLoadedDoctorId = useDoctorStore((state) => state.lastLoadedDoctorId);
+  const lastLoadedDoctorId = useDoctorStore(
+    (state) => state.lastLoadedDoctorId
+  );
   const loadDashboard = useDoctorStore((state) => state.loadDashboard);
 
-  const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'active'>('all');
+  const [filterStatus, setFilterStatus] = useState<
+    'all' | 'completed' | 'active'
+  >('all');
 
   useEffect(() => {
     let resolvedDoctorId = doctorId;
     if (!resolvedDoctorId && typeof window !== 'undefined') {
-      const stored = window.localStorage.getItem('userId') || window.localStorage.getItem('doctorId');
+      const stored =
+        window.localStorage.getItem('userId') ||
+        window.localStorage.getItem('doctorId');
       if (stored) {
         resolvedDoctorId = stored;
         useDoctorStore.getState().setDoctorId(stored);
@@ -43,7 +49,8 @@ export default function SummariesPage() {
     const activeId =
       doctorId ||
       (typeof window !== 'undefined'
-        ? window.localStorage.getItem('userId') || window.localStorage.getItem('doctorId')
+        ? window.localStorage.getItem('userId') ||
+          window.localStorage.getItem('doctorId')
         : null);
     if (activeId) {
       void loadDashboard(activeId);
@@ -87,7 +94,10 @@ export default function SummariesPage() {
         </div>
       )}
 
-      <SummariesFilter filterStatus={filterStatus} onFilterChange={setFilterStatus} />
+      <SummariesFilter
+        filterStatus={filterStatus}
+        onFilterChange={setFilterStatus}
+      />
 
       <SummariesGrid
         isLoading={isLoading}

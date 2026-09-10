@@ -16,11 +16,14 @@ export const triageGenerateSchema = z.object({
     .string({ error: 'Chief complaint is required' })
     .trim()
     .min(1, 'Chief complaint is required'),
-  symptoms: z.any().refine((val) => {
-    if (typeof val === 'string') return val.trim().length > 0;
-    if (Array.isArray(val)) return val.length > 0;
-    return Boolean(val);
-  }, { message: 'Chief complaint and symptoms are required' }),
+  symptoms: z.any().refine(
+    (val) => {
+      if (typeof val === 'string') return val.trim().length > 0;
+      if (Array.isArray(val)) return val.length > 0;
+      return Boolean(val);
+    },
+    { message: 'Chief complaint and symptoms are required' }
+  ),
   vitalSigns: z.record(z.string(), z.unknown()).optional(),
 });
 
@@ -36,7 +39,9 @@ export const suggestionsGenerateSchema = z.object({
   currentSymptoms: z.string().optional(),
 });
 
-export type SuggestionsGenerateInput = z.infer<typeof suggestionsGenerateSchema>;
+export type SuggestionsGenerateInput = z.infer<
+  typeof suggestionsGenerateSchema
+>;
 
 export const summaryGenerateSchema = z.object({
   soapNote: z
@@ -75,4 +80,3 @@ export const transcribeSliceSchema = z.object({
 });
 
 export type TranscribeSliceInput = z.infer<typeof transcribeSliceSchema>;
-

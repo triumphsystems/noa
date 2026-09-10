@@ -29,9 +29,9 @@ export function OnboardingHeader({
           Doctor Licensure & Verification
         </h1>
         <p className="text-slate mt-1 max-w-2xl text-xs sm:text-sm">
-          To ensure patient safety and HIPAA compliance, all healthcare providers must
-          hold a verified medical license before accessing electronic health records
-          and clinical consultation tools.
+          To ensure patient safety and HIPAA compliance, all healthcare
+          providers must hold a verified medical license before accessing
+          electronic health records and clinical consultation tools.
         </p>
       </div>
 

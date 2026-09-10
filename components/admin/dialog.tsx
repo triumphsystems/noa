@@ -159,9 +159,9 @@ export function RejectionDialog({
           </div>
 
           <p className="text-slate text-xs leading-relaxed">
-            Select or specify why this clinician cannot be certified. This notice
-            will be recorded in the clinical governance audit trail and revoke
-            active privileges.
+            Select or specify why this clinician cannot be certified. This
+            notice will be recorded in the clinical governance audit trail and
+            revoke active privileges.
           </p>
 
           {/* Quick preset selector */}
@@ -263,9 +263,7 @@ export function DossierDialog({
                 {getDoctorInitials(doctor.name)}
               </div>
               <div>
-                <DialogTitle className="text-lg">
-                  Dr. {doctor.name}
-                </DialogTitle>
+                <DialogTitle className="text-lg">Dr. {doctor.name}</DialogTitle>
                 <DialogDescription className="text-slate text-xs">
                   Care Code: {doctor.careCode} • {doctor.clinic}
                 </DialogDescription>
@@ -305,12 +303,20 @@ export function DossierDialog({
             </h4>
             <div className="bg-soft-meadow/40 border-deep-ink/8 grid grid-cols-2 gap-4 rounded-xl border p-4">
               <div>
-                <span className="text-slate block font-medium">Full Legal Name</span>
-                <span className="text-deep-ink font-semibold">{doctor.name}</span>
+                <span className="text-slate block font-medium">
+                  Full Legal Name
+                </span>
+                <span className="text-deep-ink font-semibold">
+                  {doctor.name}
+                </span>
               </div>
               <div>
-                <span className="text-slate block font-medium">Primary Email</span>
-                <span className="text-deep-ink font-semibold">{doctor.email}</span>
+                <span className="text-slate block font-medium">
+                  Primary Email
+                </span>
+                <span className="text-deep-ink font-semibold">
+                  {doctor.email}
+                </span>
               </div>
               <div>
                 <span className="text-slate block font-medium">
@@ -384,10 +390,10 @@ export function DossierDialog({
             </div>
 
             {doctor.verifiedAt && (
-              <div className="bg-emerald-50/70 border-emerald-200/80 rounded-xl border p-3 text-emerald-900">
-                <span className="font-semibold">Verification Audit:</span> Approved on{' '}
-                {new Date(doctor.verifiedAt).toLocaleDateString()} by{' '}
-                {doctor.verifiedBy || 'Administrator'}.
+              <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/70 p-3 text-emerald-900">
+                <span className="font-semibold">Verification Audit:</span>{' '}
+                Approved on {new Date(doctor.verifiedAt).toLocaleDateString()}{' '}
+                by {doctor.verifiedBy || 'Administrator'}.
               </div>
             )}
 

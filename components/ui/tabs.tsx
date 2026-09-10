@@ -7,10 +7,7 @@ import { cn } from '@/lib/utils';
 
 const Tabs = TabsPrimitive.Root;
 
-function TabsList({
-  className,
-  ...props
-}: TabsPrimitive.List.Props) {
+function TabsList({ className, ...props }: TabsPrimitive.List.Props) {
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
@@ -23,15 +20,12 @@ function TabsList({
   );
 }
 
-function TabsTab({
-  className,
-  ...props
-}: TabsPrimitive.Tab.Props) {
+function TabsTab({ className, ...props }: TabsPrimitive.Tab.Props) {
   return (
     <TabsPrimitive.Tab
       data-slot="tabs-tab"
       className={cn(
-        'text-slate hover:text-deep-ink inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all outline-none disabled:pointer-events-none disabled:opacity-50 data-[selected]:border-deep-ink/8 data-[selected]:text-deep-ink data-[selected]:border data-[selected]:bg-white data-[selected]:font-semibold data-[selected]:shadow-2xs focus-visible:ring-2 focus-visible:ring-deep-ink/20',
+        'text-slate hover:text-deep-ink data-[selected]:border-deep-ink/8 data-[selected]:text-deep-ink focus-visible:ring-deep-ink/20 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 data-[selected]:border data-[selected]:bg-white data-[selected]:font-semibold data-[selected]:shadow-2xs',
         className
       )}
       {...props}
@@ -39,15 +33,12 @@ function TabsTab({
   );
 }
 
-function TabsPanel({
-  className,
-  ...props
-}: TabsPrimitive.Panel.Props) {
+function TabsPanel({ className, ...props }: TabsPrimitive.Panel.Props) {
   return (
     <TabsPrimitive.Panel
       data-slot="tabs-panel"
       className={cn(
-        'mt-3 focus-visible:ring-2 focus-visible:ring-deep-ink/20 focus-visible:outline-none',
+        'focus-visible:ring-deep-ink/20 mt-3 focus-visible:ring-2 focus-visible:outline-none',
         className
       )}
       {...props}

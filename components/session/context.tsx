@@ -75,7 +75,9 @@ export function PatientContextCard({
         {activePatient && (
           <div className="border-deep-ink/10 flex items-center gap-4 border-t pt-3 text-xs lg:border-t-0 lg:pt-0">
             <div>
-              <span className="text-slate block text-[11px]">Date of Birth</span>
+              <span className="text-slate block text-[11px]">
+                Date of Birth
+              </span>
               <span className="text-deep-ink font-semibold">
                 {activePatient.dateOfBirth || '—'}
               </span>

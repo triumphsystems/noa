@@ -19,7 +19,11 @@ export async function POST(
 
     const { id } = await params;
     if (!id) {
-      return apiError(API_ERROR_CODES.VALIDATION_ERROR, 'Doctor ID is required', 400);
+      return apiError(
+        API_ERROR_CODES.VALIDATION_ERROR,
+        'Doctor ID is required',
+        400
+      );
     }
 
     if (id !== auth.sub && auth.userType !== 'admin') {
@@ -40,7 +44,11 @@ export async function POST(
     if (file && file.size > 0) {
       // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        return apiError(API_ERROR_CODES.VALIDATION_ERROR, 'File size exceeds 10MB limit', 400);
+        return apiError(
+          API_ERROR_CODES.VALIDATION_ERROR,
+          'File size exceeds 10MB limit',
+          400
+        );
       }
 
       const buffer = Buffer.from(await file.arrayBuffer());
@@ -82,7 +90,11 @@ export async function POST(
     }
 
     if (!finalDocumentUrl) {
-      return apiError(API_ERROR_CODES.VALIDATION_ERROR, 'No file or document URL provided', 400);
+      return apiError(
+        API_ERROR_CODES.VALIDATION_ERROR,
+        'No file or document URL provided',
+        400
+      );
     }
 
     // Update doctor record with the license document URL

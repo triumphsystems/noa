@@ -18,7 +18,10 @@ export async function POST(request: NextRequest) {
     const parseResult = loginSchema.safeParse(rawBody);
 
     if (!parseResult.success) {
-      return zodValidationError(parseResult.error, 'Email and password are required');
+      return zodValidationError(
+        parseResult.error,
+        'Email and password are required'
+      );
     }
 
     const { email, password, userType } = parseResult.data;

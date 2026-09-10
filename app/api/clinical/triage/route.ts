@@ -2,7 +2,11 @@ import { NextRequest } from 'next/server';
 import { generateTriagePriority } from '@/lib/bedrock';
 import { requireAuth } from '@/lib/auth/guard';
 import { triageGenerateSchema } from '@/lib/validations';
-import { apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import {
+  apiSuccess,
+  handleApiError,
+  zodValidationError,
+} from '@/lib/api/response';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +22,10 @@ export async function POST(request: NextRequest) {
     const parseResult = triageGenerateSchema.safeParse(rawBody);
 
     if (!parseResult.success) {
-      return zodValidationError(parseResult.error, 'Chief complaint and symptoms are required');
+      return zodValidationError(
+        parseResult.error,
+        'Chief complaint and symptoms are required'
+      );
     }
 
     const { chiefComplaint, symptoms, vitalSigns } = parseResult.data;

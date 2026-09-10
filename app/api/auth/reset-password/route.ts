@@ -15,7 +15,10 @@ export async function POST(request: NextRequest) {
     const parseResult = resetPasswordSchema.safeParse(rawBody);
 
     if (!parseResult.success) {
-      return zodValidationError(parseResult.error, 'Password reset validation failed');
+      return zodValidationError(
+        parseResult.error,
+        'Password reset validation failed'
+      );
     }
 
     const { email, code, newPassword } = parseResult.data;

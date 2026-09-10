@@ -137,7 +137,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.error?.message || data.message || 'Verification failed');
+      throw new Error(
+        data.error?.message || data.message || 'Verification failed'
+      );
     }
   };
 

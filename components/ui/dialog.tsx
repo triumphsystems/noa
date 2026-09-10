@@ -43,7 +43,7 @@ function DialogPopup({
         <DialogPrimitive.Popup
           data-slot="dialog-popup"
           className={cn(
-            'border-deep-ink/10 shadow-editorial-elevated relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border bg-white p-6 transition-all data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 focus:outline-none',
+            'border-deep-ink/10 shadow-editorial-elevated relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border bg-white p-6 transition-all focus:outline-none data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
             className
           )}
           {...props}
@@ -52,7 +52,7 @@ function DialogPopup({
           {showClose && (
             <DialogPrimitive.Close
               data-slot="dialog-close"
-              className="text-slate hover:text-deep-ink hover:bg-soft-meadow absolute top-4 right-4 cursor-pointer rounded-lg p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-deep-ink/20 focus:outline-none"
+              className="text-slate hover:text-deep-ink hover:bg-soft-meadow focus-visible:ring-deep-ink/20 absolute top-4 right-4 cursor-pointer rounded-lg p-1.5 transition-colors focus:outline-none focus-visible:ring-2"
               aria-label="Close"
             >
               <X className="h-4 w-4" />
@@ -93,10 +93,7 @@ function DialogFooter({
   );
 }
 
-function DialogTitle({
-  className,
-  ...props
-}: DialogPrimitive.Title.Props) {
+function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"

@@ -42,7 +42,8 @@ export function CareCodeBanner({ careCode }: CareCodeBannerProps) {
           </span>
         </div>
         <p className="text-slate text-xs">
-          Patients can enter this code in their portal or start an intake directly with your pre-configured link.
+          Patients can enter this code in their portal or start an intake
+          directly with your pre-configured link.
         </p>
       </div>
 

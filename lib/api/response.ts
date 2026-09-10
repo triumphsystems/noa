@@ -141,9 +141,5 @@ export function handleApiError(
   }
 
   // 4. Opaque server error - strictly sanitized
-  return apiError(
-    API_ERROR_CODES.INTERNAL_SERVER_ERROR,
-    fallbackMessage,
-    500
-  );
+  return apiError(API_ERROR_CODES.INTERNAL_SERVER_ERROR, fallbackMessage, 500);
 }

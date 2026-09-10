@@ -27,11 +27,7 @@ export async function POST(
     const doctor = await getDoctorById(id);
 
     if (!doctor) {
-      return apiError(
-        API_ERROR_CODES.NOT_FOUND,
-        'Doctor not found.',
-        404
-      );
+      return apiError(API_ERROR_CODES.NOT_FOUND, 'Doctor not found.', 404);
     }
 
     // 1. Update verification state in DynamoDB
@@ -42,7 +38,8 @@ export async function POST(
     try {
       await addUserToCognitoGroup(doctor.email, 'Doctors');
     } catch (cognitoError) {
-      const msg = cognitoError instanceof Error ? cognitoError.message : 'Unknown error';
+      const msg =
+        cognitoError instanceof Error ? cognitoError.message : 'Unknown error';
       console.warn('[Admin API] Cognito group assignment warning:', msg);
       // Group assignment failure shouldn't fail the verification DB record if group already assigned
     }

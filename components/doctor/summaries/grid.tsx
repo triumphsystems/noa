@@ -3,7 +3,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, Calendar, FileText, Loader2 } from 'lucide-react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -48,14 +54,19 @@ export function SummariesGrid({
   return (
     <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
       {sessions.map((session) => {
-        const patient = session.patientId ? patientMap.get(session.patientId) : null;
+        const patient = session.patientId
+          ? patientMap.get(session.patientId)
+          : null;
         const patientNameParts = patient
           ? [patient.firstName, patient.lastName].filter(Boolean)
           : [];
         const patientName =
           patientNameParts.length > 0
             ? patientNameParts.join(' ').trim()
-            : patient?.email || (session.patientId ? `Patient #${session.patientId.slice(-6)}` : 'Patient');
+            : patient?.email ||
+              (session.patientId
+                ? `Patient #${session.patientId.slice(-6)}`
+                : 'Patient');
         const formattedDate = session.startedAt
           ? new Date(session.startedAt).toLocaleDateString('en-US', {
               month: 'short',
@@ -73,10 +84,18 @@ export function SummariesGrid({
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <CardTitle className="font-serif text-lg">{patientName}</CardTitle>
-                    <p className="text-slate mt-0.5 text-xs">Clinical Consultation</p>
+                    <CardTitle className="font-serif text-lg">
+                      {patientName}
+                    </CardTitle>
+                    <p className="text-slate mt-0.5 text-xs">
+                      Clinical Consultation
+                    </p>
                   </div>
-                  <Badge variant={session.status === 'completed' ? 'success' : 'secondary'}>
+                  <Badge
+                    variant={
+                      session.status === 'completed' ? 'success' : 'secondary'
+                    }
+                  >
                     {session.status === 'completed' ? 'Completed' : 'Active'}
                   </Badge>
                 </div>
@@ -122,7 +141,10 @@ export function SummariesGrid({
             </div>
 
             <CardFooter className="pt-2">
-              <Link href={`/dashboard/doctor/summaries/${session.id}`} className="w-full">
+              <Link
+                href={`/dashboard/doctor/summaries/${session.id}`}
+                className="w-full"
+              >
                 <Button
                   variant="outline"
                   className="border-deep-ink/15 text-deep-ink hover:bg-hi-yellow hover:border-hi-yellow group w-full cursor-pointer justify-between rounded-full px-5 font-medium transition-all"

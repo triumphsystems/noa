@@ -29,7 +29,10 @@ export function LandingFooter() {
           <Link href="/intake" className="transition-colors hover:text-white">
             Patient Check-in
           </Link>
-          <Link href="/auth/login" className="transition-colors hover:text-white">
+          <Link
+            href="/auth/login"
+            className="transition-colors hover:text-white"
+          >
             Portal Login
           </Link>
         </div>

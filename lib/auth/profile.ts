@@ -41,7 +41,7 @@ export async function resolveUserProfile(
           ? `${user.firstName} ${user.lastName || ''}`.trim()
           : 'User';
 
-    const avatar = 'avatar' in user ? user.avatar ?? null : null;
+    const avatar = 'avatar' in user ? (user.avatar ?? null) : null;
 
     return {
       id: user.id,
@@ -51,7 +51,10 @@ export async function resolveUserProfile(
       avatar,
     };
   } catch (error) {
-    console.error(`[Profile] Failed to resolve ${userType} profile for ${sub}:`, error);
+    console.error(
+      `[Profile] Failed to resolve ${userType} profile for ${sub}:`,
+      error
+    );
     return null;
   }
 }

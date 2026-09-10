@@ -202,14 +202,18 @@ export function PatientsTable({
                     </td>
                     <td className="text-slate px-6 py-4 text-sm whitespace-nowrap">
                       {patient.linkStatus === 'pending_patient_approval' ? (
-                        <span className="text-slate/60 text-xs italic">Hidden</span>
+                        <span className="text-slate/60 text-xs italic">
+                          Hidden
+                        </span>
                       ) : (
                         patient.phone || '—'
                       )}
                     </td>
                     <td className="text-slate px-6 py-4 text-sm whitespace-nowrap">
                       {patient.linkStatus === 'pending_patient_approval' ? (
-                        <span className="text-slate/60 text-xs italic">Hidden</span>
+                        <span className="text-slate/60 text-xs italic">
+                          Hidden
+                        </span>
                       ) : (
                         patient.dateOfBirth || '—'
                       )}
@@ -246,19 +250,24 @@ export function PatientsTable({
                     </td>
                     <td className="text-slate px-6 py-4 text-sm">
                       {patient.linkStatus === 'pending_patient_approval' ? (
-                        <span className="text-slate/50 text-xs italic">Locked</span>
+                        <span className="text-slate/50 text-xs italic">
+                          Locked
+                        </span>
                       ) : (
                         <div className="flex max-w-xs flex-wrap gap-1.5">
-                          {patient.conditions && patient.conditions.length > 0 ? (
-                            patient.conditions.slice(0, 2).map((condition, idx) => (
-                              <Badge
-                                key={idx}
-                                variant="secondary"
-                                className="px-2 py-0.5 text-[11px]"
-                              >
-                                {condition}
-                              </Badge>
-                            ))
+                          {patient.conditions &&
+                          patient.conditions.length > 0 ? (
+                            patient.conditions
+                              .slice(0, 2)
+                              .map((condition, idx) => (
+                                <Badge
+                                  key={idx}
+                                  variant="secondary"
+                                  className="px-2 py-0.5 text-[11px]"
+                                >
+                                  {condition}
+                                </Badge>
+                              ))
                           ) : (
                             <span className="text-slate/60 text-xs">—</span>
                           )}

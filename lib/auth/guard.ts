@@ -19,8 +19,7 @@ export type VerifiedAuth = Required<
   VerifiedAuthPayload;
 
 export type AuthGuardResult =
-  | { ok: true; auth: VerifiedAuth }
-  | { ok: false; response: NextResponse };
+  { ok: true; auth: VerifiedAuth } | { ok: false; response: NextResponse };
 
 export interface GuardRateLimitOptions extends RateLimitConfig {
   /** Optional namespace prefix for the rate limit key. Defaults to 'api'. */
@@ -55,22 +54,14 @@ export async function requireAuth(
   if (!auth.isValid || !auth.sub || !isValidRole(auth.userType)) {
     return {
       ok: false,
-      response: apiError(
-        API_ERROR_CODES.UNAUTHORIZED,
-        'Unauthorized',
-        401
-      ),
+      response: apiError(API_ERROR_CODES.UNAUTHORIZED, 'Unauthorized', 401),
     };
   }
 
   if (allowedRoles && !allowedRoles.includes(auth.userType)) {
     return {
       ok: false,
-      response: apiError(
-        API_ERROR_CODES.FORBIDDEN,
-        'Forbidden',
-        403
-      ),
+      response: apiError(API_ERROR_CODES.FORBIDDEN, 'Forbidden', 403),
     };
   }
 

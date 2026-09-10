@@ -80,7 +80,8 @@ export function PatientHeader({
               </span>
             </div>
             <p className="text-slate text-xs">
-              Your encrypted personal AI health records and consultation summaries
+              Your encrypted personal AI health records and consultation
+              summaries
             </p>
           </div>
         </div>
@@ -94,7 +95,10 @@ export function PatientHeader({
             className="border-deep-ink/10 hover:bg-soft-meadow text-slate hover:text-deep-ink flex cursor-pointer items-center gap-1.5 rounded-full border bg-white px-3 py-1.5 text-xs shadow-2xs transition-colors"
           >
             <RefreshCw
-              className={cn('h-3.5 w-3.5', isLoading && 'text-deep-ink animate-spin')}
+              className={cn(
+                'h-3.5 w-3.5',
+                isLoading && 'text-deep-ink animate-spin'
+              )}
             />
             <span className="hidden sm:inline">Refresh</span>
           </button>
@@ -133,7 +137,9 @@ export function PatientHeader({
                 <span
                   className={cn(
                     'py-0.2 rounded-full px-1.5 text-[10px] font-bold',
-                    isActive ? 'bg-hi-yellow text-deep-ink' : 'bg-amber-100 text-amber-900'
+                    isActive
+                      ? 'bg-hi-yellow text-deep-ink'
+                      : 'bg-amber-100 text-amber-900'
                   )}
                 >
                   {tab.badge}

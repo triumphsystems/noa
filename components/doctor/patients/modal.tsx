@@ -78,7 +78,8 @@ export function InviteModal({
               placeholder="patient@example.com"
             />
             <DialogDescription className="text-[10px]">
-              If the patient already has a Noa account, an invitation request will appear on their portal.
+              If the patient already has a Noa account, an invitation request
+              will appear on their portal.
             </DialogDescription>
           </div>
 

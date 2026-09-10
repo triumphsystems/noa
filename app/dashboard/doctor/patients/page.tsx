@@ -28,14 +28,19 @@ export default function PatientsPage() {
     text: string;
   } | null>(null);
 
-  const [linkActionLoadingId, setLinkActionLoadingId] = useState<string | null>(null);
-  const [actionNotification, setActionNotification] = useState<PatientActionNotification | null>(null);
+  const [linkActionLoadingId, setLinkActionLoadingId] = useState<string | null>(
+    null
+  );
+  const [actionNotification, setActionNotification] =
+    useState<PatientActionNotification | null>(null);
 
   const doctorId = useDoctorStore((state) => state.doctorId);
   const doctor = useDoctorStore((state) => state.doctor);
   const patients = useDoctorStore((state) => state.patients);
   const isLoading = useDoctorStore((state) => state.isLoading);
-  const lastLoadedDoctorId = useDoctorStore((state) => state.lastLoadedDoctorId);
+  const lastLoadedDoctorId = useDoctorStore(
+    (state) => state.lastLoadedDoctorId
+  );
   const loadDashboard = useDoctorStore((state) => state.loadDashboard);
 
   useEffect(() => {
@@ -100,7 +105,10 @@ export default function PatientsPage() {
     }
   };
 
-  const handleRespondLink = async (patientId: string, action: 'accept' | 'decline') => {
+  const handleRespondLink = async (
+    patientId: string,
+    action: 'accept' | 'decline'
+  ) => {
     if (linkActionLoadingId) return;
     setLinkActionLoadingId(patientId);
     setActionNotification(null);
@@ -113,20 +121,26 @@ export default function PatientsPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || `Failed to ${action} patient request`);
+      if (!res.ok)
+        throw new Error(data.message || `Failed to ${action} patient request`);
 
       setActionNotification({
         type: 'success',
         message:
           data.message ||
-          (action === 'accept' ? 'Patient connection approved.' : 'Patient connection declined.'),
+          (action === 'accept'
+            ? 'Patient connection approved.'
+            : 'Patient connection declined.'),
       });
 
       if (doctorId) {
         await loadDashboard(doctorId);
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : `Failed to ${action} patient request`;
+      const message =
+        err instanceof Error
+          ? err.message
+          : `Failed to ${action} patient request`;
       setActionNotification({ type: 'error', message });
     } finally {
       setLinkActionLoadingId(null);

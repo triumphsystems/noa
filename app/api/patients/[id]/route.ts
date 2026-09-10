@@ -7,7 +7,12 @@ import {
 } from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
 import { patientProfileUpdateSchema } from '@/lib/validations';
-import { apiError, apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import {
+  apiError,
+  apiSuccess,
+  handleApiError,
+  zodValidationError,
+} from '@/lib/api/response';
 import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function GET(
@@ -32,11 +37,7 @@ export async function GET(
     const patient = await getPatientById(id);
 
     if (!patient) {
-      return apiError(
-        API_ERROR_CODES.NOT_FOUND,
-        'Patient not found',
-        404
-      );
+      return apiError(API_ERROR_CODES.NOT_FOUND, 'Patient not found', 404);
     }
 
     // -----------------------------------------------------------------------
@@ -154,7 +155,10 @@ export async function PATCH(
     const parseResult = patientProfileUpdateSchema.safeParse(rawBody);
 
     if (!parseResult.success) {
-      return zodValidationError(parseResult.error, 'At least one field is required for update');
+      return zodValidationError(
+        parseResult.error,
+        'At least one field is required for update'
+      );
     }
 
     const body = parseResult.data;
@@ -166,8 +170,7 @@ export async function PATCH(
     if (body.dateOfBirth !== undefined)
       allowedUpdates.dateOfBirth = body.dateOfBirth;
     if (body.address !== undefined) allowedUpdates.address = body.address;
-    if (body.allergies !== undefined)
-      allowedUpdates.allergies = body.allergies;
+    if (body.allergies !== undefined) allowedUpdates.allergies = body.allergies;
     if (body.medications !== undefined)
       allowedUpdates.medications = body.medications;
     if (body.conditions !== undefined)

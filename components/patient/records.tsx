@@ -27,7 +27,9 @@ export function PatientRecords({
       {/* Screen Header */}
       <div className="border-deep-ink/10 flex items-center justify-between rounded-2xl border bg-white p-4 shadow-2xs">
         <div>
-          <h2 className="text-deep-ink font-serif text-lg font-bold">Health Records</h2>
+          <h2 className="text-deep-ink font-serif text-lg font-bold">
+            Health Records
+          </h2>
           <p className="text-slate text-xs">
             Your verified medical baseline and security rights.
           </p>
@@ -63,7 +65,10 @@ export function PatientRecords({
               </p>
             </div>
           </div>
-          <Badge variant={intake ? 'success' : 'default'} className="text-[10px]">
+          <Badge
+            variant={intake ? 'success' : 'default'}
+            className="text-[10px]"
+          >
             {intake ? 'Completed' : 'Pending'}
           </Badge>
         </div>

@@ -242,7 +242,10 @@ export function LandingNav() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full"
               >
-                <Button variant="dark" className="w-full rounded-lg font-medium">
+                <Button
+                  variant="dark"
+                  className="w-full rounded-lg font-medium"
+                >
                   Get Started
                 </Button>
               </Link>

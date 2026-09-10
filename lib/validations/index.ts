@@ -4,5 +4,3 @@ export * from './doctor';
 export * from './patient';
 export * from './intake';
 export * from './session';
-
-

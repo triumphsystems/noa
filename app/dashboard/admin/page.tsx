@@ -26,7 +26,9 @@ export default function AdminDashboardPage() {
   const [doctors, setDoctors] = useState<DoctorItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'pending' | 'verified' | 'rejected' | 'all'>('pending');
+  const [activeTab, setActiveTab] = useState<
+    'pending' | 'verified' | 'rejected' | 'all'
+  >('pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name'>('newest');
@@ -36,8 +38,11 @@ export default function AdminDashboardPage() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
 
   // Dialog states
-  const [approvingDoctor, setApprovingDoctor] = useState<DoctorItem | null>(null);
-  const [rejectionModalDoctor, setRejectionModalDoctor] = useState<DoctorItem | null>(null);
+  const [approvingDoctor, setApprovingDoctor] = useState<DoctorItem | null>(
+    null
+  );
+  const [rejectionModalDoctor, setRejectionModalDoctor] =
+    useState<DoctorItem | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [revokingDoctor, setRevokingDoctor] = useState<DoctorItem | null>(null);
   const [dossierDoctor, setDossierDoctor] = useState<DoctorItem | null>(null);
@@ -81,7 +86,10 @@ export default function AdminDashboardPage() {
         throw new Error(data?.message || 'Failed to load clinicians');
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load clinicians registry';
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Failed to load clinicians registry';
       setNotification({ type: 'error', message });
     } finally {
       setLoading(false);
@@ -93,12 +101,19 @@ export default function AdminDashboardPage() {
     void fetchDoctors();
   }, []);
 
-  const counts = useMemo(() => ({
-    pending: doctors.filter((d) => (d.verificationStatus || 'pending') === 'pending').length,
-    verified: doctors.filter((d) => d.verificationStatus === 'verified').length,
-    rejected: doctors.filter((d) => d.verificationStatus === 'rejected').length,
-    total: doctors.length,
-  }), [doctors]);
+  const counts = useMemo(
+    () => ({
+      pending: doctors.filter(
+        (d) => (d.verificationStatus || 'pending') === 'pending'
+      ).length,
+      verified: doctors.filter((d) => d.verificationStatus === 'verified')
+        .length,
+      rejected: doctors.filter((d) => d.verificationStatus === 'rejected')
+        .length,
+      total: doctors.length,
+    }),
+    [doctors]
+  );
 
   const specialties = useMemo(() => {
     const set = new Set<string>();
@@ -122,10 +137,12 @@ export default function AdminDashboardPage() {
           doc.license.toLowerCase().includes(query) ||
           doc.careCode.toLowerCase().includes(query) ||
           doc.specialty.toLowerCase().includes(query) ||
-          (doc.issuingAuthority && doc.issuingAuthority.toLowerCase().includes(query));
+          (doc.issuingAuthority &&
+            doc.issuingAuthority.toLowerCase().includes(query));
 
         const matchesSpecialty =
-          specialtyFilter === 'all' || doc.specialty.toLowerCase() === specialtyFilter.toLowerCase();
+          specialtyFilter === 'all' ||
+          doc.specialty.toLowerCase() === specialtyFilter.toLowerCase();
 
         return matchesTab && matchesSearch && matchesSpecialty;
       })
@@ -150,7 +167,10 @@ export default function AdminDashboardPage() {
       if (dossierDoctor?.id === doctor.id) setDossierDoctor(null);
       await fetchDoctors();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to approve clinician verification.';
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Failed to approve clinician verification.';
       setNotification({ type: 'error', message });
     } finally {
       setActionLoadingId(null);
@@ -163,7 +183,8 @@ export default function AdminDashboardPage() {
     setActionLoadingId(target.id);
     setNotification(null);
     const reason =
-      rejectionReason.trim() || 'Medical credentials could not be verified with the issuing authority.';
+      rejectionReason.trim() ||
+      'Medical credentials could not be verified with the issuing authority.';
 
     try {
       await http.post(`/api/admin/doctors/${target.id}/reject`, { reason });
@@ -177,7 +198,10 @@ export default function AdminDashboardPage() {
       if (dossierDoctor?.id === target.id) setDossierDoctor(null);
       await fetchDoctors();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to revoke clinician status.';
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Failed to revoke clinician status.';
       setNotification({ type: 'error', message });
     } finally {
       setActionLoadingId(null);
@@ -193,9 +217,19 @@ export default function AdminDashboardPage() {
   const handleExportCSV = () => {
     if (doctors.length === 0) return;
     const headers = [
-      'Doctor ID', 'Name', 'Email', 'Specialty', 'Clinic', 'Care Code',
-      'License Number', 'Issuing Authority', 'Verification Status',
-      'Registered At', 'Verified At', 'Verified By', 'Rejection Reason',
+      'Doctor ID',
+      'Name',
+      'Email',
+      'Specialty',
+      'Clinic',
+      'Care Code',
+      'License Number',
+      'Issuing Authority',
+      'Verification Status',
+      'Registered At',
+      'Verified At',
+      'Verified By',
+      'Rejection Reason',
     ];
     const rows = doctors.map((doc) => [
       `"${doc.id}"`,
@@ -212,10 +246,15 @@ export default function AdminDashboardPage() {
       `"${doc.verifiedBy || ''}"`,
       `"${(doc.rejectionReason || '').replace(/"/g, '""')}"`,
     ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const csvContent =
+      'data:text/csv;charset=utf-8,' +
+      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const link = document.createElement('a');
     link.setAttribute('href', encodeURI(csvContent));
-    link.setAttribute('download', `noa-clinician-verification-audit-${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute(
+      'download',
+      `noa-clinician-verification-audit-${new Date().toISOString().slice(0, 10)}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -251,20 +290,35 @@ export default function AdminDashboardPage() {
           <div
             className={cn(
               'animate-in fade-in slide-in-from-top-2 flex items-start justify-between gap-3 rounded-xl border p-3.5 text-xs break-words shadow-xs transition-all sm:p-4 sm:text-sm',
-              notification.type === 'success' && 'border-emerald-200 bg-emerald-50 text-emerald-900',
-              notification.type === 'error' && 'border-rose-200 bg-rose-50 text-rose-900',
-              notification.type === 'info' && 'border-teal-200 bg-teal-50 text-teal-900'
+              notification.type === 'success' &&
+                'border-emerald-200 bg-emerald-50 text-emerald-900',
+              notification.type === 'error' &&
+                'border-rose-200 bg-rose-50 text-rose-900',
+              notification.type === 'info' &&
+                'border-teal-200 bg-teal-50 text-teal-900'
             )}
           >
             <div className="flex min-w-0 flex-1 items-start gap-2.5">
-              {notification.type === 'success' && <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />}
-              {notification.type === 'error' && <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" />}
-              {notification.type === 'info' && <Info className="mt-0.5 h-5 w-5 shrink-0 text-teal-600" />}
+              {notification.type === 'success' && (
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+              )}
+              {notification.type === 'error' && (
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" />
+              )}
+              {notification.type === 'info' && (
+                <Info className="mt-0.5 h-5 w-5 shrink-0 text-teal-600" />
+              )}
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold tracking-wide uppercase opacity-80">
-                  {notification.type === 'success' ? 'Action Completed' : notification.type === 'error' ? 'Validation Notice' : 'System Notice'}
+                  {notification.type === 'success'
+                    ? 'Action Completed'
+                    : notification.type === 'error'
+                      ? 'Validation Notice'
+                      : 'System Notice'}
                 </p>
-                <p className="mt-0.5 text-xs leading-relaxed break-words sm:text-sm">{notification.message}</p>
+                <p className="mt-0.5 text-xs leading-relaxed break-words sm:text-sm">
+                  {notification.message}
+                </p>
               </div>
             </div>
             <button
@@ -276,7 +330,11 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        <AdminMetrics counts={counts} activeTab={activeTab} onTabChange={setActiveTab} />
+        <AdminMetrics
+          counts={counts}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
 
         <AdminToolbar
           searchQuery={searchQuery}

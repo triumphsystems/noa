@@ -17,7 +17,10 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { WelcomeBanner } from './welcome-banner';
-import type { PatientProfile, PatientDashboardPayload } from '@/lib/types/patient.types';
+import type {
+  PatientProfile,
+  PatientDashboardPayload,
+} from '@/lib/types/patient.types';
 import type { Doctor, PatientIntake, Session } from '@/lib/db';
 import type { PatientScreenTab } from './types';
 
@@ -80,7 +83,8 @@ export function PatientOverview({
                 Dr. {pendingDoctor.name} invited you to connect
               </h4>
               <p className="text-slate mt-0.5 text-xs leading-relaxed">
-                Accept to share your AI intake summaries and consultation notes with your clinician.
+                Accept to share your AI intake summaries and consultation notes
+                with your clinician.
               </p>
             </div>
           </div>
@@ -146,7 +150,8 @@ export function PatientOverview({
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 sm:h-4 sm:w-4" />
               </div>
               <div className="mt-1.5 font-serif text-2xl font-bold text-emerald-700 sm:text-3xl">
-                {stats?.completedConsultations ?? sessions.filter((s) => s.status === 'completed').length}
+                {stats?.completedConsultations ??
+                  sessions.filter((s) => s.status === 'completed').length}
               </div>
               <span className="text-slate block truncate text-[10px] sm:text-xs">
                 Completed visits
@@ -192,12 +197,18 @@ export function PatientOverview({
             {sessions.length === 0 ? (
               <Card className="rounded-2xl border-dashed bg-white/70 p-6 text-center sm:p-8">
                 <Clock className="text-slate/40 mx-auto mb-2 h-8 w-8" />
-                <p className="text-slate text-xs font-medium">No consultation visits recorded yet.</p>
+                <p className="text-slate text-xs font-medium">
+                  No consultation visits recorded yet.
+                </p>
                 <p className="text-slate/70 mt-1 mb-3 text-[11px]">
-                  Your summaries and AI care plans will appear here after consultations.
+                  Your summaries and AI care plans will appear here after
+                  consultations.
                 </p>
                 <Link href="/intake">
-                  <Button variant="outline" className="h-8 cursor-pointer rounded-full px-4 text-xs font-semibold">
+                  <Button
+                    variant="outline"
+                    className="h-8 cursor-pointer rounded-full px-4 text-xs font-semibold"
+                  >
                     Start First Intake
                   </Button>
                 </Link>
@@ -215,7 +226,9 @@ export function PatientOverview({
                     </h4>
                   </div>
                   <Badge
-                    variant={recent?.status === 'completed' ? 'success' : 'default'}
+                    variant={
+                      recent?.status === 'completed' ? 'success' : 'default'
+                    }
                     className="text-[10px]"
                   >
                     {recent?.status === 'completed' ? 'Completed' : 'Active'}
@@ -226,7 +239,10 @@ export function PatientOverview({
                   {summarySnippet}
                 </p>
 
-                <Link href={`/dashboard/patient/consultations/${recent?.id}`} className="block">
+                <Link
+                  href={`/dashboard/patient/consultations/${recent?.id}`}
+                  className="block"
+                >
                   <Button className="bg-hi-yellow text-deep-ink hover:bg-hi-yellow/90 h-9 w-full cursor-pointer gap-1.5 rounded-xl text-xs font-semibold shadow-2xs">
                     <span>View Full Clinical Report</span>
                     <ChevronRight className="h-3.5 w-3.5" />
@@ -244,7 +260,9 @@ export function PatientOverview({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Stethoscope className="text-deep-ink h-4 w-4" />
-                <h3 className="text-deep-ink font-serif text-sm font-bold">Your Physician</h3>
+                <h3 className="text-deep-ink font-serif text-sm font-bold">
+                  Your Physician
+                </h3>
               </div>
               <button
                 onClick={() => onNavigateTab('care-team')}
@@ -258,9 +276,12 @@ export function PatientOverview({
             {hasDoctor ? (
               <div className="bg-soft-meadow/50 border-deep-ink/5 flex items-center justify-between rounded-xl border p-3">
                 <div className="min-w-0">
-                  <p className="text-deep-ink truncate text-sm font-bold">Dr. {doctor?.name}</p>
+                  <p className="text-deep-ink truncate text-sm font-bold">
+                    Dr. {doctor?.name}
+                  </p>
                   <p className="text-slate truncate text-xs">
-                    {doctor?.specialty || 'General Practice'} • {doctor?.clinic || 'Clinical Center'}
+                    {doctor?.specialty || 'General Practice'} •{' '}
+                    {doctor?.clinic || 'Clinical Center'}
                   </p>
                 </div>
                 <Badge variant="success" className="shrink-0 text-[10px]">
@@ -270,8 +291,12 @@ export function PatientOverview({
             ) : (
               <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200/60 bg-amber-50/60 p-3">
                 <div>
-                  <p className="text-xs font-semibold text-amber-900">No Doctor Linked</p>
-                  <p className="text-slate text-[11px]">Connect with your physician using their Care Code.</p>
+                  <p className="text-xs font-semibold text-amber-900">
+                    No Doctor Linked
+                  </p>
+                  <p className="text-slate text-[11px]">
+                    Connect with your physician using their Care Code.
+                  </p>
                 </div>
                 <Button
                   size="sm"
@@ -296,10 +321,16 @@ export function PatientOverview({
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <div>
-                <h4 className="text-deep-ink text-xs font-bold">Medical Information & Medications</h4>
+                <h4 className="text-deep-ink text-xs font-bold">
+                  Medical Information & Medications
+                </h4>
                 <p className="text-slate mt-0.5 text-[11px]">
-                  {intake?.medications?.length || patient?.medications?.length || 0} meds •{' '}
-                  {intake?.allergies?.length || patient?.allergies?.length || 0} allergies documented
+                  {intake?.medications?.length ||
+                    patient?.medications?.length ||
+                    0}{' '}
+                  meds •{' '}
+                  {intake?.allergies?.length || patient?.allergies?.length || 0}{' '}
+                  allergies documented
                 </p>
               </div>
             </div>

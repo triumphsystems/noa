@@ -3,7 +3,12 @@ import { createIntake, getIntakesByPatient } from '@/lib/db';
 import { getAuthenticatedUser } from '@/lib/auth/jwt';
 import { requireAuth } from '@/lib/auth/guard';
 import { intakeSubmitSchema } from '@/lib/validations';
-import { apiError, apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import {
+  apiError,
+  apiSuccess,
+  handleApiError,
+  zodValidationError,
+} from '@/lib/api/response';
 import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function POST(request: NextRequest) {
@@ -14,7 +19,10 @@ export async function POST(request: NextRequest) {
     const parseResult = intakeSubmitSchema.safeParse(rawBody);
 
     if (!parseResult.success) {
-      return zodValidationError(parseResult.error, 'Intake submission validation failed');
+      return zodValidationError(
+        parseResult.error,
+        'Intake submission validation failed'
+      );
     }
 
     const {

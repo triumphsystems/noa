@@ -17,9 +17,13 @@ export default function DoctorSettingsPage() {
   const isLoading = useDoctorStore((state) => state.isLoading);
   const error = useDoctorStore((state) => state.error);
   const loadDashboard = useDoctorStore((state) => state.loadDashboard);
-  const updateDoctorProfile = useDoctorStore((state) => state.updateDoctorProfile);
+  const updateDoctorProfile = useDoctorStore(
+    (state) => state.updateDoctorProfile
+  );
 
-  const [formState, setFormState] = useState<SettingsFormState>(DEFAULT_SETTINGS_FORM);
+  const [formState, setFormState] = useState<SettingsFormState>(
+    DEFAULT_SETTINGS_FORM
+  );
   const [success, setSuccess] = useState('');
 
   useEffect(() => {

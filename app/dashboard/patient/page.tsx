@@ -24,7 +24,9 @@ export default function PatientDashboardPage() {
 
   const initialTab = (searchParams.get('tab') as PatientScreenTab) || 'home';
   const [activeTab, setActiveTab] = useState<PatientScreenTab>(
-    ['home', 'visits', 'care-team', 'records'].includes(initialTab) ? initialTab : 'home'
+    ['home', 'visits', 'care-team', 'records'].includes(initialTab)
+      ? initialTab
+      : 'home'
   );
 
   const {
@@ -66,7 +68,9 @@ export default function PatientDashboardPage() {
   useEffect(() => {
     let resolvedId = patientId;
     if (!resolvedId && typeof window !== 'undefined') {
-      const stored = window.localStorage.getItem('userId') || window.localStorage.getItem('patientId');
+      const stored =
+        window.localStorage.getItem('userId') ||
+        window.localStorage.getItem('patientId');
       if (stored) {
         resolvedId = stored;
         setPatientId(stored);
@@ -92,7 +96,9 @@ export default function PatientDashboardPage() {
     }
   };
 
-  const fullName = patient ? `${patient.firstName} ${patient.lastName}`.trim() : '';
+  const fullName = patient
+    ? `${patient.firstName} ${patient.lastName}`.trim()
+    : '';
   const hasDoctor = Boolean(patient?.doctorId && doctor);
   const isPendingApproval = patient?.linkStatus === 'pending_patient_approval';
 
@@ -121,7 +127,11 @@ export default function PatientDashboardPage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#f9fbf2] p-4">
         <div className="w-full max-w-md space-y-4">
-          <ErrorAlert variant="card" title="Unable to Load Health Portal" message={error} />
+          <ErrorAlert
+            variant="card"
+            title="Unable to Load Health Portal"
+            message={error}
+          />
           <div className="text-center">
             <Button
               variant="outline"

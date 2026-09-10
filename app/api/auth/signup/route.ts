@@ -20,7 +20,10 @@ export async function POST(request: NextRequest) {
     const parseResult = signupSchema.safeParse(rawBody);
 
     if (!parseResult.success) {
-      return zodValidationError(parseResult.error, 'Registration validation failed');
+      return zodValidationError(
+        parseResult.error,
+        'Registration validation failed'
+      );
     }
 
     const {

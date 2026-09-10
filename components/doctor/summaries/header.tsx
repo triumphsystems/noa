@@ -9,7 +9,10 @@ interface SummariesHeaderProps {
   onRefresh: () => void;
 }
 
-export function SummariesHeader({ isLoading, onRefresh }: SummariesHeaderProps) {
+export function SummariesHeader({
+  isLoading,
+  onRefresh,
+}: SummariesHeaderProps) {
   return (
     <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
       <div>
@@ -17,7 +20,8 @@ export function SummariesHeader({ isLoading, onRefresh }: SummariesHeaderProps) 
           Clinical Summaries
         </h1>
         <p className="text-slate text-xs sm:text-sm">
-          Review, verify, and export live consultation notes and SOAP assessments
+          Review, verify, and export live consultation notes and SOAP
+          assessments
         </p>
       </div>
       <Button
@@ -27,7 +31,9 @@ export function SummariesHeader({ isLoading, onRefresh }: SummariesHeaderProps) 
         disabled={isLoading}
         className="border-deep-ink/15 cursor-pointer gap-2 self-start rounded-xl text-xs font-semibold sm:self-auto"
       >
-        <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+        <RefreshCw
+          className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`}
+        />
         <span>Refresh</span>
       </Button>
     </div>

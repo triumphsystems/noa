@@ -22,7 +22,9 @@ export function DoctorRecentSessions({
 }: DoctorRecentSessionsProps) {
   const getPatientName = (patientId: string) => {
     const patient = patients.find((entry) => entry.id === patientId);
-    return patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown Patient';
+    return patient
+      ? `${patient.firstName} ${patient.lastName}`
+      : 'Unknown Patient';
   };
 
   const formatSessionTime = (startedAt: number) => {
@@ -61,7 +63,10 @@ export function DoctorRecentSessions({
           description="Start your first AI-assisted clinical consultation to see transcripts and SOAP notes here."
           action={
             <Link href="/dashboard/doctor/sessions/new">
-              <Button size="sm" className="gap-2 rounded-lg text-xs font-semibold">
+              <Button
+                size="sm"
+                className="gap-2 rounded-lg text-xs font-semibold"
+              >
                 <Plus className="h-4 w-4" />
                 Start New Session
               </Button>
@@ -98,7 +103,8 @@ export function DoctorRecentSessions({
                     </Badge>
                   </div>
                   <p className="text-slate line-clamp-1 text-sm">
-                    {session.soapNote?.assessment || 'No clinical assessment yet'}
+                    {session.soapNote?.assessment ||
+                      'No clinical assessment yet'}
                   </p>
                   <div className="text-slate flex items-center gap-2 pt-1 text-xs">
                     <Clock className="h-3.5 w-3.5 shrink-0" />
@@ -113,10 +119,14 @@ export function DoctorRecentSessions({
                   >
                     <Button
                       size="sm"
-                      variant={session.status === 'completed' ? 'secondary' : 'default'}
+                      variant={
+                        session.status === 'completed' ? 'secondary' : 'default'
+                      }
                       className="w-full rounded-full font-medium sm:w-auto"
                     >
-                      {session.status === 'completed' ? 'View Note' : 'Continue Session'}
+                      {session.status === 'completed'
+                        ? 'View Note'
+                        : 'Continue Session'}
                     </Button>
                   </Link>
                 </div>

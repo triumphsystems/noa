@@ -10,7 +10,13 @@ import {
   Stethoscope,
   Upload,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +24,9 @@ import type { DoctorOnboardingFormData } from './types';
 
 interface OnboardingFormProps {
   formData: DoctorOnboardingFormData;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  onChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => void;
   selectedFile: File | null;
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   certified: boolean;
@@ -60,7 +68,8 @@ export function OnboardingForm({
                 : 'Medical Licensure & Practice Details'}
             </CardTitle>
             <CardDescription className="text-slate mt-0.5 text-xs">
-              Enter your official registration details exactly as they appear on your state or national medical register.
+              Enter your official registration details exactly as they appear on
+              your state or national medical register.
             </CardDescription>
           </div>
           <Badge variant="outline" className="font-sans text-xs">
@@ -95,7 +104,8 @@ export function OnboardingForm({
 
               <div className="space-y-1.5">
                 <label className="text-deep-ink block text-xs font-semibold">
-                  Primary Clinical Specialty <span className="text-rose-600">*</span>
+                  Primary Clinical Specialty{' '}
+                  <span className="text-rose-600">*</span>
                 </label>
                 <Input
                   type="text"
@@ -111,7 +121,8 @@ export function OnboardingForm({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label className="text-deep-ink block text-xs font-semibold">
-                  Clinic / Hospital Affiliation <span className="text-rose-600">*</span>
+                  Clinic / Hospital Affiliation{' '}
+                  <span className="text-rose-600">*</span>
                 </label>
                 <Input
                   type="text"
@@ -148,7 +159,8 @@ export function OnboardingForm({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label className="text-deep-ink block text-xs font-semibold">
-                  Medical License / Registration Number <span className="text-rose-600">*</span>
+                  Medical License / Registration Number{' '}
+                  <span className="text-rose-600">*</span>
                 </label>
                 <Input
                   type="text"
@@ -160,13 +172,15 @@ export function OnboardingForm({
                   placeholder="e.g. C123456, GMC-7654321, NPI-1982734123"
                 />
                 <p className="text-slate text-[11px]">
-                  Your primary state board license, GMC number, or medical council registration.
+                  Your primary state board license, GMC number, or medical
+                  council registration.
                 </p>
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-deep-ink block text-xs font-semibold">
-                  Issuing Board / Regulatory Authority <span className="text-rose-600">*</span>
+                  Issuing Board / Regulatory Authority{' '}
+                  <span className="text-rose-600">*</span>
                 </label>
                 <Input
                   type="text"
@@ -177,7 +191,8 @@ export function OnboardingForm({
                   placeholder="e.g. Medical Board of California, GMC UK"
                 />
                 <p className="text-slate text-[11px]">
-                  The official body responsible for issuing and verifying your license.
+                  The official body responsible for issuing and verifying your
+                  license.
                 </p>
               </div>
             </div>
@@ -191,9 +206,12 @@ export function OnboardingForm({
               <div className="border-deep-ink/15 hover:border-deep-ink/30 bg-soft-meadow/30 rounded-2xl border-2 border-dashed p-6 text-center transition-colors">
                 <Upload className="text-slate mx-auto mb-2 h-8 w-8" />
                 <p className="text-deep-ink text-xs font-medium">
-                  Upload your current medical license certificate or registration letter
+                  Upload your current medical license certificate or
+                  registration letter
                 </p>
-                <p className="text-slate mt-0.5 text-[11px]">PDF, JPG, or PNG up to 10MB</p>
+                <p className="text-slate mt-0.5 text-[11px]">
+                  PDF, JPG, or PNG up to 10MB
+                </p>
 
                 <input
                   type="file"
@@ -208,7 +226,9 @@ export function OnboardingForm({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => document.getElementById('license-file')?.click()}
+                    onClick={() =>
+                      document.getElementById('license-file')?.click()
+                    }
                     className="cursor-pointer gap-1.5 rounded-lg text-xs font-medium"
                   >
                     <FileText className="h-3.5 w-3.5" />
@@ -216,7 +236,8 @@ export function OnboardingForm({
                   </Button>
                   {selectedFile && (
                     <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                      {selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)} KB)
+                      {selectedFile.name} (
+                      {(selectedFile.size / 1024).toFixed(0)} KB)
                     </span>
                   )}
                 </div>
@@ -257,10 +278,13 @@ export function OnboardingForm({
                   htmlFor="certify-check"
                   className="text-deep-ink cursor-pointer text-xs leading-relaxed select-none"
                 >
-                  <span className="font-semibold">Professional Attestation:</span> I hereby certify
-                  under penalty of perjury that I am a duly licensed medical practitioner
-                  authorized to practice in the specified jurisdiction, and the credentials
-                  submitted herein are authentic, active, and in good standing.
+                  <span className="font-semibold">
+                    Professional Attestation:
+                  </span>{' '}
+                  I hereby certify under penalty of perjury that I am a duly
+                  licensed medical practitioner authorized to practice in the
+                  specified jurisdiction, and the credentials submitted herein
+                  are authentic, active, and in good standing.
                 </label>
               </div>
             </div>

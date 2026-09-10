@@ -40,8 +40,14 @@ export function DoctorHeader({
           <RefreshCw className="h-3.5 w-3.5" />
           <span>Refresh</span>
         </Button>
-        <Link href="/dashboard/doctor/settings" className="flex-1 sm:flex-initial">
-          <Button size="sm" className="w-full rounded-lg text-xs font-semibold sm:w-auto">
+        <Link
+          href="/dashboard/doctor/settings"
+          className="flex-1 sm:flex-initial"
+        >
+          <Button
+            size="sm"
+            className="w-full rounded-lg text-xs font-semibold sm:w-auto"
+          >
             Edit Profile
           </Button>
         </Link>
