@@ -6,7 +6,8 @@ import type {
 } from '@/lib/types/doctor.types';
 import { getDoctorById, updateDoctor, type Doctor } from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
-import { apiError, apiSuccess, handleApiError } from '@/lib/api/response';
+import { doctorProfileUpdateSchema } from '@/lib/validations';
+import { apiError, apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
 import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function GET(
@@ -63,7 +64,14 @@ export async function PUT(
       );
     }
 
-    const body: DoctorProfileUpdateInput = await request.json();
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = doctorProfileUpdateSchema.safeParse(rawBody);
+
+    if (!parseResult.success) {
+      return zodValidationError(parseResult.error, 'At least one profile field is required');
+    }
+
+    const body = parseResult.data;
 
     // Whitelist allowed fields to prevent arbitrary writes
     const updates: Partial<Doctor> = {};
@@ -90,14 +98,6 @@ export async function PUT(
       // Resubmitting credentials resets status to 'pending' for re-review
       updates.verificationStatus = 'pending';
       updates.rejectionReason = '';
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return apiError(
-        API_ERROR_CODES.BAD_REQUEST,
-        'At least one profile field is required',
-        400
-      );
     }
 
     const updatedDoctor = await updateDoctor(id, updates);

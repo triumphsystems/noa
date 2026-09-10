@@ -10,12 +10,19 @@ import {
 } from '@/lib/db';
 import { signUpWithCognito, getCognitoConfig } from '@/lib/auth/cognito';
 import { enforceRateLimit, getClientIdentifier } from '@/lib/ratelimit';
-import { apiError } from '@/lib/api/response';
+import { signupSchema } from '@/lib/validations';
+import { apiError, zodValidationError } from '@/lib/api/response';
 import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = signupSchema.safeParse(rawBody);
+
+    if (!parseResult.success) {
+      return zodValidationError(parseResult.error, 'Registration validation failed');
+    }
+
     const {
       email,
       password,
@@ -28,7 +35,7 @@ export async function POST(request: NextRequest) {
       license,
       issuingAuthority,
       licenseDocumentUrl,
-    } = body;
+    } = parseResult.data;
 
     // 1. Rate limiting: max 5 signups per minute per client
     const clientId = getClientIdentifier(request, email);
@@ -37,31 +44,6 @@ export async function POST(request: NextRequest) {
       windowSeconds: 60,
     });
     if (rateLimitRes) return rateLimitRes;
-
-    // Validate input
-    if (!email || !password || !firstName || !lastName || !userType) {
-      return apiError(
-        API_ERROR_CODES.BAD_REQUEST,
-        'Missing required fields',
-        400
-      );
-    }
-
-    if (password.length < 6) {
-      return apiError(
-        API_ERROR_CODES.BAD_REQUEST,
-        'Password must be at least 6 characters long.',
-        400
-      );
-    }
-
-    if (userType !== 'doctor' && userType !== 'patient') {
-      return apiError(
-        API_ERROR_CODES.BAD_REQUEST,
-        'Invalid user type. Must be doctor or patient.',
-        400
-      );
-    }
 
     const { isConfigured } = getCognitoConfig();
 

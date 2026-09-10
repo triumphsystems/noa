@@ -8,22 +8,20 @@ import { setAuthCookies } from '@/lib/auth/cookies';
 import { isValidRole, type Role } from '@/lib/auth/roles';
 import { resolveUserProfile } from '@/lib/auth/profile';
 import { enforceRateLimit, getClientIdentifier } from '@/lib/ratelimit';
-import { apiError } from '@/lib/api/response';
+import { loginSchema } from '@/lib/validations';
+import { apiError, zodValidationError } from '@/lib/api/response';
 import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email, password, userType } = body;
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = loginSchema.safeParse(rawBody);
 
-    // Validate input FIRST before rate limiting, so we don't use 'undefined' as the rate-limit key
-    if (!email || !password) {
-      return apiError(
-        API_ERROR_CODES.BAD_REQUEST,
-        'Email and password are required',
-        400
-      );
+    if (!parseResult.success) {
+      return zodValidationError(parseResult.error, 'Email and password are required');
     }
+
+    const { email, password, userType } = parseResult.data;
 
     // Rate limiting: max 5 login attempts per minute per client (uses validated email)
     const clientId = getClientIdentifier(request, email);

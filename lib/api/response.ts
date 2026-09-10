@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { ZodError } from 'zod';
 import {
   API_ERROR_CODES,
   type ApiErrorCode,
@@ -86,6 +87,27 @@ export function apiError(
 }
 
 /**
+ * Maps a ZodError to our canonical ApiValidationErrorDetail array
+ */
+export function formatZodError(error: ZodError): ApiValidationErrorDetail[] {
+  return error.issues.map((issue) => ({
+    field: issue.path.length > 0 ? issue.path.join('.') : undefined,
+    issue: issue.message,
+  }));
+}
+
+/**
+ * Returns a canonical 400 VALIDATION_ERROR response from a ZodError
+ */
+export function zodValidationError(
+  error: ZodError,
+  message: string = 'Validation failed'
+): NextResponse<ApiErrorResponse> {
+  const details = formatZodError(error);
+  return apiError(API_ERROR_CODES.VALIDATION_ERROR, message, 400, { details });
+}
+
+/**
  * Universal error handler for catch blocks.
  * Guarantees zero leakage of internal server state, database errors, or SDK stack traces.
  */
@@ -96,14 +118,19 @@ export function handleApiError(
   // Always log raw error with full stack trace server-side for CloudWatch
   console.error('[API Error]:', error);
 
-  // 1. Intentional domain error (safe to return domain message & validation details)
+  // 1. Zod validation failure
+  if (error instanceof ZodError) {
+    return zodValidationError(error);
+  }
+
+  // 2. Intentional domain error (safe to return domain message & validation details)
   if (isAppError(error)) {
     return apiError(error.code, error.message, error.statusCode, {
       details: error.details,
     });
   }
 
-  // 2. Throttling or capacity exceeded
+  // 3. Throttling or capacity exceeded
   if (isThrottlingError(error)) {
     return apiError(
       API_ERROR_CODES.CAPACITY_EXCEEDED,
@@ -113,7 +140,7 @@ export function handleApiError(
     );
   }
 
-  // 3. Opaque server error - strictly sanitized
+  // 4. Opaque server error - strictly sanitized
   return apiError(
     API_ERROR_CODES.INTERNAL_SERVER_ERROR,
     fallbackMessage,

@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
 import { generateTriagePriority } from '@/lib/bedrock-nova';
 import { requireAuth } from '@/lib/auth/guard';
-import { apiError, apiSuccess, handleApiError } from '@/lib/api/response';
-import { API_ERROR_CODES } from '@/lib/types/api.types';
+import { triageGenerateSchema } from '@/lib/validations';
+import { apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,16 +14,14 @@ export async function POST(request: NextRequest) {
     if (!guard.ok) return guard.response;
     const { auth } = guard;
 
-    const body = await request.json();
-    const { chiefComplaint, symptoms, vitalSigns } = body;
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = triageGenerateSchema.safeParse(rawBody);
 
-    if (!chiefComplaint || !symptoms) {
-      return apiError(
-        API_ERROR_CODES.BAD_REQUEST,
-        'Chief complaint and symptoms are required',
-        400
-      );
+    if (!parseResult.success) {
+      return zodValidationError(parseResult.error, 'Chief complaint and symptoms are required');
     }
+
+    const { chiefComplaint, symptoms, vitalSigns } = parseResult.data;
 
     // Generate triage priority using Nova Lite
     const triageResult = await generateTriagePriority(

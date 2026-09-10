@@ -271,7 +271,24 @@ All API route responses must use the canonical response helpers (`apiSuccess`, `
   - Maps Bedrock/AI capacity limits to `CAPACITY_EXCEEDED` (429).
   - Redacts all unexpected errors into `INTERNAL_SERVER_ERROR` (500) — **never leak `error.message`, database schemas, or AWS SDK stack traces to the client**.
 
-#### 3. Client HTTP Layer — `lib/http.ts`
+#### 3. Request Validation with Zod — `lib/validations/index.ts`
+
+All API endpoints that accept request bodies must validate using canonical Zod schemas from `lib/validations`:
+- Parse with `schema.safeParse(rawBody)`.
+- If invalid, return `zodValidationError(parseResult.error, fallbackMessage)`.
+- If a `ZodError` is thrown inside a handler, `handleApiError(error)` automatically converts it into a `400 VALIDATION_ERROR` with structured `{ field, issue }` details.
+
+```typescript
+// Route handler pattern:
+const rawBody = await request.json().catch(() => ({}));
+const parseResult = loginSchema.safeParse(rawBody);
+if (!parseResult.success) {
+  return zodValidationError(parseResult.error, 'Invalid credentials');
+}
+const { email, password } = parseResult.data;
+```
+
+#### 4. Client HTTP Layer — `lib/http.ts`
 
 `http` throws a typed `ApiClientError` on non-2xx responses. Consume with `instanceof ApiClientError`:
 ```typescript

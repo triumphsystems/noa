@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
 import { generatePatientSummary } from '@/lib/bedrock-nova';
 import { requireAuth } from '@/lib/auth/guard';
-import { apiError, apiSuccess, handleApiError } from '@/lib/api/response';
-import { API_ERROR_CODES } from '@/lib/types/api.types';
+import { summaryGenerateSchema } from '@/lib/validations';
+import { apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,16 +14,14 @@ export async function POST(request: NextRequest) {
     if (!guard.ok) return guard.response;
     const { auth } = guard;
 
-    const body = await request.json();
-    const { soapNote, clinicalTerms } = body;
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = summaryGenerateSchema.safeParse(rawBody);
 
-    if (!soapNote) {
-      return apiError(
-        API_ERROR_CODES.BAD_REQUEST,
-        'SOAP note is required',
-        400
-      );
+    if (!parseResult.success) {
+      return zodValidationError(parseResult.error, 'SOAP note is required');
     }
+
+    const { soapNote, clinicalTerms } = parseResult.data;
 
     // Generate patient-friendly summary using Nova Lite
     const summary = await generatePatientSummary(soapNote, clinicalTerms);

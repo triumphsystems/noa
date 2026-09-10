@@ -2,8 +2,8 @@ import { NextRequest } from 'next/server';
 import { generateSOAPWithNova } from '@/lib/bedrock-nova';
 import { updateSession } from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
-import { apiError, apiSuccess, handleApiError } from '@/lib/api/response';
-import { API_ERROR_CODES } from '@/lib/types/api.types';
+import { soapGenerateSchema } from '@/lib/validations';
+import { apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,16 +15,14 @@ export async function POST(request: NextRequest) {
     if (!guard.ok) return guard.response;
     const { auth } = guard;
 
-    const body = await request.json();
-    const { transcript, patientInfo, sessionId } = body;
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = soapGenerateSchema.safeParse(rawBody);
 
-    if (!transcript) {
-      return apiError(
-        API_ERROR_CODES.BAD_REQUEST,
-        'Transcript is required',
-        400
-      );
+    if (!parseResult.success) {
+      return zodValidationError(parseResult.error, 'Transcript is required');
     }
+
+    const { transcript, patientInfo, sessionId } = parseResult.data;
 
     console.log('[SOAP] Generating SOAP note with Nova AI for user:', auth.sub);
 

@@ -4,13 +4,20 @@ import {
   getCognitoConfig,
 } from '@/lib/auth/cognito';
 import { enforceRateLimit, getClientIdentifier } from '@/lib/ratelimit';
-import { apiError, apiSuccess } from '@/lib/api/response';
+import { forgotPasswordSchema } from '@/lib/validations';
+import { apiError, apiSuccess, zodValidationError } from '@/lib/api/response';
 import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email } = body;
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = forgotPasswordSchema.safeParse(rawBody);
+
+    if (!parseResult.success) {
+      return zodValidationError(parseResult.error, 'Email address is required');
+    }
+
+    const { email } = parseResult.data;
 
     // 1. Rate limiting: max 5 requests per minute per client
     const clientId = getClientIdentifier(request, email);
@@ -19,14 +26,6 @@ export async function POST(request: NextRequest) {
       windowSeconds: 60,
     });
     if (rateLimitRes) return rateLimitRes;
-
-    if (!email || typeof email !== 'string' || !email.trim()) {
-      return apiError(
-        API_ERROR_CODES.BAD_REQUEST,
-        'Email address is required',
-        400
-      );
-    }
 
     const trimmedEmail = email.trim().toLowerCase();
     const { isConfigured } = getCognitoConfig();

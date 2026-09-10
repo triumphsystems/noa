@@ -4,8 +4,8 @@ import {
   generateFollowUpPlan,
 } from '@/lib/bedrock-nova';
 import { requireAuth } from '@/lib/auth/guard';
-import { apiError, apiSuccess, handleApiError } from '@/lib/api/response';
-import { API_ERROR_CODES } from '@/lib/types/api.types';
+import { insightsGenerateSchema } from '@/lib/validations';
+import { apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,22 +17,20 @@ export async function POST(request: NextRequest) {
     if (!guard.ok) return guard.response;
     const { auth } = guard;
 
-    const body = await request.json();
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = insightsGenerateSchema.safeParse(rawBody);
+
+    if (!parseResult.success) {
+      return zodValidationError(parseResult.error, 'Current presentation is required');
+    }
+
     const {
       patientHistory,
       currentPresentation,
       previousFindings,
       medications,
       procedures,
-    } = body;
-
-    if (!currentPresentation) {
-      return apiError(
-        API_ERROR_CODES.BAD_REQUEST,
-        'Current presentation is required',
-        400
-      );
-    }
+    } = parseResult.data;
 
     console.log('[v0] Generating clinical insights with Nova');
 
