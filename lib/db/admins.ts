@@ -55,3 +55,21 @@ export async function getAdminById(id: string): Promise<AdminUser | null> {
 
   return (result.Item as AdminUser) || null;
 }
+
+/**
+ * Fetches a user record directly from DynamoDB by primary key (id + role).
+ * Returns null if the user does not exist.
+ */
+export async function getUserById(
+  id: string,
+  role: 'doctor' | 'patient' | 'admin'
+): Promise<import('./types').UserRecord | null> {
+  const result = await docClient.send(
+    new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { [PK]: id, [SK]: role },
+    })
+  );
+
+  return (result.Item as import('./types').UserRecord) || null;
+}

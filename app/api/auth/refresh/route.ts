@@ -44,10 +44,7 @@ export async function POST(request: NextRequest) {
         ? cognitoUser.userType
         : 'patient';
 
-    const profile = await resolveUserProfile(userId, userRole, {
-      email: cognitoUser?.email || '',
-      name: cognitoUser?.name || 'User',
-    });
+    const profile = await resolveUserProfile(userId, userRole);
 
     if (!profile) {
       return NextResponse.json(

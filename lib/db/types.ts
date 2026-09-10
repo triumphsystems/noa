@@ -102,3 +102,5 @@ export interface AdminUser {
   createdAt: number;
   updatedAt: number;
 }
+
+export type UserRecord = Doctor | Patient | AdminUser;

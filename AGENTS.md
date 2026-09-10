@@ -315,47 +315,28 @@ export interface ResolvedUserProfile {
  */
 export async function resolveUserProfile(
   sub: string,
-  userType: Role,
-  fallback?: { email?: string; name?: string }
+  userType: Role
 ): Promise<ResolvedUserProfile | null> {
   try {
-    if (userType === 'doctor') {
-      const doctor = await getDoctorById(sub);
-      if (doctor) {
-        return {
-          id: sub,
-          email: doctor.email,
-          name: doctor.name,
-          userType,
-          avatar: doctor.avatar ?? null,
-        };
-      }
-    } else if (userType === 'patient') {
-      const patient = await getPatientById(sub);
-      if (patient) {
-        return {
-          id: sub,
-          email: patient.email,
-          name: `${patient.firstName} ${patient.lastName}`.trim(),
-          userType,
-          avatar: patient.avatar ?? null,
-        };
-      }
-    } else if (userType === 'admin') {
-      let admin = await getAdminById(sub);
-      if (!admin && fallback?.email) {
-        admin = await getAdminByEmail(fallback.email);
-      }
-      if (admin) {
-        return {
-          id: sub,
-          email: admin.email,
-          name: admin.name,
-          userType,
-          avatar: null,
-        };
-      }
-    }
+    const user = await getUserById(sub, userType);
+    if (!user) return null;
+
+    const name =
+      'name' in user && user.name
+        ? user.name
+        : 'firstName' in user && user.firstName
+          ? `${user.firstName} ${user.lastName || ''}`.trim()
+          : 'User';
+
+    const avatar = 'avatar' in user ? user.avatar ?? null : null;
+
+    return {
+      id: user.id,
+      email: user.email,
+      name,
+      userType,
+      avatar,
+    };
   } catch {
     // DB lookup failure logged
   }
@@ -440,10 +421,8 @@ Cognito token (RS256 signed)
     └─ getAuthenticatedUser(request) → VerifiedAuthPayload { isValid, sub, userType }
 
   Profile enrichment (lib/auth/profile.ts)
-    └─ resolveUserProfile(sub, userType, fallback) → ResolvedUserProfile
-         ├─ doctor  → getDoctorById(sub)
-         ├─ patient → getPatientById(sub)
-         └─ admin   → getAdminByEmail(email)
+    └─ resolveUserProfile(sub, userType) → ResolvedUserProfile
+         └─ getUserById(sub, userType) from DynamoDB
 
   Client hydration (lib/auth-context.tsx)
     └─ AuthProvider → UserSession { id, email, name, userType, avatar }

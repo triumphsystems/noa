@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/guard';
 import { resolveUserProfile } from '@/lib/auth/profile';
 
@@ -15,10 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { auth } = guard;
-    const profile = await resolveUserProfile(auth.sub, auth.userType, {
-      email: auth.email || '',
-      name: '',
-    });
+    const profile = await resolveUserProfile(auth.sub, auth.userType);
 
     return NextResponse.json({ user: profile });
   } catch (error) {
