@@ -3,8 +3,14 @@ import {
   getPatientsByDoctor,
   getPendingPatientsByDoctor,
   getSessionsByDoctor,
+  getPatientById,
+  getIntakesByPatient,
+  getSessionsByPatient,
   computeDoctorCareCode,
   type Patient,
+  type Doctor,
+  type Session,
+  type PatientIntake,
 } from '@/lib/db';
 import type {
   DoctorDashboardPayload,
@@ -80,5 +86,89 @@ export async function getDoctorData(
     patients,
     sessions: [...sessions].sort((a, b) => b.startedAt - a.startedAt),
     stats,
+  };
+}
+
+export interface DoctorPatientsData {
+  doctor: Doctor;
+  patients: Patient[];
+}
+
+export async function getDoctorPatientsData(
+  doctorId: string
+): Promise<DoctorPatientsData | null> {
+  const doctor = await getDoctorById(doctorId);
+  if (!doctor) return null;
+
+  const [linkedPatients, pendingPatients] = await Promise.all([
+    getPatientsByDoctor(doctorId),
+    getPendingPatientsByDoctor(doctorId),
+  ]);
+
+  const patientMap = new Map<string, Patient>();
+  linkedPatients.forEach((p) => patientMap.set(p.id, p));
+  pendingPatients.forEach((p) => {
+    if (!patientMap.has(p.id)) {
+      const isFullyLinked =
+        p.linkStatus === 'linked' && p.doctorId === doctorId;
+      const sanitized: Patient = isFullyLinked
+        ? p
+        : {
+            ...p,
+            dateOfBirth: undefined,
+            gender: undefined,
+            phone: p.phone ? `${p.phone.slice(0, 3)}***` : undefined,
+            address: undefined,
+            allergies: [],
+            medications: [],
+            conditions: [],
+          };
+      patientMap.set(p.id, sanitized);
+    }
+  });
+
+  return {
+    doctor: {
+      ...doctor,
+      careCode: computeDoctorCareCode(doctor),
+    },
+    patients: Array.from(patientMap.values()),
+  };
+}
+
+export interface DoctorPatientDetailData {
+  patient: Patient;
+  intake: PatientIntake | null;
+  sessions: Session[];
+  doctor: Doctor;
+}
+
+export async function getDoctorPatientDetail(
+  doctorId: string,
+  patientId: string
+): Promise<DoctorPatientDetailData | null> {
+  const [doctor, patient] = await Promise.all([
+    getDoctorById(doctorId),
+    getPatientById(patientId),
+  ]);
+
+  if (!doctor || !patient) return null;
+
+  const isLinked = patient.doctorId === doctorId;
+  const isPending = patient.pendingDoctorId === doctorId;
+  if (!isLinked && !isPending) return null;
+
+  const [intakes, sessions] = await Promise.all([
+    getIntakesByPatient(patientId),
+    getSessionsByPatient(patientId),
+  ]);
+
+  return {
+    doctor,
+    patient,
+    intake: intakes[0] || null,
+    sessions: [...sessions].sort(
+      (a, b) => (b.startedAt || 0) - (a.startedAt || 0)
+    ),
   };
 }
