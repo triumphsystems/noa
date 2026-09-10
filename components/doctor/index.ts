@@ -4,3 +4,4 @@ export { DoctorMetrics } from './metrics';
 export { DoctorQuickActions } from './actions';
 export { DoctorRecentSessions } from './sessions';
 export { DoctorLayoutShell } from './layout-shell';
+export { DoctorDashboardView } from './dashboard-view';
