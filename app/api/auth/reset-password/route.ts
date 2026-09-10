@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     return apiError(
       API_ERROR_CODES.SERVICE_UNAVAILABLE,
-      'Authentication service is not configured',
+      'Service Unavailable',
       503
     );
   } catch (error) {

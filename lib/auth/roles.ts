@@ -7,15 +7,8 @@
 export const ROLES = ['doctor', 'patient', 'admin'] as const;
 export type Role = (typeof ROLES)[number];
 
-/**
- * Cognito group names that map to 'admin' — for legacy seeded admins only.
- * New users must carry custom:user_type='admin' in their Cognito token.
- */
 export const ADMIN_COGNITO_GROUPS = ['Admins', 'Superadmins'] as const;
 
-/**
- * Cognito group names that map to 'doctor' — legacy fallback only.
- */
 export const DOCTOR_COGNITO_GROUPS = ['Doctors'] as const;
 
 /**

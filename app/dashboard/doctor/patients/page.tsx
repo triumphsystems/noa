@@ -50,14 +50,7 @@ export default function PatientsPage() {
   }, [doctorId, lastLoadedDoctorId, isLoading, loadDashboard]);
 
   const careCode =
-    doctor?.careCode ||
-    (doctorId
-      ? `NOA-${doctorId
-          .replace('doctor-', '')
-          .replace(/[^a-zA-Z0-9]/g, '')
-          .slice(0, 6)
-          .toUpperCase()}`
-      : 'NOA-DOC');
+    doctor?.careCode || 'NOA-DOC';
 
   const handleInviteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

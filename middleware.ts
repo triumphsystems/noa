@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getAuthenticatedUserSync } from '@/lib/auth/jwt';
 import {
@@ -19,6 +19,16 @@ import { AUTH_COOKIE_NAMES } from '@/lib/auth/cookies';
  *
  * Never add per-route ROUTE_GUARDS tables. The URL path segment IS the guard.
  */
+function continueWithHeaders(request: NextRequest) {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-pathname', request.nextUrl.pathname);
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -58,13 +68,13 @@ export function middleware(request: NextRequest) {
         }
       }
     }
-    return NextResponse.next();
+    return continueWithHeaders(request);
   }
 
   // ─── Protected Dashboard Routes ─────────────────────────────────────────────
   const targetRole = getRoleFromPath(pathname);
   if (!targetRole) {
-    return NextResponse.next();
+    return continueWithHeaders(request);
   }
 
   const auth = getAuthenticatedUserSync(request);
@@ -74,7 +84,7 @@ export function middleware(request: NextRequest) {
 
   if (!auth.isValid) {
     // Expired token with active refresh token — let the client-side http interceptor refresh
-    if (hasRefreshToken) return NextResponse.next();
+    if (hasRefreshToken) return continueWithHeaders(request);
     // Fully unauthenticated — redirect to login
     return NextResponse.redirect(
       new URL(`/auth/login?from=${encodeURIComponent(pathname)}`, request.url)
@@ -88,7 +98,7 @@ export function middleware(request: NextRequest) {
     );
   }
 
-  return NextResponse.next();
+  return continueWithHeaders(request);
 }
 
 export const config = {

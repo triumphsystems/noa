@@ -1,17 +1,17 @@
-'use client';
-
 import * as React from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Bell, LogOut } from 'lucide-react';
-import { usePatientStore } from '@/lib/stores/patient.store';
+import { requireServerAuth } from '@/lib/auth/server';
+import { getPatientById } from '@/lib/db';
 
-export default function PatientDashboardLayout({
+export default async function PatientDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const patient = usePatientStore((state) => state.patient);
+  const auth = await requireServerAuth(['patient']);
+  const patient = await getPatientById(auth.sub);
   const initial = patient?.firstName
     ? patient.firstName.charAt(0).toUpperCase()
     : 'P';
