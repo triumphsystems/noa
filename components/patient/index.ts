@@ -14,4 +14,5 @@ export { DoctorDirectorySearch } from './doctor-directory-search';
 export { CarePlanView } from './care-plan-view';
 export { ConsultationHeader } from './consultation-header';
 export { ConsultationsList } from './consultations-list';
+export { ConsultationDetailView } from './consultation-detail-view';
 export { PatientDashboardView } from './dashboard-view';
