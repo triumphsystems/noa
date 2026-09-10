@@ -1,9 +1,10 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { Search } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 interface PatientsSearchProps {
   searchTerm: string;
@@ -31,12 +32,14 @@ export function PatientsSearch({
           className="text-deep-ink placeholder-slate w-full bg-transparent py-2 text-base focus:outline-none sm:text-sm"
         />
         {searchTerm && (
-          <button
+          <Button
+            variant="ghost"
+            size="xs"
             onClick={() => onSearchChange('')}
-            className="text-slate hover:text-deep-ink cursor-pointer px-2 py-1 text-xs font-medium"
+            className="text-slate hover:text-deep-ink"
           >
             Clear
-          </button>
+          </Button>
         )}
       </Card>
 

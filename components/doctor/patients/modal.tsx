@@ -1,8 +1,15 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
-import { Loader2, Mail, Phone, User, UserPlus, X } from 'lucide-react';
+import { Loader2, Mail, Phone, User, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogPopup,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 interface InviteModalProps {
   isOpen: boolean;
@@ -35,26 +42,14 @@ export function InviteModal({
   inviteMessage,
   onSubmit,
 }: InviteModalProps) {
-  if (!isOpen) return null;
-
   return (
-    <div className="bg-deep-ink/40 animate-in fade-in fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
-      <div className="border-deep-ink/10 relative w-full max-w-md space-y-5 rounded-2xl border bg-white p-6 shadow-xl">
-        <div className="border-deep-ink/10 flex items-center justify-between border-b pb-2">
-          <div className="flex items-center gap-2">
-            <div className="bg-soft-meadow text-deep-ink flex h-8 w-8 items-center justify-center rounded-lg">
-              <UserPlus className="h-4 w-4" />
-            </div>
-            <h3 className="text-deep-ink font-serif text-lg font-bold">
-              Add Patient Record
-            </h3>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogPopup className="max-w-md space-y-5">
+        <div className="border-deep-ink/10 flex items-center gap-2 border-b pb-2">
+          <div className="bg-soft-meadow text-deep-ink flex h-8 w-8 items-center justify-center rounded-lg">
+            <UserPlus className="h-4 w-4" />
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate hover:text-deep-ink cursor-pointer rounded-md p-1 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <DialogTitle>Add Patient Record</DialogTitle>
         </div>
 
         {inviteMessage && (
@@ -75,17 +70,16 @@ export function InviteModal({
               <Mail className="text-slate h-3.5 w-3.5" />
               Email Address *
             </label>
-            <input
+            <Input
               type="email"
               required
               value={inviteEmail}
               onChange={(e) => onEmailChange(e.target.value)}
               placeholder="patient@example.com"
-              className="border-deep-ink/15 text-deep-ink placeholder-slate/60 focus:border-deep-ink bg-canvas/30 w-full rounded-xl border px-3.5 py-2 text-xs focus:outline-none"
             />
-            <p className="text-slate text-[10px]">
+            <DialogDescription className="text-[10px]">
               If the patient already has a Noa account, an invitation request will appear on their portal.
-            </p>
+            </DialogDescription>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -94,24 +88,22 @@ export function InviteModal({
                 <User className="text-slate h-3.5 w-3.5" />
                 First Name
               </label>
-              <input
+              <Input
                 type="text"
                 value={inviteFirstName}
                 onChange={(e) => onFirstNameChange(e.target.value)}
                 placeholder="Jane"
-                className="border-deep-ink/15 text-deep-ink placeholder-slate/60 focus:border-deep-ink bg-canvas/30 w-full rounded-xl border px-3.5 py-2 text-xs focus:outline-none"
               />
             </div>
             <div className="space-y-1.5">
               <label className="text-deep-ink flex items-center gap-1.5 font-semibold">
                 Last Name
               </label>
-              <input
+              <Input
                 type="text"
                 value={inviteLastName}
                 onChange={(e) => onLastNameChange(e.target.value)}
                 placeholder="Doe"
-                className="border-deep-ink/15 text-deep-ink placeholder-slate/60 focus:border-deep-ink bg-canvas/30 w-full rounded-xl border px-3.5 py-2 text-xs focus:outline-none"
               />
             </div>
           </div>
@@ -121,12 +113,11 @@ export function InviteModal({
               <Phone className="text-slate h-3.5 w-3.5" />
               Phone Number
             </label>
-            <input
+            <Input
               type="tel"
               value={invitePhone}
               onChange={(e) => onPhoneChange(e.target.value)}
               placeholder="+1 (555) 000-0000"
-              className="border-deep-ink/15 text-deep-ink placeholder-slate/60 focus:border-deep-ink bg-canvas/30 w-full rounded-xl border px-3.5 py-2 text-xs focus:outline-none"
             />
           </div>
 
@@ -152,7 +143,7 @@ export function InviteModal({
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogPopup>
+    </Dialog>
   );
 }

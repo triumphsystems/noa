@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { Stethoscope, User, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -154,13 +155,12 @@ export default function SignupForm({
             <label className="text-deep-ink block text-xs font-semibold">
               First Name
             </label>
-            <input
+            <Input
               type="text"
               name="firstName"
               value={formData.firstName}
               onChange={handleChange}
               required
-              className="border-deep-ink/15 text-deep-ink placeholder:text-slate/50 focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm shadow-2xs transition-all focus:ring-2 focus:outline-none"
               placeholder="First name"
             />
           </div>
@@ -168,13 +168,12 @@ export default function SignupForm({
             <label className="text-deep-ink block text-xs font-semibold">
               Last Name
             </label>
-            <input
+            <Input
               type="text"
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
               required
-              className="border-deep-ink/15 text-deep-ink placeholder:text-slate/50 focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm shadow-2xs transition-all focus:ring-2 focus:outline-none"
               placeholder="Last name"
             />
           </div>
@@ -184,13 +183,12 @@ export default function SignupForm({
           <label className="text-deep-ink block text-xs font-semibold">
             {userType === 'doctor' ? 'Clinical Email' : 'Email Address'}
           </label>
-          <input
+          <Input
             type="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
             required
-            className="border-deep-ink/15 text-deep-ink placeholder:text-slate/50 focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm shadow-2xs transition-all focus:ring-2 focus:outline-none"
             placeholder={
               userType === 'doctor' ? 'doctor@hospital.org' : 'you@example.com'
             }
@@ -204,13 +202,12 @@ export default function SignupForm({
                 <label className="text-deep-ink block text-xs font-semibold">
                   Medical Specialty
                 </label>
-                <input
+                <Input
                   type="text"
                   name="specialty"
                   value={formData.specialty}
                   onChange={handleChange}
                   required
-                  className="border-deep-ink/15 text-deep-ink placeholder:text-slate/50 focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm shadow-2xs transition-all focus:ring-2 focus:outline-none"
                   placeholder="e.g. Cardiology"
                 />
               </div>
@@ -218,13 +215,12 @@ export default function SignupForm({
                 <label className="text-deep-ink block text-xs font-semibold">
                   Clinic / Hospital
                 </label>
-                <input
+                <Input
                   type="text"
                   name="clinic"
                   value={formData.clinic}
                   onChange={handleChange}
                   required
-                  className="border-deep-ink/15 text-deep-ink placeholder:text-slate/50 focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm shadow-2xs transition-all focus:ring-2 focus:outline-none"
                   placeholder="e.g. St. Jude Clinic"
                 />
               </div>
@@ -236,13 +232,13 @@ export default function SignupForm({
                   Medical License Number{' '}
                   <span className="text-amber-600">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   name="license"
                   value={formData.license || ''}
                   onChange={handleChange}
                   required
-                  className="border-deep-ink/15 text-deep-ink placeholder:text-slate/50 focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 font-mono text-sm shadow-2xs transition-all focus:ring-2 focus:outline-none"
+                  className="font-mono"
                   placeholder="e.g. MD-982341"
                 />
               </div>
@@ -250,12 +246,11 @@ export default function SignupForm({
                 <label className="text-deep-ink block text-xs font-semibold">
                   Issuing Board / Authority
                 </label>
-                <input
+                <Input
                   type="text"
                   name="issuingAuthority"
                   value={formData.issuingAuthority || ''}
                   onChange={handleChange}
-                  className="border-deep-ink/15 text-deep-ink placeholder:text-slate/50 focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm shadow-2xs transition-all focus:ring-2 focus:outline-none"
                   placeholder="e.g. Medical Board / GMC"
                 />
               </div>
@@ -266,13 +261,12 @@ export default function SignupForm({
             <label className="text-deep-ink block text-xs font-semibold">
               Date of Birth
             </label>
-            <input
+            <Input
               type="date"
               name="dateOfBirth"
               value={formData.dateOfBirth}
               onChange={handleChange}
               required
-              className="border-deep-ink/15 text-deep-ink focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm shadow-2xs transition-all focus:ring-2 focus:outline-none"
             />
           </div>
         )}
@@ -281,14 +275,13 @@ export default function SignupForm({
           <label className="text-deep-ink block text-xs font-semibold">
             Password
           </label>
-          <input
+          <Input
             type="password"
             name="password"
             value={formData.password}
             onChange={handleChange}
             required
             minLength={6}
-            className="border-deep-ink/15 text-deep-ink placeholder:text-slate/50 focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm shadow-2xs transition-all focus:ring-2 focus:outline-none"
             placeholder="At least 6 characters"
           />
         </div>

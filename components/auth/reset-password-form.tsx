@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import {
   ArrowLeft,
@@ -133,13 +134,12 @@ export default function ResetPasswordForm() {
           <label className="text-deep-ink block text-xs font-medium">
             Email address
           </label>
-          <input
+          <Input
             type="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
             required
-            className="border-deep-ink/15 text-deep-ink placeholder:text-slate/60 focus:border-deep-ink focus:ring-deep-ink/20 w-full rounded-lg border bg-white px-3.5 py-2.5 text-sm shadow-2xs transition-colors focus:ring-1 focus:outline-none"
             placeholder="you@example.com"
           />
         </div>
@@ -149,14 +149,14 @@ export default function ResetPasswordForm() {
             Verification Code
           </label>
           <div className="relative">
-            <input
+            <Input
               type="text"
               name="code"
               value={formData.code}
               onChange={handleChange}
               required
               maxLength={8}
-              className="border-deep-ink/15 text-deep-ink placeholder:text-slate/60 focus:border-deep-ink focus:ring-deep-ink/20 w-full rounded-lg border bg-white py-2.5 pr-3.5 pl-9 font-mono text-sm tracking-widest shadow-2xs transition-colors focus:ring-1 focus:outline-none"
+              className="pr-3.5 pl-9 font-mono tracking-widest"
               placeholder="123456"
             />
             <KeyRound className="text-slate/60 absolute top-3 left-3 h-4 w-4" />
@@ -168,14 +168,14 @@ export default function ResetPasswordForm() {
             New Password
           </label>
           <div className="relative">
-            <input
+            <Input
               type={showPassword ? 'text' : 'password'}
               name="newPassword"
               value={formData.newPassword}
               onChange={handleChange}
               required
               minLength={6}
-              className="border-deep-ink/15 text-deep-ink placeholder:text-slate/60 focus:border-deep-ink focus:ring-deep-ink/20 w-full rounded-lg border bg-white py-2.5 pr-10 pl-9 text-sm shadow-2xs transition-colors focus:ring-1 focus:outline-none"
+              className="pr-10 pl-9"
               placeholder="••••••••"
             />
             <Lock className="text-slate/60 absolute top-3 left-3 h-4 w-4" />
@@ -198,14 +198,14 @@ export default function ResetPasswordForm() {
             Confirm New Password
           </label>
           <div className="relative">
-            <input
+            <Input
               type={showPassword ? 'text' : 'password'}
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
               required
               minLength={6}
-              className="border-deep-ink/15 text-deep-ink placeholder:text-slate/60 focus:border-deep-ink focus:ring-deep-ink/20 w-full rounded-lg border bg-white py-2.5 pr-3.5 pl-9 text-sm shadow-2xs transition-colors focus:ring-1 focus:outline-none"
+              className="pr-3.5 pl-9"
               placeholder="••••••••"
             />
             <Lock className="text-slate/60 absolute top-3 left-3 h-4 w-4" />

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import {
@@ -13,6 +13,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import type { DoctorOnboardingFormData } from './types';
 
 interface OnboardingFormProps {
@@ -82,14 +83,13 @@ export function OnboardingForm({
                 <label className="text-deep-ink block text-xs font-semibold">
                   Full Legal Name <span className="text-rose-600">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={onChange}
                   required
                   placeholder="e.g. Dr. Sarah Jenkins, MD"
-                  className="border-deep-ink/15 focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm focus:ring-2 focus:outline-none"
                 />
               </div>
 
@@ -97,14 +97,13 @@ export function OnboardingForm({
                 <label className="text-deep-ink block text-xs font-semibold">
                   Primary Clinical Specialty <span className="text-rose-600">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   name="specialty"
                   value={formData.specialty}
                   onChange={onChange}
                   required
                   placeholder="e.g. Internal Medicine, Family Practice, Cardiology"
-                  className="border-deep-ink/15 focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm focus:ring-2 focus:outline-none"
                 />
               </div>
             </div>
@@ -114,14 +113,13 @@ export function OnboardingForm({
                 <label className="text-deep-ink block text-xs font-semibold">
                   Clinic / Hospital Affiliation <span className="text-rose-600">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   name="clinic"
                   value={formData.clinic}
                   onChange={onChange}
                   required
                   placeholder="e.g. MetroHealth Medical Center"
-                  className="border-deep-ink/15 focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm focus:ring-2 focus:outline-none"
                 />
               </div>
 
@@ -129,13 +127,12 @@ export function OnboardingForm({
                 <label className="text-deep-ink block text-xs font-semibold">
                   Practice Contact Phone
                 </label>
-                <input
+                <Input
                   type="tel"
                   name="phone"
                   value={formData.phone}
                   onChange={onChange}
                   placeholder="e.g. +1 (555) 234-5678"
-                  className="border-deep-ink/15 focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm focus:ring-2 focus:outline-none"
                 />
               </div>
             </div>
@@ -153,14 +150,14 @@ export function OnboardingForm({
                 <label className="text-deep-ink block text-xs font-semibold">
                   Medical License / Registration Number <span className="text-rose-600">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   name="license"
                   value={formData.license}
                   onChange={onChange}
                   required
+                  className="font-mono"
                   placeholder="e.g. C123456, GMC-7654321, NPI-1982734123"
-                  className="border-deep-ink/15 focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 font-mono text-sm focus:ring-2 focus:outline-none"
                 />
                 <p className="text-slate text-[11px]">
                   Your primary state board license, GMC number, or medical council registration.
@@ -171,14 +168,13 @@ export function OnboardingForm({
                 <label className="text-deep-ink block text-xs font-semibold">
                   Issuing Board / Regulatory Authority <span className="text-rose-600">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   name="issuingAuthority"
                   value={formData.issuingAuthority}
                   onChange={onChange}
                   required
                   placeholder="e.g. Medical Board of California, GMC UK"
-                  className="border-deep-ink/15 focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm focus:ring-2 focus:outline-none"
                 />
                 <p className="text-slate text-[11px]">
                   The official body responsible for issuing and verifying your license.

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import {
   Stethoscope,
@@ -160,13 +161,12 @@ export default function LoginForm({
           <label className="text-deep-ink block text-xs font-semibold">
             {userType === 'doctor' ? 'Clinical Email' : 'Patient Email'}
           </label>
-          <input
+          <Input
             type="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
             required
-            className="border-deep-ink/15 text-deep-ink placeholder:text-slate/50 focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm shadow-2xs transition-all focus:ring-2 focus:outline-none"
             placeholder={
               userType === 'doctor' ? 'doctor@hospital.org' : 'you@example.com'
             }
@@ -185,13 +185,12 @@ export default function LoginForm({
               Forgot password?
             </Link>
           </div>
-          <input
+          <Input
             type="password"
             name="password"
             value={formData.password}
             onChange={handleChange}
             required
-            className="border-deep-ink/15 text-deep-ink placeholder:text-slate/50 focus:border-deep-ink focus:ring-deep-ink/10 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm shadow-2xs transition-all focus:ring-2 focus:outline-none"
             placeholder="••••••••"
           />
         </div>

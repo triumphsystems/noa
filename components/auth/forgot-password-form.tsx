@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import {
   ArrowLeft,
@@ -142,12 +143,12 @@ export default function ForgotPasswordForm() {
             Email address
           </label>
           <div className="relative">
-            <input
+            <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="border-deep-ink/15 text-deep-ink placeholder:text-slate/60 focus:border-deep-ink focus:ring-deep-ink/20 w-full rounded-lg border bg-white py-2.5 pr-3.5 pl-9 text-sm shadow-2xs transition-colors focus:ring-1 focus:outline-none"
+              className="pr-3.5 pl-9"
               placeholder="you@hospital.org"
             />
             <Mail className="text-slate/60 absolute top-3 left-3 h-4 w-4" />
