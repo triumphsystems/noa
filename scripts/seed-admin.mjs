@@ -426,10 +426,10 @@ async function main() {
       ` ${c.emerald}│${c.reset}  ${c.dim}Role:${c.reset}            ${c.teal}Superadministrator (${c.white}Admins${c.teal} Cognito Group)${c.reset}          ${c.emerald}│${c.reset}`
     );
     console.log(
-      ` ${c.emerald}│${c.reset}  ${c.dim}Approval API:${c.reset}    ${c.amber}GET  /api/admin/doctors?status=pending${c.reset}                    ${c.emerald}│${c.reset}`
+      ` ${c.emerald}│${c.reset}  ${c.dim}Console URL:${c.reset}     ${c.amber}/dashboard/admin (RSC + Server Actions)${c.reset}            ${c.emerald}│${c.reset}`
     );
     console.log(
-      ` ${c.emerald}│${c.reset}  ${c.dim}Approve Doctor:${c.reset}  ${c.amber}POST /api/admin/doctors/:id/approve${c.reset}                       ${c.emerald}│${c.reset}`
+      ` ${c.emerald}│${c.reset}  ${c.dim}Governance:${c.reset}      ${c.amber}Zero HTTP roundtrips • Direct DynamoDB & Cognito${c.reset}      ${c.emerald}│${c.reset}`
     );
     console.log(
       ` ${c.emerald}└───────────────────────────────────────────────────────────────────────────┘${c.reset}\n`

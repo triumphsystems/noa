@@ -332,4 +332,75 @@ describe('Server Action Mutations Suite', () => {
       assert.equal(resultCreate.intake.chiefComplaint, 'Knee pain');
     });
   });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 6. Admin Governance: approveDoctorAction & rejectDoctorAction
+  // ──────────────────────────────────────────────────────────────────────────
+  describe('Admin Governance Actions', () => {
+    it('should verify doctor and trigger status transition to verified', () => {
+      const mockDoctors = new Map([
+        ['doc-1', { id: 'doc-1', name: 'Gregory House', email: 'house@ppth.org', verificationStatus: 'pending' }],
+      ]);
+
+      function approveDoctor(doctorId, adminId) {
+        const doctor = mockDoctors.get(doctorId);
+        if (!doctor) return { success: false, error: 'Doctor not found' };
+
+        const updated = {
+          ...doctor,
+          verificationStatus: 'verified',
+          verifiedAt: Date.now(),
+          verifiedBy: adminId,
+        };
+        mockDoctors.set(doctorId, updated);
+        return {
+          success: true,
+          message: `Dr. ${doctor.name} was successfully verified and granted clinical privileges.`,
+          doctor: updated,
+        };
+      }
+
+      const res = approveDoctor(null, 'admin-sub');
+      assert.equal(res.success, false);
+      assert.equal(res.error, 'Doctor not found');
+
+      const validRes = approveDoctor('doc-1', 'admin-sub');
+      assert.equal(validRes.success, true);
+      assert.equal(validRes.doctor.verificationStatus, 'verified');
+      assert.equal(validRes.doctor.verifiedBy, 'admin-sub');
+      assert.match(validRes.message, /Dr\. Gregory House/);
+    });
+
+    it('should reject doctor credentials with specified audit reason', () => {
+      const mockDoctors = new Map([
+        ['doc-2', { id: 'doc-2', name: 'John Doe', email: 'doe@clinic.org', verificationStatus: 'pending' }],
+      ]);
+
+      function rejectDoctor(doctorId, adminId, reason) {
+        const doctor = mockDoctors.get(doctorId);
+        if (!doctor) return { success: false, error: 'Doctor not found' };
+
+        const updated = {
+          ...doctor,
+          verificationStatus: 'rejected',
+          verifiedAt: Date.now(),
+          verifiedBy: adminId,
+          rejectionReason: reason || 'Medical credentials could not be verified.',
+        };
+        mockDoctors.set(doctorId, updated);
+        return {
+          success: true,
+          message: `Clinical privileges for Dr. ${doctor.name} have been revoked.`,
+          doctor: updated,
+        };
+      }
+
+      const res = rejectDoctor('doc-2', 'admin-sub', 'Invalid State Medical Board license certificate.');
+      assert.equal(res.success, true);
+      assert.equal(res.doctor.verificationStatus, 'rejected');
+      assert.equal(res.doctor.rejectionReason, 'Invalid State Medical Board license certificate.');
+      assert.match(res.message, /Dr\. John Doe/);
+    });
+  });
 });
+

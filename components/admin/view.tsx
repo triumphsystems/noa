@@ -198,6 +198,58 @@ export function AdminDashboardView({
     }
   };
 
+  const handleExport = () => {
+    if (doctors.length === 0) return;
+    const headers = [
+      'ID',
+      'Name',
+      'Email',
+      'Specialty',
+      'Clinic',
+      'License',
+      'Issuing Authority',
+      'Care Code',
+      'Status',
+      'Created At',
+    ];
+    const rows = doctors.map((d) => [
+      d.id,
+      `"${d.name.replace(/"/g, '""')}"`,
+      d.email,
+      `"${d.specialty.replace(/"/g, '""')}"`,
+      `"${d.clinic.replace(/"/g, '""')}"`,
+      `"${d.license.replace(/"/g, '""')}"`,
+      `"${(d.issuingAuthority || '').replace(/"/g, '""')}"`,
+      d.careCode,
+      d.verificationStatus || 'pending',
+      d.createdAt ? new Date(d.createdAt).toISOString() : '',
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) => row.join(',')),
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute(
+      'download',
+      `clinicians-audit-${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setSpecialtyFilter('all');
+    setActiveTab('all');
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -248,7 +300,9 @@ export function AdminDashboardView({
         adminUser={adminUser}
         lastUpdated={lastUpdated}
         refreshing={isPending}
+        doctorsCount={doctors.length}
         onRefresh={handleRefresh}
+        onExport={handleExport}
         onLogout={handleLogout}
       />
 
@@ -266,10 +320,12 @@ export function AdminDashboardView({
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             specialtyFilter={specialtyFilter}
-            onSpecialtyFilterChange={setSpecialtyFilter}
+            onSpecialtyChange={setSpecialtyFilter}
             specialties={specialties}
             sortBy={sortBy}
             onSortChange={setSortChangeState}
+            filteredCount={filteredDoctors.length}
+            onReset={handleResetFilters}
           />
 
           {/* Clinicians Table */}

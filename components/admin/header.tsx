@@ -5,21 +5,21 @@ import type { AdminUser } from './types';
 import { getDoctorInitials } from './types';
 
 interface AdminHeaderProps {
-  adminUser: AdminUser | null;
-  loading: boolean;
+  adminUser?: AdminUser | null;
+  loading?: boolean;
   refreshing: boolean;
-  doctorsCount: number;
+  doctorsCount?: number;
   lastUpdated: Date;
   onRefresh: () => void;
-  onExport: () => void;
+  onExport?: () => void;
   onLogout: () => void;
 }
 
 export function AdminHeader({
   adminUser,
-  loading,
+  loading = false,
   refreshing,
-  doctorsCount,
+  doctorsCount = 0,
   lastUpdated,
   onRefresh,
   onExport,
