@@ -5,9 +5,9 @@
  *
  * Flow:
  *   Browser (MediaRecorder, 60s slices)
- *     → POST /api/consultation/upload-slice  (gets presigned S3 URL, ≤50ms)
+ *     → POST /api/consultation/upload  (gets presigned S3 URL, ≤50ms)
  *     → PUT audio/webm directly to S3        (browser → S3, bypasses Vercel)
- *     → POST /api/consultation/transcribe-slice (triggers Transcribe Medical)
+ *     → POST /api/consultation/transcribe (triggers Transcribe Medical)
  *
  * Benefits over a persistent WebSocket for long consultations:
  * - No Vercel function timeouts (each request is <1s)

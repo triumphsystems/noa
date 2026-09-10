@@ -10,8 +10,8 @@
  *
  * Architecture:
  *   MediaRecorder (60s timeslice)
- *     → POST /api/consultation/upload-slice  → S3 presigned PUT
- *     → POST /api/consultation/transcribe-slice → Transcribe Medical → DynamoDB
+ *     → POST /api/consultation/upload  → S3 presigned PUT
+ *     → POST /api/consultation/transcribe → Transcribe Medical → DynamoDB
  *
  * Features:
  * - Unlimited duration recording (15 min, 45 min, 90 min)
@@ -111,7 +111,7 @@ export function useConsultationRecorder({
 
       try {
         // 1. Get presigned S3 upload URL
-        const urlRes = await fetch('/api/consultation/upload-slice', {
+        const urlRes = await fetch('/api/consultation/upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -146,7 +146,7 @@ export function useConsultationRecorder({
         updateSlice(index, { status: 'transcribing', uploadedAt: Date.now() });
 
         // 3. Trigger Transcribe Medical on the uploaded slice
-        const txRes = await fetch('/api/consultation/transcribe-slice', {
+        const txRes = await fetch('/api/consultation/transcribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId, s3Key, sliceIndex: index }),

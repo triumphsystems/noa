@@ -32,7 +32,7 @@ const docClient = DynamoDBDocumentClient.from(dynamodbClient);
 interface TranscribeSliceRequest {
   /** Consultation session identifier */
   sessionId: string;
-  /** S3 key of the audio slice (returned by /api/consultation/upload-slice) */
+  /** S3 key of the audio slice (returned by /api/consultation/upload) */
   s3Key: string;
   /** Sequential slice index */
   sliceIndex: number;
