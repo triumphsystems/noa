@@ -7,11 +7,7 @@ import {
 import { setAuthCookies } from '@/lib/auth/cookies';
 import { isValidRole, type Role } from '@/lib/auth/roles';
 import { resolveUserProfile } from '@/lib/auth/profile';
-import {
-  checkRateLimit,
-  getClientIdentifier,
-  rateLimitResponse,
-} from '@/lib/ratelimit';
+import { enforceRateLimit, getClientIdentifier } from '@/lib/ratelimit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,13 +24,11 @@ export async function POST(request: NextRequest) {
 
     // Rate limiting: max 5 login attempts per minute per client (uses validated email)
     const clientId = getClientIdentifier(request, email);
-    const rateCheck = await checkRateLimit(`login:${clientId}`, {
+    const rateLimitRes = await enforceRateLimit(`login:${clientId}`, {
       limit: 5,
       windowSeconds: 60,
     });
-    if (!rateCheck.success) {
-      return rateLimitResponse(rateCheck);
-    }
+    if (rateLimitRes) return rateLimitRes;
 
     const { isConfigured } = getCognitoConfig();
 
@@ -55,6 +49,13 @@ export async function POST(request: NextRequest) {
         email: email.trim().toLowerCase(),
         name: cognitoUser?.name || email,
       });
+
+      if (!profile) {
+        return NextResponse.json(
+          { message: 'User profile not found in database' },
+          { status: 401 }
+        );
+      }
 
       const response = NextResponse.json({
         success: true,

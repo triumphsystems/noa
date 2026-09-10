@@ -1,14 +1,18 @@
-﻿/**
+/**
  * Canonical Profile Resolution
  *
  * Resolves a display name and avatar from DynamoDB for any authenticated user.
  * Called by /api/auth/login, /api/auth/me, and /api/auth/refresh — previously
  * each route had its own incomplete copy of this logic.
  *
- * Never throws — all DynamoDB failures return a Cognito-derived fallback.
  */
 
-import { getDoctorById, getPatientById, getAdminByEmail } from '@/lib/db';
+import {
+  getDoctorById,
+  getPatientById,
+  getAdminById,
+  getAdminByEmail,
+} from '@/lib/db';
 import type { Role } from './roles';
 
 export interface ResolvedUserProfile {
@@ -20,26 +24,23 @@ export interface ResolvedUserProfile {
 }
 
 export interface ProfileFallback {
-  email: string;
-  name: string;
+  email?: string;
+  name?: string;
 }
 
 /**
- * Fetches the canonical display profile for an authenticated user.
+ * Fetches the canonical display profile for an authenticated user from DynamoDB.
+ * Returns null if the user does not exist in the database (never synthesizes phantom profiles).
  *
- * Resolution order:
- * 1. DynamoDB record (doctor / patient / admin table lookup)
- * 2. Cognito-derived fallback (email + name from token)
- *
- * @param sub      The user's Cognito sub (used as DynamoDB primary key for doctor/patient)
+ * @param sub      The user's Cognito sub (DynamoDB primary key)
  * @param userType The verified role from the Cognito token
- * @param fallback Cognito-derived email and name to fall back to on DB miss
+ * @param fallback Optional metadata (such as admin email for legacy lookup)
  */
 export async function resolveUserProfile(
   sub: string,
   userType: Role,
-  fallback: ProfileFallback
-): Promise<ResolvedUserProfile> {
+  fallback?: ProfileFallback
+): Promise<ResolvedUserProfile | null> {
   try {
     if (userType === 'doctor') {
       const doctor = await getDoctorById(sub);
@@ -64,7 +65,10 @@ export async function resolveUserProfile(
         };
       }
     } else if (userType === 'admin') {
-      const admin = await getAdminByEmail(fallback.email);
+      let admin = await getAdminById(sub);
+      if (!admin && fallback?.email) {
+        admin = await getAdminByEmail(fallback.email);
+      }
       if (admin) {
         return {
           id: sub,
@@ -75,15 +79,9 @@ export async function resolveUserProfile(
         };
       }
     }
-  } catch {
-    // Non-fatal: DB lookup failures gracefully return the Cognito fallback below
+  } catch (error) {
+    console.error(`[Profile] Failed to resolve ${userType} profile for ${sub}:`, error);
   }
 
-  return {
-    id: sub,
-    email: fallback.email,
-    name: fallback.name,
-    userType,
-    avatar: null,
-  };
+  return null;
 }

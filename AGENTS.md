@@ -261,10 +261,8 @@ All client-side localStorage reads and writes for auth identifiers must use this
 // lib/auth/storage.ts
 
 export const AUTH_STORAGE_KEYS = {
+  USER_ID: 'userId',
   USER_TYPE: 'userType',
-  DOCTOR_ID: 'doctorId',
-  PATIENT_ID: 'patientId',
-  ADMIN_ID: 'adminId',
   ACTIVE_INTAKE: 'active_intake_session',
   INTAKE_COMPLETION: 'intake-completion',
 } as const;
@@ -280,15 +278,10 @@ export function clearAuthStorage(): void {
   );
 }
 
-/** Writes the role-scoped user ID into localStorage. */
+/** Writes the canonical user ID and userType into localStorage. */
 export function setStoredUserId(role: Role, id: string): void {
   if (typeof window === 'undefined') return;
-  const keyMap: Record<Role, AuthStorageKey> = {
-    doctor: AUTH_STORAGE_KEYS.DOCTOR_ID,
-    patient: AUTH_STORAGE_KEYS.PATIENT_ID,
-    admin: AUTH_STORAGE_KEYS.ADMIN_ID,
-  };
-  window.localStorage.setItem(keyMap[role], id);
+  window.localStorage.setItem(AUTH_STORAGE_KEYS.USER_ID, id);
   window.localStorage.setItem(AUTH_STORAGE_KEYS.USER_TYPE, role);
 }
 ```
@@ -318,14 +311,13 @@ export interface ResolvedUserProfile {
 
 /**
  * Fetches the canonical display profile for an authenticated user from DynamoDB.
- * Falls back to Cognito-derived values if the DB record is not found.
- * Never throws — failures return the fallback gracefully.
+ * Returns null if the user does not exist in DynamoDB (never synthesizes phantom profiles).
  */
 export async function resolveUserProfile(
   sub: string,
   userType: Role,
-  fallback: { email: string; name: string }
-): Promise<ResolvedUserProfile> {
+  fallback?: { email?: string; name?: string }
+): Promise<ResolvedUserProfile | null> {
   try {
     if (userType === 'doctor') {
       const doctor = await getDoctorById(sub);
@@ -350,7 +342,10 @@ export async function resolveUserProfile(
         };
       }
     } else if (userType === 'admin') {
-      const admin = await getAdminByEmail(fallback.email);
+      let admin = await getAdminById(sub);
+      if (!admin && fallback?.email) {
+        admin = await getAdminByEmail(fallback.email);
+      }
       if (admin) {
         return {
           id: sub,
@@ -362,15 +357,9 @@ export async function resolveUserProfile(
       }
     }
   } catch {
-    // Non-fatal: DB lookup failures return Cognito-derived fallback
+    // DB lookup failure logged
   }
-  return {
-    id: sub,
-    email: fallback.email,
-    name: fallback.name,
-    userType,
-    avatar: null,
-  };
+  return null;
 }
 ```
 

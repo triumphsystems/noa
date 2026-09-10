@@ -49,6 +49,13 @@ export async function POST(request: NextRequest) {
       name: cognitoUser?.name || 'User',
     });
 
+    if (!profile) {
+      return NextResponse.json(
+        { message: 'User profile not found in database' },
+        { status: 401 }
+      );
+    }
+
     const response = NextResponse.json({
       success: true,
       message: 'Tokens refreshed successfully',
