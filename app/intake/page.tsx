@@ -1,10 +1,12 @@
 'use client';
 
 import { Suspense } from 'react';
-import { IntakeHeader } from '@/components/intake/intake-header';
-import { AssistantPromptBox } from '@/components/intake/assistant-prompt-box';
-import { VoiceStudio } from '@/components/intake/voice-studio';
-import { ClinicalIntakeCard } from '@/components/intake/clinical-intake-card';
+import {
+  IntakeHeader,
+  AssistantPromptBox,
+  VoiceStudio,
+  ClinicalIntakeCard,
+} from '@/components/intake';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { useIntakeVoice } from '@/lib/hooks/use-intake-voice';
 
