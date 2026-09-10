@@ -17,6 +17,8 @@ export interface Doctor {
   rejectionReason?: string;
   phone?: string;
   avatar?: string;
+  address?: string;
+  bio?: string;
   createdAt: number;
   updatedAt: number;
 }

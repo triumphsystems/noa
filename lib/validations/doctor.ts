@@ -36,11 +36,11 @@ export type DoctorConnectInput = z.infer<typeof doctorConnectSchema>;
 
 export const doctorLinkActionSchema = z.object({
   patientId: z
-    .string({ required_error: 'patientId is required' })
+    .string({ error: 'patientId is required' })
     .trim()
     .min(1, 'patientId is required'),
-  action: z.enum(['accept', 'decline'], {
-    errorMap: () => ({ message: 'Valid action (accept or decline) is required' }),
+  action: z.enum(['accept', 'decline'] as const, {
+    error: 'Valid action (accept or decline) is required',
   }),
 });
 

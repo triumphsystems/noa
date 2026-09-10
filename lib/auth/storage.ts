@@ -24,7 +24,6 @@ export type AuthStorageKey =
 
 /**
  * Clears every auth-related localStorage entry in one call.
- * Used by both logout() in auth-context.tsx and handleAuthExpiration() in http.ts.
  */
 export function clearAuthStorage(): void {
   if (typeof window === 'undefined') return;

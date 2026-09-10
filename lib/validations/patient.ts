@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const patientInviteSchema = z.object({
   email: z
-    .string({ required_error: 'Patient email is required' })
+    .string({ error: 'Patient email is required' })
     .trim()
     .min(1, 'Patient email is required')
     .email('Invalid email address'),
@@ -14,8 +14,8 @@ export const patientInviteSchema = z.object({
 export type PatientInviteInput = z.infer<typeof patientInviteSchema>;
 
 export const patientLinkActionSchema = z.object({
-  action: z.enum(['accept', 'decline'], {
-    errorMap: () => ({ message: 'Valid action (accept or decline) is required' }),
+  action: z.enum(['accept', 'decline'] as const, {
+    error: 'Valid action (accept or decline) is required',
   }),
 });
 

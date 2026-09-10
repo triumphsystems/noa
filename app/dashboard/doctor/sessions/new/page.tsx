@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, {
   useState,
@@ -108,9 +108,25 @@ function SessionPageContent() {
         const data = await response.json();
         if (Array.isArray(data.suggestions)) {
           setSuggestions((prev) => {
-            const existingIds = new Set(prev.map((s) => s.id));
-            const newOnes = data.suggestions.filter((s: ClinicalSuggestionItem) => !existingIds.has(s.id));
-            return [...newOnes, ...prev].slice(0, 8);
+            const existingTexts = new Set(prev.map((s) => s.text));
+            const newItems: ClinicalSuggestionItem[] = [];
+            for (const s of data.suggestions) {
+              if (typeof s === 'string' && !existingTexts.has(s)) {
+                newItems.push({ text: s, priority: 'medium' });
+              } else if (
+                typeof s === 'object' &&
+                s !== null &&
+                'text' in s &&
+                typeof (s as { text: unknown }).text === 'string'
+              ) {
+                const text = (s as { text: string }).text;
+                const priority = (s as { priority?: 'high' | 'medium' | 'low' }).priority || 'medium';
+                if (!existingTexts.has(text)) {
+                  newItems.push({ text, priority });
+                }
+              }
+            }
+            return [...newItems, ...prev].slice(0, 8);
           });
         }
       }

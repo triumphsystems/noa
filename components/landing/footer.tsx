@@ -34,7 +34,7 @@ export function LandingFooter() {
           </Link>
         </div>
         <p className="text-white/40">
-          &copy; 2026 Noa Health. All rights reserved.
+          &copy; {new Date().getFullYear()} Noa Health. All rights reserved.
         </p>
       </div>
     </footer>

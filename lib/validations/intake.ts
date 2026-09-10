@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const intakeSubmitSchema = z.object({
   patientId: z.string().trim().optional(),
   doctorId: z
-    .string({ required_error: 'doctorId is required' })
+    .string({ error: 'doctorId is required' })
     .trim()
     .min(1, 'doctorId is required'),
   chiefComplaint: z.string().trim().optional(),
@@ -18,14 +18,20 @@ export const intakeSubmitSchema = z.object({
 
 export type IntakeSubmitInput = z.infer<typeof intakeSubmitSchema>;
 
+export const intakeConversationMessageSchema = z.object({
+  role: z.enum(['assistant', 'patient', 'system'] as const),
+  content: z.string(),
+  timestamp: z.number(),
+});
+
 export const intakeConversationTurnSchema = z.object({
   transcript: z
-    .string({ required_error: 'transcript is required' })
+    .string({ error: 'transcript is required' })
     .trim()
     .min(1, 'transcript is required'),
   language: z.string().trim().optional(),
-  history: z.array(z.record(z.unknown())).optional(),
-  draft: z.record(z.unknown()).optional(),
+  history: z.array(intakeConversationMessageSchema).optional(),
+  draft: z.record(z.string(), z.unknown()).optional(),
   doctorId: z.string().trim().optional(),
   intakeId: z.string().trim().optional(),
 });

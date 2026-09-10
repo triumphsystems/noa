@@ -8,7 +8,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Claude filled primary action: Dark carbon fill on light surfaces
+        // Primary action: Dark carbon fill on light surfaces
         dark: 'bg-deep-ink text-canvas hover:bg-deep-ink/90 shadow-2xs border-transparent',
         // Signature brand chromatic action: Radiant Hi-Yellow
         default:
