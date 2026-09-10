@@ -30,6 +30,7 @@ export async function updateDoctorProfile(
       | 'specialty'
       | 'clinic'
       | 'phone'
+      | 'avatar'
       | 'license'
       | 'issuingAuthority'
       | 'licenseDocumentUrl'

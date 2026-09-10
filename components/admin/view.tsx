@@ -310,7 +310,11 @@ export function AdminDashboardView({
       <main className="flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
         <div className="mx-auto max-w-7xl space-y-6">
           {/* Metrics Overview */}
-          <AdminMetrics counts={initialCounts} activeTab={activeTab} />
+          <AdminMetrics
+            counts={initialCounts}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
 
           {/* Search, Filter & Tabs Toolbar */}
           <AdminToolbar
@@ -332,13 +336,17 @@ export function AdminDashboardView({
           <AdminTable
             doctors={filteredDoctors}
             loading={isPending}
+            searchQuery={searchQuery}
+            specialtyFilter={specialtyFilter}
+            activeTab={activeTab}
             actionLoadingId={actionLoadingId}
             copiedCode={copiedCode}
-            onCopyCode={handleCopyCode}
-            onViewDossier={setDossierDoctor}
-            onApprove={setApprovingDoctor}
-            onReject={setRejectionModalDoctor}
-            onRevoke={setRevokingDoctor}
+            onCopy={handleCopyCode}
+            onDossierClick={setDossierDoctor}
+            onApproveClick={setApprovingDoctor}
+            onRejectClick={setRejectionModalDoctor}
+            onRevokeClick={setRevokingDoctor}
+            onResetFilters={handleResetFilters}
           />
         </div>
       </main>
@@ -352,13 +360,13 @@ export function AdminDashboardView({
       />
 
       <RejectionDialog
-        doctor={rejectionModalDoctor}
-        revokingDoctor={revokingDoctor}
+        doctor={rejectionModalDoctor || revokingDoctor}
+        isRevocation={Boolean(revokingDoctor)}
         actionLoading={
           actionLoadingId ===
           (rejectionModalDoctor?.id || revokingDoctor?.id)
         }
-        rejectionReason={rejectionReason}
+        reason={rejectionReason}
         onReasonChange={setRejectionReason}
         onClose={() => {
           setRejectionModalDoctor(null);
@@ -370,17 +378,12 @@ export function AdminDashboardView({
 
       <DossierDialog
         doctor={dossierDoctor}
-        actionLoadingId={actionLoadingId}
         onClose={() => setDossierDoctor(null)}
-        onApprove={(doc) => {
+        onApprove={(doc: DoctorItem) => {
           setDossierDoctor(null);
           setApprovingDoctor(doc);
         }}
-        onReject={(doc) => {
-          setDossierDoctor(null);
-          setRejectionModalDoctor(doc);
-        }}
-        onRevoke={(doc) => {
+        onRevoke={(doc: DoctorItem) => {
           setDossierDoctor(null);
           setRevokingDoctor(doc);
         }}

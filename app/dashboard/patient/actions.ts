@@ -179,13 +179,11 @@ export async function respondToDoctorLink(
       };
     }
   } catch (error) {
-    console.error('[Actions] Failed to respond to doctor link:', error);
-      return {
-        success: false,
-        error:
-          error instanceof Error ? error.message : 'Action failed to process',
-      };
-    }
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : 'Action failed to process',
+    };
   }
 }
 

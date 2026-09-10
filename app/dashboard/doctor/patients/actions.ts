@@ -62,7 +62,7 @@ export async function invitePatient(
     if (!parseResult.success) {
       return {
         success: false,
-        error: parseResult.error.errors[0]?.message || 'Invalid invite input',
+        error: parseResult.error.issues[0]?.message || 'Invalid invite input',
       };
     }
 
@@ -182,15 +182,13 @@ export async function respondToPatientLink(
           : 'Patient connection request declined.',
     };
   } catch (error) {
-    console.error('[Actions] Failed to respond to patient link:', error);
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to process connection request',
-      };
-    }
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to process connection request',
+    };
   }
 }
 

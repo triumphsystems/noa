@@ -114,14 +114,14 @@ export function PatientsView({
 
       setActionNotification({
         type: 'success',
-        text: res.message || `Patient request ${action}ed successfully.`,
+        message: res.message || `Patient request ${action}ed successfully.`,
       });
     } catch (err) {
       const text =
         err instanceof Error
           ? err.message
           : `Failed to ${action} patient request`;
-      setActionNotification({ type: 'error', text });
+      setActionNotification({ type: 'error', message: text });
     } finally {
       setLinkActionLoadingId(null);
     }
@@ -152,7 +152,7 @@ export function PatientsView({
               : 'border-rose-200 bg-rose-50 text-rose-900'
           }`}
         >
-          <span>{actionNotification.text}</span>
+          <span>{actionNotification.message}</span>
           <button
             onClick={() => setActionNotification(null)}
             className="text-xs underline hover:opacity-80"
@@ -166,10 +166,11 @@ export function PatientsView({
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         totalCount={patients.length}
-        filteredCount={filteredPatients.length}
+        withConditionsCount={patients.filter((p) => (p.conditions?.length || 0) > 0).length}
       />
 
       <PatientsTable
+        isLoading={false}
         patients={filteredPatients}
         searchTerm={searchTerm}
         linkActionLoadingId={linkActionLoadingId}
@@ -182,17 +183,17 @@ export function PatientsView({
           setIsModalOpen(false);
           setInviteMessage(null);
         }}
-        email={inviteEmail}
-        firstName={inviteFirstName}
-        lastName={inviteLastName}
-        phone={invitePhone}
+        inviteEmail={inviteEmail}
+        inviteFirstName={inviteFirstName}
+        inviteLastName={inviteLastName}
+        invitePhone={invitePhone}
         onEmailChange={setInviteEmail}
         onFirstNameChange={setInviteFirstName}
         onLastNameChange={setInviteLastName}
         onPhoneChange={setInvitePhone}
         onSubmit={handleInviteSubmit}
         isSubmitting={isSubmittingInvite}
-        message={inviteMessage}
+        inviteMessage={inviteMessage}
       />
     </div>
   );

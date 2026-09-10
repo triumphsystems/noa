@@ -55,7 +55,7 @@ export function PatientDashboardView({
     usePatientStore((state) => state.patient) || initialData.patient;
   const doctor = useDoctorStoreDoctor(initialData.doctor);
   const pendingDoctor =
-    usePatientStore((state) => state.pendingDoctor) ?? initialData.pendingDoctor;
+    (usePatientStore((state) => state.pendingDoctor) ?? initialData.pendingDoctor) ?? null;
   const sessions =
     usePatientStore((state) => state.sessions) || initialData.sessions;
   const intake =
@@ -90,7 +90,7 @@ export function PatientDashboardView({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     startTransition(async () => {
       await refreshPatientDashboard();
     });

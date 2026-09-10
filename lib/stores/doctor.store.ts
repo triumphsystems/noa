@@ -19,6 +19,8 @@ export interface DoctorState {
   error: string | null;
   lastLoadedDoctorId: string | null;
   setDoctorId: (doctorId: string | null) => void;
+  setDoctor: (doctor: DoctorProfile | null) => void;
+  setPatients: (patients: Patient[]) => void;
   loadDashboard: (doctorId?: string) => Promise<void>;
   updateDoctorProfile: (
     updates: DoctorProfileUpdateInput
@@ -51,6 +53,8 @@ export const useDoctorStore = create<DoctorState>((set, get) => ({
   ...initialState,
 
   setDoctorId: (doctorId) => set({ doctorId }),
+  setDoctor: (doctor) => set({ doctor }),
+  setPatients: (patients) => set({ patients }),
 
   loadDashboard: async (doctorId) => {
     const activeDoctorId = doctorId ?? get().doctorId;
