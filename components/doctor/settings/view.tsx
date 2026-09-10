@@ -9,7 +9,7 @@ import {
   DoctorSettingsPreview,
   type SettingsFormState,
 } from '@/components/doctor/settings';
-import { updateDoctorProfileAction } from '@/app/dashboard/doctor/actions';
+import { updateDoctorProfile } from '@/app/dashboard/doctor/actions';
 import { useDoctorStore } from '@/lib/stores/doctor.store';
 import type { Doctor } from '@/lib/db';
 
@@ -57,7 +57,7 @@ export function DoctorSettingsView({ initialDoctor }: DoctorSettingsViewProps) {
     setError(null);
 
     startTransition(async () => {
-      const res = await updateDoctorProfileAction({
+      const res = await updateDoctorProfile({
         name: formState.name,
         specialty: formState.specialty,
         clinic: formState.clinic,

@@ -19,7 +19,7 @@ import {
   X,
   Loader2,
 } from 'lucide-react';
-import { saveSessionAction } from '@/app/dashboard/doctor/actions';
+import { saveSession } from '@/app/dashboard/doctor/actions';
 import type { Session, Patient, Doctor, SoapNote } from '@/lib/db';
 
 export interface SessionDetailProps {
@@ -50,7 +50,7 @@ export function SessionDetail({
 
   const handleSaveSOAP = () => {
     startTransition(async () => {
-      const res = await saveSessionAction({
+      const res = await saveSession({
         sessionId: session.id,
         patientId: session.patientId,
         transcript: session.transcript,

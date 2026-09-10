@@ -22,7 +22,7 @@ import {
   type ClinicalSuggestionItem,
   type SOAPNoteData,
 } from '@/components/session';
-import { saveSessionAction } from '@/app/dashboard/doctor/actions';
+import { saveSession } from '@/app/dashboard/doctor/actions';
 import type { Patient } from '@/lib/db';
 
 interface SessionConsoleProps {
@@ -413,7 +413,7 @@ export function SessionConsole({
         .map((t) => `${t.role}: ${t.text}`)
         .join('\n');
 
-      const res = await saveSessionAction({
+      const res = await saveSession({
         sessionId: sessionId || undefined,
         patientId: selectedPatient,
         transcript: fullTranscript,

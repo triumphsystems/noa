@@ -22,7 +22,7 @@ export interface ActionResult<T = unknown> {
 /**
  * Server Action to update Doctor profile information.
  */
-export async function updateDoctorProfileAction(
+export async function updateDoctorProfile(
   updates: Partial<
     Pick<
       Doctor,
@@ -64,6 +64,8 @@ export async function updateDoctorProfileAction(
   }
 }
 
+export const updateDoctorProfileAction = updateDoctorProfile;
+
 export interface SaveSessionInput {
   sessionId?: string;
   patientId: string;
@@ -79,7 +81,7 @@ export interface SaveSessionInput {
 /**
  * Server Action to save or complete a clinical consultation session.
  */
-export async function saveSessionAction(
+export async function saveSession(
   input: SaveSessionInput
 ): Promise<ActionResult<{ sessionId: string }>> {
   try {
@@ -168,6 +170,8 @@ export async function saveSessionAction(
     };
   }
 }
+
+export const saveSessionAction = saveSession;
 
 export { submitLicensure, submitLicensureAction } from './onboarding/actions';
 
