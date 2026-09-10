@@ -3,6 +3,7 @@ import {
   createDoctor,
   createPatient,
   updatePatient,
+  migratePatientId,
   getDoctorByEmail,
   getPatientByEmail,
   type Patient,

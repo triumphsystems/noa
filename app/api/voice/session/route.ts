@@ -357,7 +357,7 @@ export async function GET(request: Request) {
   const idToken = cookies[AUTH_COOKIE_NAMES.ID_TOKEN];
   const accessToken = cookies[AUTH_COOKIE_NAMES.ACCESS_TOKEN];
 
-  let auth = { isValid: false, sub: undefined as string | undefined, userType: undefined as string | undefined };
+  let auth: import('@/lib/auth/jwt').VerifiedAuthPayload = { isValid: false };
   try {
     auth = await verifyToken(idToken, accessToken);
   } catch {
@@ -375,39 +375,38 @@ export async function GET(request: Request) {
     }
   }
 
-  let patientName = '';
+  // DynamoDB: Pre-load patient details if available
+  let patientName = 'Patient';
   let draft: IntakeConversationDraft = {};
 
   if (authorizedPatientId) {
     try {
       const patient = await getPatientById(authorizedPatientId);
       if (patient) {
-        patientName = [patient.firstName, patient.lastName].filter(Boolean).join(' ');
+        patientName = `${patient.firstName} ${patient.lastName}`.trim();
         draft = {
+          ...draft,
           firstName: patient.firstName,
           lastName: patient.lastName,
-          dateOfBirth: patient.dateOfBirth,
-          gender: patient.gender,
-          email: patient.email,
-          phone: patient.phone,
-          address: patient.address,
-          medicalConditions: patient.conditions,
-          allergies: patient.allergies,
-          currentMedications: patient.medications,
+          dateOfBirth: patient.dateOfBirth || '',
+          gender: patient.gender || '',
+          phone: patient.phone || '',
+          email: patient.email || '',
+          address: patient.address || '',
+          medicalConditions: patient.conditions || [],
+          currentMedications: patient.medications || [],
+          allergies: patient.allergies || [],
         };
       }
-    } catch (err) {
-      console.warn('[Voice/WS] Could not fetch patient record for prompt:', err);
+    } catch {
+      // Non-fatal: proceed with default draft
     }
   }
 
+  // Pre-load draft from active intake record if provided
   if (intakeId) {
     try {
       const intake = await getIntakeById(intakeId);
-      // Security: Only allow intake access if:
-      // 1. Authenticated patient owns it (auth.sub === intake.patientId)
-      // 2. Authenticated doctor is reviewing it (auth.userType === 'doctor')
-      // 3. Anonymous in-progress guest intake (intake.patientId.startsWith('guest-') && !intake.completed)
       const isOwner = auth.isValid && Boolean(auth.sub) && intake?.patientId === auth.sub;
       const isDoctor = auth.isValid && auth.userType === 'doctor';
       const isAnonymousGuest =
@@ -436,7 +435,7 @@ export async function GET(request: Request) {
 
   return experimental_upgradeWebSocket(async (ws) => {
     console.log(
-      `[Voice/WS] Session ${sessionId} connected (patient: ${patientId || 'guest'}, intake: ${intakeId || 'none'}) — model: ${modelId} (${region})`
+      `[Voice/WS] Session ${sessionId} connected (patient: ${requestedPatientId || 'guest'}, intake: ${intakeId || 'none'}) — model: ${modelId} (${region})`
     );
 
     // Correlated turn IDs required by Amazon Bedrock Nova Sonic protocol

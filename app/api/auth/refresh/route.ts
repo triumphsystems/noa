@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import {
   refreshCognitoTokens,
   getCognitoUser,
@@ -38,10 +38,11 @@ export async function POST(request: NextRequest) {
     const tokens = await refreshCognitoTokens(refreshToken);
     const cognitoUser = await getCognitoUser(tokens.accessToken);
 
-    const userId = cognitoUser?.sub;
+    const userId = cognitoUser?.sub || '';
     const userRole: Role =
       cognitoUser?.userType && isValidRole(cognitoUser.userType)
         ? cognitoUser.userType
+        : 'patient';
 
     const profile = await resolveUserProfile(userId, userRole, {
       email: cognitoUser?.email || '',

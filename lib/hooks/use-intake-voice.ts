@@ -162,9 +162,9 @@ export function useIntakeVoice() {
   }
 
   // Ref tracking forward declaration
-  const sendTranscriptRef = useRef<(text: string, isVoiceTurn?: boolean) => Promise<void>>(
-    async () => {}
-  );
+  const sendTranscriptRef = useRef<
+    (text: string, isVoiceTurn?: boolean, isAuto?: boolean) => Promise<void>
+  >(async () => {});
 
   const chatItems = useMemo(
     () => history.filter((item) => item.role !== 'system'),

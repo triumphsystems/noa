@@ -88,7 +88,7 @@ export interface PatientIntake {
   completed: boolean;
   completedAt?: number;
   draft?: Record<string, unknown>;
-  ttl?: number;
+  ttl?: number | null;
   createdAt: number;
   updatedAt: number;
 }
