@@ -9,7 +9,7 @@ import { invokeClinicalAI } from '@/lib/ai/provider';
 /**
  * Generate SOAP notes from clinical transcript using Nova Lite (or Local LLM)
  */
-export async function generateSOAPWithNova(
+export async function generateSOAPNote(
   transcript: string,
   patientContext?: string
 ): Promise<{
@@ -19,7 +19,7 @@ export async function generateSOAPWithNova(
   plan: string;
 }> {
   const systemPrompt = `You are a clinical documentation expert. Convert the following medical consultation transcript into a structured SOAP note.
-  
+
 Patient Context: ${patientContext || 'N/A'}
 
 Format your response EXACTLY as follows:
@@ -53,6 +53,8 @@ PLAN:
     plan: extractSection(text, 'PLAN'),
   };
 }
+
+export const generateSOAPWithNova = generateSOAPNote;
 
 /**
  * Generate clinical insights and recommendations from patient data
@@ -98,8 +100,8 @@ export async function generatePatientSummary(
   soapNote: string,
   clinicalTerms?: string[]
 ): Promise<string> {
-  const prompt = `Convert the following clinical SOAP note into a patient-friendly summary. 
-  
+  const prompt = `Convert the following clinical SOAP note into a patient-friendly summary.
+
 Use simple, clear language. Avoid medical jargon or explain it in parentheses.
 Focus on: what was found, what it means for the patient, and what they need to do next.
 

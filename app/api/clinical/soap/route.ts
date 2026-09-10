@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { generateSOAPWithNova } from '@/lib/bedrock-nova';
+import { generateSOAPWithNova } from '@/lib/bedrock';
 import { updateSession } from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
 import { soapGenerateSchema } from '@/lib/validations';

@@ -265,7 +265,6 @@ export const awsConfig = {
         process.env.BEDROCK_NOVA_PRO_MODEL || 'global.amazon.nova-pro-v1:0',
 
       // Nova 2 Sonic — bidirectional audio stream ONLY (patient intake voice dialogue)
-      // Direct regional ID required — no global. prefix for bidirectional streaming
       sonic: process.env.BEDROCK_SONIC_MODEL || 'amazon.nova-2-sonic-v1:0',
     },
     config: {

@@ -77,27 +77,28 @@ export async function POST(request: NextRequest) {
     }
 
     if (!sessionId) {
-      return NextResponse.json(
-        { error: 'Session ID is required' },
-        { status: 400 }
+      return apiError(
+        API_ERROR_CODES.VALIDATION_ERROR,
+        'Session ID is required',
+        400
       );
     }
 
     // Enforce that doctorId and patientId must be provided
     if (!doctorId || !patientId) {
-      return NextResponse.json(
-        { error: 'doctorId and patientId are required' },
-        { status: 400 }
+      return apiError(
+        API_ERROR_CODES.VALIDATION_ERROR,
+        'doctorId and patientId are required',
+        400
       );
     }
 
     // BOLA: verify the calling doctor owns this session's doctorId
     if (auth.userType === 'doctor' && doctorId !== auth.sub) {
-      return NextResponse.json(
-        {
-          error: "Forbidden: Cannot submit voice for another doctor's session",
-        },
-        { status: 403 }
+      return apiError(
+        API_ERROR_CODES.FORBIDDEN,
+        "Forbidden: Cannot submit voice for another doctor's session",
+        403
       );
     }
 

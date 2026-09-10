@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import {
   generateClinicalInsights,
   generateFollowUpPlan,
-} from '@/lib/bedrock-nova';
+} from '@/lib/bedrock';
 import { requireAuth } from '@/lib/auth/guard';
 import { insightsGenerateSchema } from '@/lib/validations';
 import { apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
@@ -44,10 +44,15 @@ export async function POST(request: NextRequest) {
     // Generate follow-up plan if medications or procedures provided
     let followUpPlan = '';
     if (medications || procedures) {
+      const proceduresList = procedures
+        ? Array.isArray(procedures)
+          ? procedures
+          : [procedures]
+        : undefined;
       followUpPlan = await generateFollowUpPlan(
         currentPresentation,
         medications || [],
-        procedures
+        proceduresList
       );
     }
 

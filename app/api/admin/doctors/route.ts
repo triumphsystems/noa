@@ -45,8 +45,7 @@ export async function GET(request: NextRequest) {
           )
         : allDoctors;
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       count: doctors.length,
       counts,
       doctors: doctors.map((doc) => ({
@@ -67,7 +66,6 @@ export async function GET(request: NextRequest) {
         createdAt: doc.createdAt,
         updatedAt: doc.updatedAt,
       })),
-      counts,
       total: allDoctors.length,
     });
   } catch (error) {

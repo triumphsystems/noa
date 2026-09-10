@@ -10,7 +10,7 @@ import {
   generatePatientSummary,
   generateTriagePriority,
   generateFollowUpPlan,
-} from '@/lib/bedrock-nova';
+} from '@/lib/bedrock';
 import {
   getClinicaSuggestions,
   analyzeSessionSentiment,
