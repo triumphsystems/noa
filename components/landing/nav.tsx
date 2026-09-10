@@ -165,9 +165,11 @@ export function LandingNav() {
               </Button>
             </Link>
           )}
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="hover:bg-deep-ink/5 text-deep-ink cursor-pointer rounded-lg p-1.5 transition-colors"
+            className="text-deep-ink"
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           >
             {mobileMenuOpen ? (
@@ -175,7 +177,7 @@ export function LandingNav() {
             ) : (
               <Menu className="h-5 w-5" />
             )}
-          </button>
+          </Button>
         </div>
       </div>
 

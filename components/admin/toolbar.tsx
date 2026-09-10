@@ -1,5 +1,7 @@
 import { Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 
 interface AdminToolbarProps {
   searchQuery: string;
@@ -56,25 +58,26 @@ export function AdminToolbar({
             className="border-deep-ink/10 bg-canvas focus:ring-deep-ink/20 text-deep-ink placeholder:text-slate/60 w-full rounded-xl border py-2 pr-9 pl-10 text-sm transition-all focus:bg-white focus:ring-2 focus:outline-none"
           />
           {searchQuery && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon-xs"
               onClick={() => onSearchChange('')}
-              className="text-slate hover:text-deep-ink absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer rounded p-0.5"
+              className="text-slate hover:text-deep-ink absolute top-1/2 right-2.5 -translate-y-1/2"
               title="Clear search"
             >
               <X className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           )}
         </div>
 
         {/* Filter and Sort Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
           {specialties.length > 0 && (
-            <div className="text-slate flex items-center gap-1.5 text-xs">
-              <select
+            <div className="w-36">
+              <Select
                 value={specialtyFilter}
                 onChange={(e) => onSpecialtyChange(e.target.value)}
                 aria-label="Filter by specialty"
-                className="border-deep-ink/10 bg-canvas text-deep-ink focus:ring-deep-ink/20 cursor-pointer rounded-xl border px-3 py-2 text-xs focus:ring-2 focus:outline-none"
               >
                 <option value="all">All Specialties</option>
                 {specialties.map((spec) => (
@@ -82,22 +85,23 @@ export function AdminToolbar({
                     {spec}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           )}
 
-          <select
-            value={sortBy}
-            onChange={(e) =>
-              onSortChange(e.target.value as 'newest' | 'oldest' | 'name')
-            }
-            aria-label="Sort order"
-            className="border-deep-ink/10 bg-canvas text-deep-ink focus:ring-deep-ink/20 cursor-pointer rounded-xl border px-3 py-2 text-xs focus:ring-2 focus:outline-none"
-          >
-            <option value="newest">Newest Registered</option>
-            <option value="oldest">Oldest Registered</option>
-            <option value="name">Name (A-Z)</option>
-          </select>
+          <div className="w-40">
+            <Select
+              value={sortBy}
+              onChange={(e) =>
+                onSortChange(e.target.value as 'newest' | 'oldest' | 'name')
+              }
+              aria-label="Sort order"
+            >
+              <option value="newest">Newest Registered</option>
+              <option value="oldest">Oldest Registered</option>
+              <option value="name">Name (A-Z)</option>
+            </Select>
+          </div>
 
           {/* Segmented Status Tabs */}
           <div className="bg-soft-meadow border-deep-ink/8 flex w-full scrollbar-none gap-1 overflow-x-auto rounded-xl border p-1 sm:w-auto">
@@ -140,12 +144,14 @@ export function AdminToolbar({
         {(searchQuery ||
           specialtyFilter !== 'all' ||
           activeTab !== 'all') && (
-          <button
+          <Button
+            variant="link"
+            size="xs"
             onClick={onReset}
-            className="text-deep-ink cursor-pointer font-semibold underline underline-offset-2 hover:opacity-75"
+            className="text-deep-ink font-semibold"
           >
             Reset filters
-          </button>
+          </Button>
         )}
       </div>
     </div>

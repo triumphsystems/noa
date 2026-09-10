@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { ShieldCheck, Mail, Check, Copy } from 'lucide-react';
@@ -131,12 +131,14 @@ export function PatientCare({
           {isChangingDoctor && (
             <div className="flex items-center justify-between px-1">
               <span className="text-slate text-xs">Connect with new healthcare provider</span>
-              <button
+              <Button
+                variant="link"
+                size="xs"
                 onClick={() => setIsChangingDoctor(false)}
-                className="text-deep-ink cursor-pointer text-xs font-semibold hover:underline"
+                className="text-deep-ink font-semibold"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           )}
 

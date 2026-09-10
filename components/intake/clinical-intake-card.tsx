@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { IntakeConversationDraft } from '@/lib/voice-service';
+import { Button } from '@/components/ui/button';
 import {
   CheckCircle2,
   Clock,
@@ -101,7 +102,7 @@ export function ClinicalIntakeCard({
         </div>
 
         {(percentComplete === 100 || isComplete) && onFinalize && (
-          <button
+          <Button
             type="button"
             onClick={onFinalize}
             disabled={isSubmitting}
@@ -113,7 +114,7 @@ export function ClinicalIntakeCard({
                 ? 'Intake Complete — Finalizing…'
                 : 'Finalize Intake & View Summary'}
             </span>
-          </button>
+          </Button>
         )}
       </div>
 
@@ -154,10 +155,11 @@ export function ClinicalIntakeCard({
 
       {/* History Drawer Toggle at Bottom */}
       <div className="border-deep-ink/8 shrink-0 border-t pt-2">
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={() => setShowHistory(!showHistory)}
-          className="bg-soft-meadow/50 hover:bg-soft-meadow text-slate hover:text-deep-ink flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-1.5 text-xs transition-colors"
+          className="bg-soft-meadow/50 hover:bg-soft-meadow text-slate hover:text-deep-ink flex h-auto w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-1.5 text-xs"
         >
           <span className="flex items-center gap-1.5 text-[11px] font-medium">
             <MessageSquare className="h-3.5 w-3.5" />
@@ -168,7 +170,7 @@ export function ClinicalIntakeCard({
           ) : (
             <ChevronUp className="h-3.5 w-3.5" />
           )}
-        </button>
+        </Button>
 
         {showHistory && (
           <div className="mt-2 max-h-32 space-y-1.5 overflow-y-auto pr-1 sm:max-h-40">
