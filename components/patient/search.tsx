@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Search, Loader2, Stethoscope, Building2 } from 'lucide-react';
 import {
-  searchDoctorsAction,
+  searchDoctors,
   type SanitizedDoctorDirectoryItem,
 } from '@/app/dashboard/patient/actions';
 
@@ -29,7 +29,7 @@ export function DoctorDirectorySearch({
     setIsSearching(true);
     setHasSearched(true);
     try {
-      const res = await searchDoctorsAction(searchQuery.trim());
+      const res = await searchDoctors(searchQuery.trim());
       if (res.success && res.data) {
         setSearchResults(res.data);
       } else {

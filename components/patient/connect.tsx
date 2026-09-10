@@ -13,12 +13,12 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import type { Doctor } from '@/lib/db';
-import { DoctorInvitationBanner } from './doctor-invitation-banner';
-import { DoctorDirectorySearch } from './doctor-directory-search';
+import { DoctorInvitationBanner } from './invitation';
+import { DoctorDirectorySearch } from './search';
 
 import {
   respondToDoctorLink,
-  linkDoctorCareCode,
+  connectDoctor,
 } from '@/app/dashboard/patient/actions';
 
 interface DoctorConnectCardProps {
@@ -69,7 +69,7 @@ export function DoctorConnectCard({
     setIsSubmitting(true);
     setFeedback(null);
     try {
-      const res = await linkDoctorCareCode({ careCode: careCodeInput.trim() });
+      const res = await connectDoctor({ careCode: careCodeInput.trim() });
       if (!res.success) {
         throw new Error(res.error || 'Doctor not found with this code');
       }
@@ -94,7 +94,7 @@ export function DoctorConnectCard({
     setIsSubmitting(true);
     setFeedback(null);
     try {
-      const res = await linkDoctorCareCode({ doctorId });
+      const res = await connectDoctor({ doctorId });
       if (!res.success) throw new Error(res.error || 'Connection failed');
       setFeedback({
         type: 'success',

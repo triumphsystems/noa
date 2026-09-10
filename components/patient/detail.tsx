@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { ConsultationHeader } from '@/components/patient/consultation-header';
-import { CarePlanView } from '@/components/patient/care-plan-view';
+import { CarePlanView } from '@/components/patient/plan';
 import type { PatientSessionDetailData } from '@/lib/data/summaries';
 
 interface ConsultationDetailViewProps {

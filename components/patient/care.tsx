@@ -5,7 +5,7 @@ import { ShieldCheck, Mail, Check, Copy } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DoctorConnectCard } from './doctor-connect-card';
+import { DoctorConnectCard } from './connect';
 import type { Doctor } from '@/lib/db';
 import type { PatientProfile } from '@/lib/types/patient.types';
 

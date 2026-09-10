@@ -28,7 +28,7 @@ export async function refreshPatientDashboard(): Promise<void> {
 /**
  * Server Action to fetch patient dashboard data directly.
  */
-export async function getPatientDashboardDataAction(): Promise<
+export async function getPatientDashboardData(): Promise<
   PatientActionResult<import('@/lib/types/patient.types').PatientDashboardPayload>
 > {
   try {
@@ -51,10 +51,12 @@ export async function getPatientDashboardDataAction(): Promise<
   }
 }
 
+export const getPatientDashboardDataAction = getPatientDashboardData;
+
 /**
  * Server Action to update patient profile information.
  */
-export async function updatePatientProfileAction(
+export async function updatePatientProfile(
   updates: Partial<{
     firstName: string;
     lastName: string;
@@ -88,6 +90,8 @@ export async function updatePatientProfileAction(
     };
   }
 }
+
+export const updatePatientProfileAction = updatePatientProfile;
 
 export type RespondDoctorLinkInput =
   | 'accept'
@@ -176,16 +180,14 @@ export async function respondToDoctorLink(
     }
   } catch (error) {
     console.error('[Actions] Failed to respond to doctor link:', error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : 'Action failed to process',
-    };
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : 'Action failed to process',
+      };
+    }
   }
 }
-
-export const respondToDoctorInvitationAction = respondToDoctorLink;
-export const respondToDoctorLinkAction = respondToDoctorLink;
 
 export type LinkDoctorInput =
   | string
@@ -277,8 +279,8 @@ export async function linkDoctorCareCode(
   }
 }
 
+export const connectDoctor = linkDoctorCareCode;
 export const connectDoctorAction = linkDoctorCareCode;
-export const linkDoctorCareCodeAction = linkDoctorCareCode;
 
 export type SanitizedDoctorDirectoryItem = Pick<
   Doctor,
@@ -288,18 +290,18 @@ export type SanitizedDoctorDirectoryItem = Pick<
 /**
  * Server Action for searching verified doctors from the directory.
  */
-export async function searchDoctorsAction(
+export async function searchDoctors(
   queryStr: string
 ): Promise<PatientActionResult<SanitizedDoctorDirectoryItem[]>> {
   try {
     await requireServerAuth(['patient']);
-    const { searchDoctors, getAllDoctors } = await import('@/lib/db');
+    const { searchDoctors: dbSearchDoctors, getAllDoctors } = await import('@/lib/db');
 
     const q = (queryStr || '').trim();
     let doctors: Doctor[] = [];
 
     if (q) {
-      doctors = await searchDoctors(q);
+      doctors = await dbSearchDoctors(q);
     } else {
       doctors = await getAllDoctors();
     }
@@ -326,5 +328,7 @@ export async function searchDoctorsAction(
   }
 }
 
-export { saveIntakeDraft, saveIntakeDraftAction } from '@/app/intake/actions';
+export const searchDoctorsAction = searchDoctors;
+
+export { saveIntakeDraft } from '@/app/intake/actions';
 
