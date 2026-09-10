@@ -82,8 +82,7 @@ export async function GET(request: NextRequest) {
     const requestedPatientId =
       request.nextUrl.searchParams.get('patientId') ||
       request.nextUrl.searchParams.get('patient');
-    const requestedIntakeId =
-      request.nextUrl.searchParams.get('intakeId');
+    const requestedIntakeId = request.nextUrl.searchParams.get('intakeId');
 
     // SECURITY: Pre-filling existing patient data from DynamoDB MUST ONLY occur
     // for verified authenticated sessions (matching auth.sub) or an authorized doctor.
@@ -108,7 +107,10 @@ export async function GET(request: NextRequest) {
       // 1. Authenticated patient owns it (auth.sub === candidateIntake.patientId)
       // 2. Authenticated doctor is reviewing it (auth.userType === 'doctor')
       // 3. Unauthenticated caller owns an in-progress anonymous guest intake (starts with guest- and not completed)
-      const isOwner = auth.isValid && Boolean(auth.sub) && candidateIntake?.patientId === auth.sub;
+      const isOwner =
+        auth.isValid &&
+        Boolean(auth.sub) &&
+        candidateIntake?.patientId === auth.sub;
       const isDoctor = auth.isValid && auth.userType === 'doctor';
       const isAnonymousGuest =
         !auth.isValid &&
@@ -131,13 +133,18 @@ export async function GET(request: NextRequest) {
         patient,
         activeOrLatestIntake?.allergies,
         activeOrLatestIntake?.medications,
-        activeOrLatestIntake?.medicalHistory ? [activeOrLatestIntake.medicalHistory] : [],
+        activeOrLatestIntake?.medicalHistory
+          ? [activeOrLatestIntake.medicalHistory]
+          : [],
         activeOrLatestIntake?.surgeries,
         activeOrLatestIntake?.familyHistory
       );
 
       // If active draft had saved in-progress fields on DynamoDB intake item
-      if (activeOrLatestIntake?.draft && typeof activeOrLatestIntake.draft === 'object') {
+      if (
+        activeOrLatestIntake?.draft &&
+        typeof activeOrLatestIntake.draft === 'object'
+      ) {
         draft = {
           ...draft,
           ...(activeOrLatestIntake.draft as unknown as IntakeConversationDraft),
@@ -148,7 +155,9 @@ export async function GET(request: NextRequest) {
         draft.chiefComplaint = activeOrLatestIntake.chiefComplaint;
       }
 
-      const patientName = [patient.firstName, patient.lastName].filter(Boolean).join(' ');
+      const patientName = [patient.firstName, patient.lastName]
+        .filter(Boolean)
+        .join(' ');
       const greeting = generateIntakeGreeting(draft, patientName);
       const missingFields = getMissingFields(draft);
 
@@ -156,7 +165,11 @@ export async function GET(request: NextRequest) {
         success: true,
         authenticated: true,
         patientId: patient.id,
-        doctorId: requestedDoctorId || activeOrLatestIntake?.doctorId || patient.doctorId || null,
+        doctorId:
+          requestedDoctorId ||
+          activeOrLatestIntake?.doctorId ||
+          patient.doctorId ||
+          null,
         intakeId: activeOrLatestIntake?.id || null,
         draft,
         missingFields,

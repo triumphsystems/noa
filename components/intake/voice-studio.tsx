@@ -118,12 +118,12 @@ export function VoiceStudio({
           {isSubmitting
             ? '● Thinking & processing...'
             : isSpeaking
-            ? '● Noa is speaking aloud...'
-            : isRecording
-            ? transcriptPreview && transcriptPreview !== 'Listening…'
-              ? '● Listening (auto-submits on silence)...'
-              : '● Listening live... speak when ready'
-            : '● Tap microphone to speak'}
+              ? '● Noa is speaking aloud...'
+              : isRecording
+                ? transcriptPreview && transcriptPreview !== 'Listening…'
+                  ? '● Listening (auto-submits on silence)...'
+                  : '● Listening live... speak when ready'
+                : '● Tap microphone to speak'}
         </span>
 
         <div className="border-deep-ink/10 flex items-center gap-1.5 rounded-full border bg-white/90 p-1 shadow-2xs backdrop-blur-xs">

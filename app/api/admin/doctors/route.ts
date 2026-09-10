@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         message:
-          'Failed to retrieve clinicians registry. Please check server logs or refresh.',
+          'Failed to retrieve clinicians registry. Please try again.',
       },
       { status: 500 }
     );

@@ -38,7 +38,7 @@ export interface ProfileFallback {
 export async function resolveUserProfile(
   sub: string,
   userType: Role,
-  fallback: ProfileFallback,
+  fallback: ProfileFallback
 ): Promise<ResolvedUserProfile> {
   try {
     if (userType === 'doctor') {

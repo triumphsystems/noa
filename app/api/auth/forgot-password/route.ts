@@ -64,15 +64,13 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: 'Authentication service is not configured' },
+      { message: 'Service is not available' },
       { status: 503 }
     );
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'An unexpected error occurred';
+    const msg =
+      error instanceof Error ? error.message : 'An unexpected error occurred';
     console.error('[API] Forgot password route error:', msg);
-    return NextResponse.json(
-      { message: msg },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: msg }, { status: 500 });
   }
 }

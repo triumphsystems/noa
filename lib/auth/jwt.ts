@@ -7,7 +7,11 @@
 
 import { NextRequest } from 'next/server';
 import { AUTH_COOKIE_NAMES } from './cookies';
-import { ADMIN_COGNITO_GROUPS, DOCTOR_COGNITO_GROUPS, type Role } from './roles';
+import {
+  ADMIN_COGNITO_GROUPS,
+  DOCTOR_COGNITO_GROUPS,
+  type Role,
+} from './roles';
 
 export interface VerifiedAuthPayload {
   isValid: boolean;
@@ -137,7 +141,9 @@ async function verifyTokenWithSignature(
   // In production, require COGNITO_USER_POOL_ID to prevent forged tokens
   if (!userPoolId) {
     if (process.env.NODE_ENV === 'production') {
-      console.error('[JWT] COGNITO_USER_POOL_ID is not configured in production. Rejecting verification.');
+      console.error(
+        '[JWT] COGNITO_USER_POOL_ID is not configured in production. Rejecting verification.'
+      );
       return { isValid: false };
     }
     const payload = decodeJwtPayload(token);

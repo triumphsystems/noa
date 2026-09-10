@@ -134,7 +134,11 @@ export default function AdminDashboardPage() {
     try {
       setRefreshing(true);
       // Fetch full directory so metric counts remain persistent & accurate across all tabs
-      const data = await http.get<{ success: boolean; doctors: DoctorItem[]; message?: string }>('/api/admin/doctors');
+      const data = await http.get<{
+        success: boolean;
+        doctors: DoctorItem[];
+        message?: string;
+      }>('/api/admin/doctors');
       if (data?.success && Array.isArray(data.doctors)) {
         setDoctors(data.doctors);
         setLastUpdated(new Date());

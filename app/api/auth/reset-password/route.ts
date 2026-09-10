@@ -59,12 +59,10 @@ export async function POST(request: NextRequest) {
           message: 'Password has been reset successfully. You can now log in.',
         });
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Failed to reset password';
+        const msg =
+          err instanceof Error ? err.message : 'Failed to reset password';
         console.error('[API] Reset password error:', msg);
-        return NextResponse.json(
-          { message: msg },
-          { status: 400 }
-        );
+        return NextResponse.json({ message: msg }, { status: 400 });
       }
     }
 
@@ -73,11 +71,9 @@ export async function POST(request: NextRequest) {
       { status: 503 }
     );
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'An unexpected error occurred';
+    const msg =
+      error instanceof Error ? error.message : 'An unexpected error occurred';
     console.error('[API] Reset password route error:', msg);
-    return NextResponse.json(
-      { message: msg },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: msg }, { status: 500 });
   }
 }

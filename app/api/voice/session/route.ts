@@ -407,7 +407,8 @@ export async function GET(request: Request) {
   if (intakeId) {
     try {
       const intake = await getIntakeById(intakeId);
-      const isOwner = auth.isValid && Boolean(auth.sub) && intake?.patientId === auth.sub;
+      const isOwner =
+        auth.isValid && Boolean(auth.sub) && intake?.patientId === auth.sub;
       const isDoctor = auth.isValid && auth.userType === 'doctor';
       const isAnonymousGuest =
         !auth.isValid &&
@@ -416,7 +417,10 @@ export async function GET(request: Request) {
 
       if (intake && (isOwner || isDoctor || isAnonymousGuest)) {
         if (intake.draft && typeof intake.draft === 'object') {
-          draft = { ...draft, ...(intake.draft as unknown as IntakeConversationDraft) };
+          draft = {
+            ...draft,
+            ...(intake.draft as unknown as IntakeConversationDraft),
+          };
         }
         if (intake.chiefComplaint && !draft.chiefComplaint) {
           draft.chiefComplaint = intake.chiefComplaint;

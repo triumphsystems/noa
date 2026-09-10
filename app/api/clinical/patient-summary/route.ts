@@ -34,8 +34,6 @@ export async function POST(request: NextRequest) {
       return rateLimitResponse(rateCheck);
     }
 
-    console.log('[v0] Generating patient-friendly summary with Nova');
-
     // Generate patient-friendly summary using Nova Lite
     const summary = await generatePatientSummary(soapNote, clinicalTerms);
 
@@ -50,7 +48,7 @@ export async function POST(request: NextRequest) {
         {
           error: 'Too Many Requests',
           message:
-            'AWS Bedrock model capacity exceeded. Please retry in a few moments.',
+            'Model capacity exceeded. Please retry in a few moments.',
         },
         { status: 429, headers: { 'Retry-After': '5' } }
       );

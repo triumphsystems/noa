@@ -60,7 +60,11 @@ export function useAudioRecorder({
       isRecordingRef.current = false;
       setIsRecording(false);
 
-      const turnText = (speechBufferRef.current + ' ' + latestInterimRef.current).trim();
+      const turnText = (
+        speechBufferRef.current +
+        ' ' +
+        latestInterimRef.current
+      ).trim();
       speechBufferRef.current = '';
       latestInterimRef.current = '';
       hasSpokenInTurnRef.current = false;

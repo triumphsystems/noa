@@ -169,6 +169,7 @@ export function getRoleFromPath(pathname: string): Role | null {
 ```
 
 **Rules:**
+
 - `getDashboardPath(role)` replaces **every** ternary/switch that maps a role to a URL.
 - Never hardcode `/dashboard/doctor`, `/dashboard/patient`, or `/dashboard/admin` inline anywhere outside this file.
 
@@ -184,7 +185,11 @@ import { getAuthenticatedUser, type VerifiedAuthPayload } from './jwt';
 import { isValidRole, type Role } from './roles';
 
 export type AuthGuardResult =
-  | { ok: true; auth: Required<Pick<VerifiedAuthPayload, 'sub' | 'userType'>> & VerifiedAuthPayload }
+  | {
+      ok: true;
+      auth: Required<Pick<VerifiedAuthPayload, 'sub' | 'userType'>> &
+        VerifiedAuthPayload;
+    }
   | { ok: false; response: NextResponse };
 
 /**
@@ -201,7 +206,7 @@ export type AuthGuardResult =
  */
 export async function requireAuth(
   request: NextRequest,
-  allowedRoles?: ReadonlyArray<Role>,
+  allowedRoles?: ReadonlyArray<Role>
 ): Promise<AuthGuardResult> {
   const auth = await getAuthenticatedUser(request);
 
@@ -221,12 +226,14 @@ export async function requireAuth(
 
   return {
     ok: true,
-    auth: auth as Required<Pick<VerifiedAuthPayload, 'sub' | 'userType'>> & VerifiedAuthPayload,
+    auth: auth as Required<Pick<VerifiedAuthPayload, 'sub' | 'userType'>> &
+      VerifiedAuthPayload,
   };
 }
 ```
 
 **Rules:**
+
 - Every protected route **must** call `requireAuth()`. Never copy-paste `getAuthenticatedUser()` + `if (!auth.isValid)` again.
 - `requireAuth` returns `auth.sub` and `auth.userType` as **non-optional** strings when `ok: true`. No optional chaining needed after the guard.
 
@@ -262,13 +269,14 @@ export const AUTH_STORAGE_KEYS = {
   INTAKE_COMPLETION: 'intake-completion',
 } as const;
 
-export type AuthStorageKey = (typeof AUTH_STORAGE_KEYS)[keyof typeof AUTH_STORAGE_KEYS];
+export type AuthStorageKey =
+  (typeof AUTH_STORAGE_KEYS)[keyof typeof AUTH_STORAGE_KEYS];
 
 /** Clears all auth-related localStorage entries. */
 export function clearAuthStorage(): void {
   if (typeof window === 'undefined') return;
   Object.values(AUTH_STORAGE_KEYS).forEach((key) =>
-    window.localStorage.removeItem(key),
+    window.localStorage.removeItem(key)
   );
 }
 
@@ -286,6 +294,7 @@ export function setStoredUserId(role: Role, id: string): void {
 ```
 
 **Rules:**
+
 - `clearAuthStorage()` replaces the two divergent key arrays in `lib/http.ts` (`handleAuthExpiration`) and `lib/auth-context.tsx` (`logout`). Both must call the same function.
 - `setStoredUserId(role, id)` replaces the `if (userType === 'doctor') setItem('doctorId', ...)` patterns in `login-form.tsx`, `signup-form.tsx`, and `auth-context.tsx`.
 
@@ -315,13 +324,19 @@ export interface ResolvedUserProfile {
 export async function resolveUserProfile(
   sub: string,
   userType: Role,
-  fallback: { email: string; name: string },
+  fallback: { email: string; name: string }
 ): Promise<ResolvedUserProfile> {
   try {
     if (userType === 'doctor') {
       const doctor = await getDoctorById(sub);
       if (doctor) {
-        return { id: sub, email: doctor.email, name: doctor.name, userType, avatar: doctor.avatar ?? null };
+        return {
+          id: sub,
+          email: doctor.email,
+          name: doctor.name,
+          userType,
+          avatar: doctor.avatar ?? null,
+        };
       }
     } else if (userType === 'patient') {
       const patient = await getPatientById(sub);
@@ -337,13 +352,25 @@ export async function resolveUserProfile(
     } else if (userType === 'admin') {
       const admin = await getAdminByEmail(fallback.email);
       if (admin) {
-        return { id: sub, email: admin.email, name: admin.name, userType, avatar: null };
+        return {
+          id: sub,
+          email: admin.email,
+          name: admin.name,
+          userType,
+          avatar: null,
+        };
       }
     }
   } catch {
     // Non-fatal: DB lookup failures return Cognito-derived fallback
   }
-  return { id: sub, email: fallback.email, name: fallback.name, userType, avatar: null };
+  return {
+    id: sub,
+    email: fallback.email,
+    name: fallback.name,
+    userType,
+    avatar: null,
+  };
 }
 ```
 
@@ -377,15 +404,21 @@ The edge middleware (`middleware.ts`) follows a strict two-step pattern:
 const targetRole = getRoleFromPath(pathname); // from lib/auth/roles.ts
 if (targetRole) {
   const auth = getAuthenticatedUserSync(request);
-  const hasRefreshToken = Boolean(request.cookies.get('noa_refresh_token')?.value);
+  const hasRefreshToken = Boolean(
+    request.cookies.get('noa_refresh_token')?.value
+  );
 
   if (!auth.isValid) {
     if (hasRefreshToken) return NextResponse.next(); // client will refresh
-    return NextResponse.redirect(new URL(`/auth/login?from=${pathname}`, request.url));
+    return NextResponse.redirect(
+      new URL(`/auth/login?from=${pathname}`, request.url)
+    );
   }
 
   if (auth.userType !== targetRole) {
-    return NextResponse.redirect(new URL(getDashboardPath(auth.userType), request.url));
+    return NextResponse.redirect(
+      new URL(getDashboardPath(auth.userType), request.url)
+    );
   }
 }
 ```
@@ -394,19 +427,19 @@ if (targetRole) {
 
 These patterns are **forbidden** in all auth-related code:
 
-| Forbidden Pattern | Reason | Replacement |
-|---|---|---|
-| `catch (error: any)` | Disables type safety on error handling | `catch (error) { const msg = error instanceof Error ? error.message : 'Unknown error'; }` |
-| `as Record<string, unknown>` for API responses | Erases response types | Define a typed interface for every API response |
-| `as unknown as SomeType` | Double-cast is a type safety bypass | Fix the type at its declaration source |
-| `let patient: any = null` | Untyped variable | `let patient: Patient | null = null` |
-| `userData: Record<string, unknown>` on function signatures | Erases caller type safety | Define a typed input interface |
-| Inline role union `'doctor' \| 'patient' \| 'admin'` | Duplicates the Role type | Import `Role` from `lib/auth/roles.ts` |
-| `if (userType === 'doctor') router.push('/dashboard/doctor')` | Hardcoded routing logic | `router.push(getDashboardPath(userType))` |
-| `['doctorId', 'patientId', ...]` inline in logout/expiry | Divergent key lists cause storage leaks | Use `clearAuthStorage()` from `lib/auth/storage.ts` |
-| `fetch('/api/auth/...')` in stores or non-auth components | Bypasses the 401 refresh interceptor | Use `http` from `lib/http.ts` or `useAuth()` from auth-context |
-| Checking `data.authenticated` from `/api/auth/me` response | `/api/auth/me` never returns this field | Check `data.user !== null` |
-| `['Admins', 'Superadmins', 'admins', 'superadmins'].includes(g)` inline | Duplicated across 4+ files | Use `ADMIN_COGNITO_GROUPS` from `lib/auth/roles.ts` |
+| Forbidden Pattern                                                       | Reason                                  | Replacement                                                                               |
+| ----------------------------------------------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `catch (error: any)`                                                    | Disables type safety on error handling  | `catch (error) { const msg = error instanceof Error ? error.message : 'Unknown error'; }` |
+| `as Record<string, unknown>` for API responses                          | Erases response types                   | Define a typed interface for every API response                                           |
+| `as unknown as SomeType`                                                | Double-cast is a type safety bypass     | Fix the type at its declaration source                                                    |
+| `let patient: any = null`                                               | Untyped variable                        | `let patient: Patient                                                                     | null = null` |
+| `userData: Record<string, unknown>` on function signatures              | Erases caller type safety               | Define a typed input interface                                                            |
+| Inline role union `'doctor' \| 'patient' \| 'admin'`                    | Duplicates the Role type                | Import `Role` from `lib/auth/roles.ts`                                                    |
+| `if (userType === 'doctor') router.push('/dashboard/doctor')`           | Hardcoded routing logic                 | `router.push(getDashboardPath(userType))`                                                 |
+| `['doctorId', 'patientId', ...]` inline in logout/expiry                | Divergent key lists cause storage leaks | Use `clearAuthStorage()` from `lib/auth/storage.ts`                                       |
+| `fetch('/api/auth/...')` in stores or non-auth components               | Bypasses the 401 refresh interceptor    | Use `http` from `lib/http.ts` or `useAuth()` from auth-context                            |
+| Checking `data.authenticated` from `/api/auth/me` response              | `/api/auth/me` never returns this field | Check `data.user !== null`                                                                |
+| `['Admins', 'Superadmins', 'admins', 'superadmins'].includes(g)` inline | Duplicated across 4+ files              | Use `ADMIN_COGNITO_GROUPS` from `lib/auth/roles.ts`                                       |
 
 ### The Cognito → DynamoDB → Client Data Flow
 

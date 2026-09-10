@@ -338,8 +338,7 @@ export default function DashboardLayout({
                 Medical Licensure Review In Progress
               </p>
               <p className="text-slate max-w-md text-xs">
-                Your medical credentials are currently under review. Redirecting
-                to licensure onboarding...
+                Your medical credentials are currently under review.
               </p>
             </div>
           ) : (

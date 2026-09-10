@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPatientById, getIntakesByPatient, updatePatient, type Patient } from '@/lib/db';
+import {
+  getPatientById,
+  getIntakesByPatient,
+  updatePatient,
+  type Patient,
+} from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
 
 export async function GET(
@@ -89,7 +94,11 @@ export async function GET(
           medications: [] as string[],
           conditions: [] as string[],
         };
-        return NextResponse.json({ success: true, patient: sanitized, intake: null });
+        return NextResponse.json({
+          success: true,
+          patient: sanitized,
+          intake: null,
+        });
       }
 
       // Doctor has consent and active link — fetch clinical intake notes
@@ -149,11 +158,15 @@ export async function PATCH(
     if (body.avatar !== undefined) allowedUpdates.avatar = body.avatar;
     if (body.phone !== undefined) allowedUpdates.phone = body.phone;
     if (body.gender !== undefined) allowedUpdates.gender = body.gender;
-    if (body.dateOfBirth !== undefined) allowedUpdates.dateOfBirth = body.dateOfBirth;
+    if (body.dateOfBirth !== undefined)
+      allowedUpdates.dateOfBirth = body.dateOfBirth;
     if (body.address !== undefined) allowedUpdates.address = body.address;
-    if (Array.isArray(body.allergies)) allowedUpdates.allergies = body.allergies;
-    if (Array.isArray(body.medications)) allowedUpdates.medications = body.medications;
-    if (Array.isArray(body.conditions)) allowedUpdates.conditions = body.conditions;
+    if (Array.isArray(body.allergies))
+      allowedUpdates.allergies = body.allergies;
+    if (Array.isArray(body.medications))
+      allowedUpdates.medications = body.medications;
+    if (Array.isArray(body.conditions))
+      allowedUpdates.conditions = body.conditions;
 
     const updated = await updatePatient(id, allowedUpdates);
     if (!updated) {

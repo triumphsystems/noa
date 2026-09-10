@@ -32,11 +32,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   userType: Role | null;
   loading: boolean;
-  login: (
-    email: string,
-    password: string,
-    userType: Role
-  ) => Promise<void>;
+  login: (email: string, password: string, userType: Role) => Promise<void>;
   logout: () => void;
   signup: (
     email: string,
@@ -60,7 +56,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Using resilient http client ensures transparent 401 token refresh on mount.
     const verifySession = async () => {
       try {
-        const data = await http.get<{ user: UserSession | null }>('/api/auth/me');
+        const data = await http.get<{ user: UserSession | null }>(
+          '/api/auth/me'
+        );
         if (data?.user) {
           setUser(data.user);
           setIsAuthenticated(true);
@@ -77,11 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void verifySession();
   }, []);
 
-  const login = async (
-    email: string,
-    password: string,
-    type: Role
-  ) => {
+  const login = async (email: string, password: string, type: Role) => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

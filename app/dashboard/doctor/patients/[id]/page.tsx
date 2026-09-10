@@ -447,8 +447,8 @@ export default function PatientProfilePage({
                     No intake record on file for this patient.
                   </p>
                   <p className="text-slate mt-1 text-[11px]">
-                    When the patient completes their voice check-in or health form,
-                    the AI-extracted clinical notes will appear here.
+                    When the patient completes their voice check-in or health
+                    form, the AI-extracted clinical notes will appear here.
                   </p>
                 </div>
               ) : (
@@ -456,10 +456,10 @@ export default function PatientProfilePage({
                   {/* Chief Complaint */}
                   {intake.chiefComplaint && (
                     <div className="rounded-xl border border-amber-200/80 bg-amber-50/70 p-3.5 sm:p-4">
-                      <span className="text-slate block text-[11px] font-bold tracking-wider uppercase text-amber-900/90">
+                      <span className="text-slate block text-[11px] font-bold tracking-wider text-amber-900/90 uppercase">
                         Primary Chief Complaint
                       </span>
-                      <p className="text-deep-ink mt-1 font-medium leading-relaxed">
+                      <p className="text-deep-ink mt-1 leading-relaxed font-medium">
                         {intake.chiefComplaint}
                       </p>
                     </div>
@@ -471,7 +471,7 @@ export default function PatientProfilePage({
                       <span className="text-slate block text-[11px] font-bold tracking-wider uppercase">
                         Intake Summary & Present Illness
                       </span>
-                      <p className="text-deep-ink bg-soft-meadow/40 border-deep-ink/5 rounded-xl border p-3.5 leading-relaxed text-xs sm:text-sm">
+                      <p className="text-deep-ink bg-soft-meadow/40 border-deep-ink/5 rounded-xl border p-3.5 text-xs leading-relaxed sm:text-sm">
                         {intake.summary}
                       </p>
                     </div>

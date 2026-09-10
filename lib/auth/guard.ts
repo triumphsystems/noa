@@ -10,12 +10,13 @@ import { getAuthenticatedUser, type VerifiedAuthPayload } from './jwt';
 import { isValidRole, type Role } from './roles';
 
 /** The auth payload guaranteed to have sub and userType when ok: true */
-export type VerifiedAuth = Required<Pick<VerifiedAuthPayload, 'sub' | 'userType'>> &
+export type VerifiedAuth = Required<
+  Pick<VerifiedAuthPayload, 'sub' | 'userType'>
+> &
   VerifiedAuthPayload;
 
 export type AuthGuardResult =
-  | { ok: true; auth: VerifiedAuth }
-  | { ok: false; response: NextResponse };
+  { ok: true; auth: VerifiedAuth } | { ok: false; response: NextResponse };
 
 /**
  * Verifies authentication and optionally enforces role-based authorization.
@@ -36,7 +37,7 @@ export type AuthGuardResult =
  */
 export async function requireAuth(
   request: NextRequest,
-  allowedRoles?: ReadonlyArray<Role>,
+  allowedRoles?: ReadonlyArray<Role>
 ): Promise<AuthGuardResult> {
   const auth = await getAuthenticatedUser(request);
 

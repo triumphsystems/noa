@@ -2,7 +2,11 @@ import type { IntakeConversationDraft } from './types';
 
 export interface IntakeStoredSession {
   draft: IntakeConversationDraft;
-  history: Array<{ id: string; role: 'assistant' | 'patient' | 'system'; text: string }>;
+  history: Array<{
+    id: string;
+    role: 'assistant' | 'patient' | 'system';
+    text: string;
+  }>;
   assistantMessage: string;
   intakeId?: string;
   patientId?: string;
@@ -15,7 +19,11 @@ const STORAGE_KEY = 'noa_intake_active_session';
 
 export function saveActiveIntakeSession(data: {
   draft: IntakeConversationDraft;
-  history: Array<{ id: string; role: 'assistant' | 'patient' | 'system'; text: string }>;
+  history: Array<{
+    id: string;
+    role: 'assistant' | 'patient' | 'system';
+    text: string;
+  }>;
   assistantMessage: string;
   intakeId?: string;
   patientId?: string;
@@ -30,7 +38,10 @@ export function saveActiveIntakeSession(data: {
     };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   } catch (err) {
-    console.warn('[IntakeStorage] Could not save session to sessionStorage:', err);
+    console.warn(
+      '[IntakeStorage] Could not save session to sessionStorage:',
+      err
+    );
   }
 }
 
@@ -47,7 +58,10 @@ export function loadActiveIntakeSession(): IntakeStoredSession | null {
     }
     return parsed;
   } catch (err) {
-    console.warn('[IntakeStorage] Could not load session from sessionStorage:', err);
+    console.warn(
+      '[IntakeStorage] Could not load session from sessionStorage:',
+      err
+    );
     return null;
   }
 }

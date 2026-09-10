@@ -45,7 +45,10 @@ export class AudioQueuePlayer {
       try {
         await ctx.resume();
       } catch (e) {
-        console.warn('[AudioQueuePlayer] Failed to resume playback context:', e);
+        console.warn(
+          '[AudioQueuePlayer] Failed to resume playback context:',
+          e
+        );
       }
     }
   }

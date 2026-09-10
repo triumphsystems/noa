@@ -103,7 +103,10 @@ CONVERSATIONAL WORKFLOW & DIRECTIVES:
  */
 export function isNegativeConfirmation(text: string): boolean {
   if (!text) return false;
-  const clean = text.trim().toLowerCase().replace(/[.!?,]/g, '');
+  const clean = text
+    .trim()
+    .toLowerCase()
+    .replace(/[.!?,]/g, '');
   const exactNegatives = new Set([
     'no',
     'nope',
@@ -209,7 +212,9 @@ export function normalizeClinicalDraft(
   // Allergies
   if (!draft.allergies || draft.allergies.length === 0) {
     if (
-      /(no|none|never had|don'?t have|not aware of).*(allerg|reaction)/i.test(t) ||
+      /(no|none|never had|don'?t have|not aware of).*(allerg|reaction)/i.test(
+        t
+      ) ||
       /^(no|none|no allergies|nope)[.!]?$/i.test(t.trim())
     ) {
       draft.allergies = ['No known allergies'];
@@ -218,7 +223,9 @@ export function normalizeClinicalDraft(
   // Current medications
   if (!draft.currentMedications || draft.currentMedications.length === 0) {
     if (
-      /(no|none|not taking|don'?t take).*(med|prescription|pill|drug)/i.test(t) ||
+      /(no|none|not taking|don'?t take).*(med|prescription|pill|drug)/i.test(
+        t
+      ) ||
       /^(no|none|no medications|no meds|nope)[.!]?$/i.test(t.trim())
     ) {
       draft.currentMedications = ['None'];
@@ -227,7 +234,9 @@ export function normalizeClinicalDraft(
   // Medical conditions
   if (!draft.medicalConditions || draft.medicalConditions.length === 0) {
     if (
-      /(no|none|don'?t have|healthy).*(condition|illness|disease|problem)/i.test(t) ||
+      /(no|none|don'?t have|healthy).*(condition|illness|disease|problem)/i.test(
+        t
+      ) ||
       /^(no|none|no conditions|healthy|nope)[.!]?$/i.test(t.trim())
     ) {
       draft.medicalConditions = ['None reported'];

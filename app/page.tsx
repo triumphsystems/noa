@@ -299,7 +299,10 @@ export default function LandingPage() {
                           ? `${user.userType === 'doctor' ? 'Dr. ' : ''}${user.name}`
                           : user.email}
                       </strong>{' '}
-                      <Badge variant="secondary" className="ml-1 text-[10px] uppercase">
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 text-[10px] uppercase"
+                      >
                         {roleLabel}
                       </Badge>
                     </span>

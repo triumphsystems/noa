@@ -1,5 +1,5 @@
 /**
- * Modern Server-Side AWS Cognito Authentication Engine
+ * Server-Side AWS Cognito Authentication Engine
  */
 
 import {
@@ -39,7 +39,10 @@ export function getCognitoErrorName(error: unknown): string | undefined {
   return undefined;
 }
 
-export function getCognitoErrorMessage(error: unknown, fallback = 'Authentication failed'): string {
+export function getCognitoErrorMessage(
+  error: unknown,
+  fallback = 'Authentication failed'
+): string {
   if (error instanceof Error) return error.message;
   return fallback;
 }
@@ -58,7 +61,7 @@ export function getCognitoConfig() {
 function ensureCognitoConfigured(): { userPoolId: string; clientId: string } {
   const config = getCognitoConfig();
   if (!config.isConfigured) {
-    throw new Error('Authentication service is currently unavailable.');
+    throw new Error('Service is currently unavailable.');
   }
   return config;
 }
@@ -153,9 +156,7 @@ export async function refreshCognitoTokens(
       !response.AuthenticationResult?.AccessToken ||
       !response.AuthenticationResult?.IdToken
     ) {
-      throw new Error(
-        'Failed to refresh tokens'
-      );
+      throw new Error('Failed to refresh tokens');
     }
 
     return {
@@ -166,12 +167,11 @@ export async function refreshCognitoTokens(
     };
   } catch (error) {
     const errorName = getCognitoErrorName(error);
-    const errorMsg = getCognitoErrorMessage(error, 'Failed to refresh authentication session');
-    console.error(
-      '[Cognito] Refresh token error:',
-      errorName,
-      errorMsg
+    const errorMsg = getCognitoErrorMessage(
+      error,
+      'Failed to refresh authentication session'
     );
+    console.error('[Cognito] Refresh token error:', errorName, errorMsg);
     throw new Error(errorMsg);
   }
 }
@@ -332,12 +332,11 @@ export async function forgotPasswordWithCognito(
     };
   } catch (error) {
     const errorName = getCognitoErrorName(error);
-    const errorMsg = getCognitoErrorMessage(error, 'Failed to request password reset.');
-    console.error(
-      '[Cognito] Forgot-password error:',
-      errorName,
-      errorMsg
+    const errorMsg = getCognitoErrorMessage(
+      error,
+      'Failed to request password reset.'
     );
+    console.error('[Cognito] Forgot-password error:', errorName, errorMsg);
     if (errorName === 'UserNotFoundException') {
       throw new Error('No account found with this email address.');
     }

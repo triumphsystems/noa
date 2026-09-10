@@ -9,7 +9,9 @@ import { bedrockClient, s3Client, awsConfig } from '../aws-config';
 const SONIC_MODEL =
   process.env.BEDROCK_SONIC_MODEL || 'amazon.nova-2-sonic-v1:0';
 
-export function detectAudioFormat(buffer: Buffer): 'wav' | 'mp3' | 'ogg' | 'flac' {
+export function detectAudioFormat(
+  buffer: Buffer
+): 'wav' | 'mp3' | 'ogg' | 'flac' {
   if (buffer.length >= 4) {
     if (
       buffer[0] === 0x52 &&

@@ -62,7 +62,15 @@ export function useIntakeSession() {
         detectedLanguage,
       });
     }
-  }, [draft, history, assistantMessage, patientId, doctorId, detectedLanguage, isComplete]);
+  }, [
+    draft,
+    history,
+    assistantMessage,
+    patientId,
+    doctorId,
+    detectedLanguage,
+    isComplete,
+  ]);
 
   // URL / LocalStorage identity hydration
   useEffect(() => {
@@ -93,7 +101,8 @@ export function useIntakeSession() {
         const queryParams = new URLSearchParams();
         if (doctorId) queryParams.set('doctorId', doctorId);
         if (patientId) queryParams.set('patientId', patientId);
-        if (intakeIdRef.current) queryParams.set('intakeId', intakeIdRef.current);
+        if (intakeIdRef.current)
+          queryParams.set('intakeId', intakeIdRef.current);
 
         const data = await http.get<{
           success: boolean;
@@ -125,7 +134,9 @@ export function useIntakeSession() {
         const hasUserTurns = history.some((h) => h.role === 'patient');
         if (data?.initialPrompt && !hasUserTurns) {
           setAssistantMessage(data.initialPrompt);
-          setHistory([{ id: 'system-1', role: 'system', text: data.initialPrompt }]);
+          setHistory([
+            { id: 'system-1', role: 'system', text: data.initialPrompt },
+          ]);
         }
       } catch (err) {
         console.warn('[Voice/Prefill] Could not load prefill data:', err);
@@ -161,7 +172,9 @@ export function useIntakeSession() {
     clearActiveIntakeSession();
     intakeIdRef.current = '';
     setDraft(INITIAL_DRAFT);
-    setHistory([{ id: 'system-1', role: 'system', text: DEFAULT_INITIAL_PROMPT }]);
+    setHistory([
+      { id: 'system-1', role: 'system', text: DEFAULT_INITIAL_PROMPT },
+    ]);
     setAssistantMessage(DEFAULT_INITIAL_PROMPT);
     setDetectedLanguage('English');
     setIsComplete(false);

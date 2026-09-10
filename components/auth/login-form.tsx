@@ -70,7 +70,11 @@ export default function LoginForm({
     try {
       await login(formData.email, formData.password, userType);
       const returnUrl = searchParams?.get('from');
-      router.push(returnUrl && returnUrl.startsWith('/') ? returnUrl : getDashboardPath(userType));
+      router.push(
+        returnUrl && returnUrl.startsWith('/')
+          ? returnUrl
+          : getDashboardPath(userType)
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {

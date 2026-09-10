@@ -22,7 +22,8 @@ export const AUTH_STORAGE_KEYS = {
   INTAKE_COMPLETION: 'intake-completion',
 } as const;
 
-export type AuthStorageKey = (typeof AUTH_STORAGE_KEYS)[keyof typeof AUTH_STORAGE_KEYS];
+export type AuthStorageKey =
+  (typeof AUTH_STORAGE_KEYS)[keyof typeof AUTH_STORAGE_KEYS];
 
 /**
  * Clears every auth-related localStorage entry in one call.
@@ -31,7 +32,9 @@ export type AuthStorageKey = (typeof AUTH_STORAGE_KEYS)[keyof typeof AUTH_STORAG
  */
 export function clearAuthStorage(): void {
   if (typeof window === 'undefined') return;
-  Object.values(AUTH_STORAGE_KEYS).forEach((key) => window.localStorage.removeItem(key));
+  Object.values(AUTH_STORAGE_KEYS).forEach((key) =>
+    window.localStorage.removeItem(key)
+  );
 }
 
 /**
@@ -71,5 +74,8 @@ export function getStoredUserId(role: Role): string | null {
     patient: AUTH_STORAGE_KEYS.PATIENT_ID,
     admin: AUTH_STORAGE_KEYS.ADMIN_ID,
   };
-  return window.localStorage.getItem(keyMap[role]) || window.localStorage.getItem(AUTH_STORAGE_KEYS.USER_ID);
+  return (
+    window.localStorage.getItem(keyMap[role]) ||
+    window.localStorage.getItem(AUTH_STORAGE_KEYS.USER_ID)
+  );
 }

@@ -35,7 +35,9 @@ export function isValidRole(value: unknown): value is Role {
  *
  * @returns The dashboard path for the role, or '/auth/login' if role is invalid.
  */
-export function getDashboardPath(role: Role | string | null | undefined): string {
+export function getDashboardPath(
+  role: Role | string | null | undefined
+): string {
   if (!role || !isValidRole(role)) return '/auth/login';
   return `/dashboard/${role}`;
 }

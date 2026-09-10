@@ -1,7 +1,4 @@
-import {
-  DynamoDBDocumentClient,
-  BatchGetCommand,
-} from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, BatchGetCommand } from '@aws-sdk/lib-dynamodb';
 import { awsConfig, dynamodbClient } from '@/lib/aws-config';
 
 export const TABLE_NAME = awsConfig.dynamodb.tableName;

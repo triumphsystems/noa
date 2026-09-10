@@ -1,8 +1,4 @@
-import {
-  PutCommand,
-  GetCommand,
-  QueryCommand,
-} from '@aws-sdk/lib-dynamodb';
+import { PutCommand, GetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME, PK, SK } from './client';
 import type { AdminUser } from './types';
 

@@ -13,9 +13,12 @@ function getPopulatedFields(draft) {
   if (draft.email) populated.push(`Email (${draft.email})`);
   if (draft.gender) populated.push(`Gender (${draft.gender})`);
   if (draft.address) populated.push(`Address (${draft.address})`);
-  if (draft.chiefComplaint) populated.push(`Reason for visit (${draft.chiefComplaint})`);
+  if (draft.chiefComplaint)
+    populated.push(`Reason for visit (${draft.chiefComplaint})`);
   if (draft.medicalConditions && draft.medicalConditions.length > 0) {
-    populated.push(`Medical Conditions (${draft.medicalConditions.join(', ')})`);
+    populated.push(
+      `Medical Conditions (${draft.medicalConditions.join(', ')})`
+    );
   }
   if (draft.currentMedications && draft.currentMedications.length > 0) {
     populated.push(`Medications (${draft.currentMedications.join(', ')})`);
@@ -24,7 +27,8 @@ function getPopulatedFields(draft) {
     populated.push(`Allergies (${draft.allergies.join(', ')})`);
   }
   if (draft.surgeries) populated.push(`Surgeries (${draft.surgeries})`);
-  if (draft.familyHistory) populated.push(`Family History (${draft.familyHistory})`);
+  if (draft.familyHistory)
+    populated.push(`Family History (${draft.familyHistory})`);
   if (draft.smokingStatus) populated.push(`Smoking (${draft.smokingStatus})`);
   if (draft.alcoholUse) populated.push(`Alcohol (${draft.alcoholUse})`);
   if (draft.emergencyContactName) {
@@ -90,7 +94,10 @@ function getMissingFields(draft) {
 
 function isNegativeConfirmation(text) {
   if (!text) return false;
-  const clean = text.trim().toLowerCase().replace(/[.!?,]/g, '');
+  const clean = text
+    .trim()
+    .toLowerCase()
+    .replace(/[.!?,]/g, '');
   const exactNegatives = new Set([
     'no',
     'nope',
@@ -178,7 +185,9 @@ function normalizeClinicalDraft(draft, transcript) {
   const t = transcript.toLowerCase();
   if (!draft.allergies || draft.allergies.length === 0) {
     if (
-      /(no|none|never had|don'?t have|not aware of).*(allerg|reaction)/i.test(t) ||
+      /(no|none|never had|don'?t have|not aware of).*(allerg|reaction)/i.test(
+        t
+      ) ||
       /^(no|none|no allergies|nope)[.!]?$/i.test(t.trim())
     ) {
       draft.allergies = ['No known allergies'];
@@ -186,7 +195,9 @@ function normalizeClinicalDraft(draft, transcript) {
   }
   if (!draft.currentMedications || draft.currentMedications.length === 0) {
     if (
-      /(no|none|not taking|don'?t take).*(med|prescription|pill|drug)/i.test(t) ||
+      /(no|none|not taking|don'?t take).*(med|prescription|pill|drug)/i.test(
+        t
+      ) ||
       /^(no|none|no medications|no meds|nope)[.!]?$/i.test(t.trim())
     ) {
       draft.currentMedications = ['None'];
@@ -194,7 +205,9 @@ function normalizeClinicalDraft(draft, transcript) {
   }
   if (!draft.medicalConditions || draft.medicalConditions.length === 0) {
     if (
-      /(no|none|don'?t have|healthy).*(condition|illness|disease|problem)/i.test(t) ||
+      /(no|none|don'?t have|healthy).*(condition|illness|disease|problem)/i.test(
+        t
+      ) ||
       /^(no|none|no conditions|healthy|nope)[.!]?$/i.test(t.trim())
     ) {
       draft.medicalConditions = ['None reported'];
@@ -395,7 +408,8 @@ describe('Clinical Draft Normalization & Missing Field Prompts Suite', () => {
     const history = [
       {
         role: 'assistant',
-        content: "We have captured all your intake details. Is there anything else you would like your doctor to know before we finalize?",
+        content:
+          'We have captured all your intake details. Is there anything else you would like your doctor to know before we finalize?',
       },
     ];
     const transcript = "No, I don't have anything else.";
@@ -416,7 +430,8 @@ describe('Clinical Draft Normalization & Missing Field Prompts Suite', () => {
     assert.equal(actualMissing.length, 1); // only consentRead is missing
     assert.equal(actualMissing[0], 'consent to submit');
 
-    const lastAssistantMsg = history.filter((m) => m.role === 'assistant').pop()?.content || '';
+    const lastAssistantMsg =
+      history.filter((m) => m.role === 'assistant').pop()?.content || '';
     const wasAskedFinalize = isFinalizationQuestion(lastAssistantMsg);
     const userSaidNoMore = isNegativeConfirmation(transcript);
 
@@ -425,7 +440,8 @@ describe('Clinical Draft Normalization & Missing Field Prompts Suite', () => {
 
     // Simulated turn logic
     let isComplete = false;
-    let assistantMessage = "Is there anything else you'd like your doctor to know before we finalize?";
+    let assistantMessage =
+      "Is there anything else you'd like your doctor to know before we finalize?";
 
     // Before consent, only consent was missing; user saying no more confirms consent!
     draft.consentRead = true;
@@ -458,7 +474,9 @@ describe('Clinical Draft Normalization & Missing Field Prompts Suite', () => {
 
     // Even if an AI mistakenly set isComplete = true, strict validation blocks it
     const aiProposedComplete = true;
-    const strictlyComplete = Boolean(aiProposedComplete && actualMissing.length === 0);
+    const strictlyComplete = Boolean(
+      aiProposedComplete && actualMissing.length === 0
+    );
 
     assert.equal(strictlyComplete, false);
   });

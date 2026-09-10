@@ -37,8 +37,8 @@ export function DoctorInvitationBanner({
             </div>
             <p className="text-slate mt-1 text-xs">
               Connecting allows Dr. {pendingDoctor.name} (
-              {pendingDoctor.clinic || pendingDoctor.specialty}) to review
-              your AI intake summaries and consultation notes.
+              {pendingDoctor.clinic || pendingDoctor.specialty}) to review your
+              AI intake summaries and consultation notes.
             </p>
           </div>
         </div>

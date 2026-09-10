@@ -192,9 +192,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Registration failed';
     console.error('[Auth] Signup error:', msg);
-    return NextResponse.json(
-      { message: msg },
-      { status: 400 }
-    );
+    return NextResponse.json({ message: msg }, { status: 400 });
   }
 }

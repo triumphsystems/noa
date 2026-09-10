@@ -25,7 +25,8 @@ export async function POST(request: NextRequest) {
     const patientId =
       auth.isValid && auth.userType === 'patient' && auth.sub
         ? auth.sub
-        : requestedPatientId || `guest-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        : requestedPatientId ||
+          `guest-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
     if (!doctorId) {
       return NextResponse.json(
@@ -34,7 +35,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (auth.isValid && auth.userType === 'patient' && requestedPatientId && requestedPatientId !== auth.sub) {
+    if (
+      auth.isValid &&
+      auth.userType === 'patient' &&
+      requestedPatientId &&
+      requestedPatientId !== auth.sub
+    ) {
       return NextResponse.json(
         { error: 'Forbidden: Cannot submit intake for another patient' },
         { status: 403 }

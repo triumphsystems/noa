@@ -18,7 +18,8 @@ class PcmCapture extends AudioWorkletProcessor {
 
     for (let i = 0; i < input.length; i++) {
       const clamped = Math.max(-1, Math.min(1, input[i]));
-      this.buffer[this.bufferIndex++] = clamped < 0 ? clamped * 32768 : clamped * 32767;
+      this.buffer[this.bufferIndex++] =
+        clamped < 0 ? clamped * 32768 : clamped * 32767;
 
       if (this.bufferIndex >= this.bufferSize) {
         const chunk = this.buffer.slice(0, this.bufferSize);

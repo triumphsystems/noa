@@ -129,7 +129,9 @@ export function useIntakeVoice() {
   const hasSpokenInTurnRef = useRef<boolean>(false);
   const receivedSonicAudioRef = useRef<boolean>(false);
   const autoResumeAfterSpeechRef = useRef<boolean>(false);
-  const fallbackSpeechTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fallbackSpeechTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   const startRecordingRef = useRef<() => Promise<void>>(async () => {});
   const stopRecordingRef = useRef<(isAuto?: boolean) => void>(() => {});
@@ -192,7 +194,15 @@ export function useIntakeVoice() {
         detectedLanguage,
       });
     }
-  }, [draft, history, assistantMessage, patientId, doctorId, detectedLanguage, isComplete]);
+  }, [
+    draft,
+    history,
+    assistantMessage,
+    patientId,
+    doctorId,
+    detectedLanguage,
+    isComplete,
+  ]);
 
   // Resolve Doctor & Patient IDs from URL query params
   useEffect(() => {
@@ -225,7 +235,8 @@ export function useIntakeVoice() {
         const queryParams = new URLSearchParams();
         if (doctorId) queryParams.set('doctorId', doctorId);
         if (patientId) queryParams.set('patientId', patientId);
-        if (intakeIdRef.current) queryParams.set('intakeId', intakeIdRef.current);
+        if (intakeIdRef.current)
+          queryParams.set('intakeId', intakeIdRef.current);
 
         const data = await http.get<{
           success: boolean;
@@ -354,7 +365,9 @@ export function useIntakeVoice() {
             isIdlePausedRef.current = true;
             isRecordingRef.current = false;
             setIsRecording(false);
-            setSupportMessage('Voice paused due to inactivity. Tap mic to resume.');
+            setSupportMessage(
+              'Voice paused due to inactivity. Tap mic to resume.'
+            );
           } else if (msg.type === 'error') {
             setError(msg.message || 'Voice stream error');
           }
@@ -760,7 +773,8 @@ export function useIntakeVoice() {
     return () => {
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       if (silenceTimerRef.current) clearInterval(silenceTimerRef.current);
-      if (fallbackSpeechTimerRef.current) clearTimeout(fallbackSpeechTimerRef.current);
+      if (fallbackSpeechTimerRef.current)
+        clearTimeout(fallbackSpeechTimerRef.current);
       wsRef.current?.close();
       stopRecording();
       audioPlayerRef.current?.close();
@@ -777,7 +791,8 @@ export function useIntakeVoice() {
   const resetConversation = useCallback(() => {
     clearActiveIntakeSession();
     if (silenceTimerRef.current) clearInterval(silenceTimerRef.current);
-    if (fallbackSpeechTimerRef.current) clearTimeout(fallbackSpeechTimerRef.current);
+    if (fallbackSpeechTimerRef.current)
+      clearTimeout(fallbackSpeechTimerRef.current);
     stopRecording();
     wsRef.current?.close();
     sessionIdRef.current = generateSessionId();

@@ -62,12 +62,12 @@ export async function POST(request: NextRequest) {
       userType: profile.userType,
     });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Failed to refresh authentication session';
+    const msg =
+      error instanceof Error
+        ? error.message
+        : 'Failed to refresh authentication session';
     console.error('[Auth] Token refresh error:', msg);
-    const response = NextResponse.json(
-      { message: msg },
-      { status: 401 }
-    );
+    const response = NextResponse.json({ message: msg }, { status: 401 });
     return clearAuthCookies(response);
   }
 }

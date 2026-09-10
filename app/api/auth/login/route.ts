@@ -80,9 +80,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Login failed';
     console.error('[Auth] Login error:', msg);
-    return NextResponse.json(
-      { message: msg },
-      { status: 401 }
-    );
+    return NextResponse.json({ message: msg }, { status: 401 });
   }
 }

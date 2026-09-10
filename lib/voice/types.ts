@@ -90,9 +90,12 @@ export function getPopulatedFields(draft?: IntakeConversationDraft): string[] {
   if (draft.email) populated.push(`Email (${draft.email})`);
   if (draft.gender) populated.push(`Gender (${draft.gender})`);
   if (draft.address) populated.push(`Address (${draft.address})`);
-  if (draft.chiefComplaint) populated.push(`Reason for visit (${draft.chiefComplaint})`);
+  if (draft.chiefComplaint)
+    populated.push(`Reason for visit (${draft.chiefComplaint})`);
   if (draft.medicalConditions && draft.medicalConditions.length > 0) {
-    populated.push(`Medical Conditions (${draft.medicalConditions.join(', ')})`);
+    populated.push(
+      `Medical Conditions (${draft.medicalConditions.join(', ')})`
+    );
   }
   if (draft.currentMedications && draft.currentMedications.length > 0) {
     populated.push(`Medications (${draft.currentMedications.join(', ')})`);
@@ -101,7 +104,8 @@ export function getPopulatedFields(draft?: IntakeConversationDraft): string[] {
     populated.push(`Allergies (${draft.allergies.join(', ')})`);
   }
   if (draft.surgeries) populated.push(`Surgeries (${draft.surgeries})`);
-  if (draft.familyHistory) populated.push(`Family History (${draft.familyHistory})`);
+  if (draft.familyHistory)
+    populated.push(`Family History (${draft.familyHistory})`);
   if (draft.smokingStatus) populated.push(`Smoking (${draft.smokingStatus})`);
   if (draft.alcoholUse) populated.push(`Alcohol (${draft.alcoholUse})`);
   if (draft.emergencyContactName) {

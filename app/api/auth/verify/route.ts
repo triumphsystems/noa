@@ -47,9 +47,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Verification failed';
     console.error('[API] Verification error:', msg);
-    return NextResponse.json(
-      { message: msg },
-      { status: 400 }
-    );
+    return NextResponse.json({ message: msg }, { status: 400 });
   }
 }
