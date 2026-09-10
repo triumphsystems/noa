@@ -9,6 +9,12 @@ import { useDoctorStore } from '@/lib/stores/doctor.store';
 import { usePatientStore } from '@/lib/stores/patient.store';
 import { useSessionStore } from '@/lib/stores/session.store';
 import { clearAuthStorage } from '@/lib/auth/storage';
+import {
+  ApiClientError,
+  API_ERROR_CODES,
+  type ApiErrorCode,
+  type ApiValidationErrorDetail,
+} from '@/lib/types/api.types';
 
 let refreshPromise: Promise<boolean> | null = null;
 
@@ -124,11 +130,25 @@ export async function http<T = any>(
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(
-      data.message ||
-        data.error ||
-        `Request failed with status ${response.status}`
-    );
+    const errorPayload = data && typeof data === 'object' && 'error' in data && data.error && typeof data.error === 'object'
+      ? data.error
+      : null;
+
+    const message: string =
+      (errorPayload && 'message' in errorPayload && typeof errorPayload.message === 'string' && errorPayload.message) ||
+      (typeof data.message === 'string' && data.message) ||
+      `Request failed with status ${response.status}`;
+
+    const code: ApiErrorCode =
+      (errorPayload && 'code' in errorPayload && typeof errorPayload.code === 'string' && (errorPayload.code as ApiErrorCode)) ||
+      API_ERROR_CODES.INTERNAL_SERVER_ERROR;
+
+    const details: ApiValidationErrorDetail[] | undefined =
+      errorPayload && 'details' in errorPayload && Array.isArray(errorPayload.details)
+        ? errorPayload.details
+        : undefined;
+
+    throw new ApiClientError(message, code, response.status, details);
   }
 
   // If payload is wrapped in { data: ... }, return unwrapped or full data

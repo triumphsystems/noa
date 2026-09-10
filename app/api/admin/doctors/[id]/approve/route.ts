@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/auth/guard';
 import { getDoctorById, updateDoctorVerification } from '@/lib/db';
 import { addUserToCognitoGroup } from '@/lib/auth/cognito';
+import { apiError, apiSuccess, handleApiError } from '@/lib/api/response';
+import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 /**
  * POST /api/admin/doctors/[id]/approve
@@ -25,9 +27,10 @@ export async function POST(
     const doctor = await getDoctorById(id);
 
     if (!doctor) {
-      return NextResponse.json(
-        { message: 'Doctor not found.' },
-        { status: 404 }
+      return apiError(
+        API_ERROR_CODES.NOT_FOUND,
+        'Doctor not found.',
+        404
       );
     }
 
@@ -38,24 +41,17 @@ export async function POST(
     // 2. Add clinician to Cognito "Doctors" group so Cognito JWT contains group membership
     try {
       await addUserToCognitoGroup(doctor.email, 'Doctors');
-    } catch (cognitoError: any) {
-      console.warn(
-        '[Admin API] Cognito group assignment warning:',
-        cognitoError?.message
-      );
+    } catch (cognitoError) {
+      const msg = cognitoError instanceof Error ? cognitoError.message : 'Unknown error';
+      console.warn('[Admin API] Cognito group assignment warning:', msg);
       // Group assignment failure shouldn't fail the verification DB record if group already assigned
     }
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       message: `Doctor ${doctor.name} (${doctor.email}) has been successfully verified.`,
       doctor: updated,
     });
-  } catch (error: any) {
-    console.error('[Admin API] Error approving doctor:', error?.message);
-    return NextResponse.json(
-      { message: error?.message || 'Failed to approve doctor' },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error, 'Failed to approve doctor');
   }
 }

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useDoctorStore } from '@/lib/stores/doctor.store';
@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.message || 'Login failed');
+      throw new Error(data.error?.message || data.message || 'Login failed');
     }
 
     if (data.user) {
@@ -124,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.message || 'Signup failed');
+      throw new Error(data.error?.message || data.message || 'Signup failed');
     }
   };
 
@@ -137,7 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.message || 'Verification failed');
+      throw new Error(data.error?.message || data.message || 'Verification failed');
     }
   };
 

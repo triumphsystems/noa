@@ -8,6 +8,8 @@ import { setAuthCookies } from '@/lib/auth/cookies';
 import { isValidRole, type Role } from '@/lib/auth/roles';
 import { resolveUserProfile } from '@/lib/auth/profile';
 import { enforceRateLimit, getClientIdentifier } from '@/lib/ratelimit';
+import { apiError } from '@/lib/api/response';
+import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,9 +18,10 @@ export async function POST(request: NextRequest) {
 
     // Validate input FIRST before rate limiting, so we don't use 'undefined' as the rate-limit key
     if (!email || !password) {
-      return NextResponse.json(
-        { message: 'Email and password are required' },
-        { status: 400 }
+      return apiError(
+        API_ERROR_CODES.BAD_REQUEST,
+        'Email and password are required',
+        400
       );
     }
 
@@ -48,9 +51,10 @@ export async function POST(request: NextRequest) {
       const profile = await resolveUserProfile(canonicalId, resolvedRole);
 
       if (!profile) {
-        return NextResponse.json(
-          { message: 'User profile not found in database' },
-          { status: 401 }
+        return apiError(
+          API_ERROR_CODES.UNAUTHORIZED,
+          'User profile not found in database',
+          401
         );
       }
 
@@ -69,15 +73,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json(
-      {
-        message: 'Authentication service is currently unavailable.',
-      },
-      { status: 503 }
+    return apiError(
+      API_ERROR_CODES.SERVICE_UNAVAILABLE,
+      'Authentication service is currently unavailable.',
+      503
     );
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Login failed';
     console.error('[Auth] Login error:', msg);
-    return NextResponse.json({ message: msg }, { status: 401 });
+    return apiError(API_ERROR_CODES.UNAUTHORIZED, msg, 401);
   }
 }

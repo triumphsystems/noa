@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser, type VerifiedAuthPayload } from './jwt';
 import { isValidRole, type Role } from './roles';
 import { enforceRateLimit, type RateLimitConfig } from '@/lib/ratelimit';
+import { apiError } from '@/lib/api/response';
+import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 /** The auth payload guaranteed to have sub and userType when ok: true */
 export type VerifiedAuth = Required<
@@ -53,14 +55,22 @@ export async function requireAuth(
   if (!auth.isValid || !auth.sub || !isValidRole(auth.userType)) {
     return {
       ok: false,
-      response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
+      response: apiError(
+        API_ERROR_CODES.UNAUTHORIZED,
+        'Unauthorized',
+        401
+      ),
     };
   }
 
   if (allowedRoles && !allowedRoles.includes(auth.userType)) {
     return {
       ok: false,
-      response: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
+      response: apiError(
+        API_ERROR_CODES.FORBIDDEN,
+        'Forbidden',
+        403
+      ),
     };
   }
 

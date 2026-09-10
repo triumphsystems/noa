@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/auth/guard';
+import { apiSuccess, handleApiError } from '@/lib/api/response';
 import {
   getDoctorsByVerificationStatus,
   getAllDoctors,
@@ -66,15 +67,13 @@ export async function GET(request: NextRequest) {
         createdAt: doc.createdAt,
         updatedAt: doc.updatedAt,
       })),
+      counts,
+      total: allDoctors.length,
     });
-  } catch (error: any) {
-    console.error('[Admin API] Error listing doctors:', error?.message);
-    return NextResponse.json(
-      {
-        message:
-          'Failed to retrieve clinicians registry. Please try again.',
-      },
-      { status: 500 }
+  } catch (error) {
+    return handleApiError(
+      error,
+      'Failed to retrieve clinicians registry. Please try again.'
     );
   }
 }

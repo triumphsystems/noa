@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import {
   generateClinicalInsights,
   generateFollowUpPlan,
 } from '@/lib/bedrock-nova';
-import { ClinicalAIUnavailableError } from '@/lib/ai/provider';
 import { requireAuth } from '@/lib/auth/guard';
+import { apiError, apiSuccess, handleApiError } from '@/lib/api/response';
+import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,9 +27,10 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!currentPresentation) {
-      return NextResponse.json(
-        { message: 'Current presentation is required' },
-        { status: 400 }
+      return apiError(
+        API_ERROR_CODES.BAD_REQUEST,
+        'Current presentation is required',
+        400
       );
     }
 
@@ -51,30 +53,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       insights,
       followUpPlan,
     });
   } catch (error) {
-    console.error('[Insights] Error generating clinical insights:', error);
-    if (error instanceof ClinicalAIUnavailableError && error.isThrottling) {
-      return NextResponse.json(
-        {
-          message:
-            'AWS Bedrock model capacity exceeded. Please retry in a few moments.',
-        },
-        { status: 429, headers: { 'Retry-After': '5' } }
-      );
-    }
-    return NextResponse.json(
-      {
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Failed to generate clinical insights',
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Failed to generate clinical insights');
   }
 }

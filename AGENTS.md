@@ -237,21 +237,52 @@ export async function requireAuth(
 - Every protected route **must** call `requireAuth()`. Never copy-paste `getAuthenticatedUser()` + `if (!auth.isValid)` again.
 - `requireAuth` returns `auth.sub` and `auth.userType` as **non-optional** strings when `ok: true`. No optional chaining needed after the guard.
 
-### Canonical Error Response Shape
+### Canonical API Response & Error Standards — `lib/types/api.types.ts` & `lib/api/response.ts`
 
-All API route error responses must use the `message` key consistently. Never mix `error:` and `message:` across routes.
+All API route responses must use the canonical response helpers (`apiSuccess`, `apiError`, `handleApiError`). Never construct manual raw error JSON responses in route handlers.
+
+#### 1. Wire Format Contract
 
 ```typescript
-// CORRECT
-return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-return NextResponse.json({ message: 'Not found' }, { status: 404 });
+// SUCCESS: 200/201
+{
+  "success": true,
+  "data": { ... }
+}
 
-// WRONG — inconsistent key
-return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+// ERROR: 4xx/5xx (nested under error, machine-readable code + human-friendly message)
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Chief complaint and symptoms are required",
+    "details": [{ "field": "symptoms", "issue": "Required" }] // optional
+  }
+}
 ```
 
-The `lib/types/api.types.ts` `ApiError` interface already requires `message`. Use it.
+#### 2. Canonical Server Helpers — `lib/api/response.ts`
+
+- **`apiSuccess(data, status = 200)`**: Returns `{ success: true, data }`.
+- **`apiError(code, message, status, options?)`**: Explicit constructor for validation or 4xx responses. Must use an `API_ERROR_CODES` constant from `lib/types/api.types.ts`.
+- **`handleApiError(error, fallbackMessage)`**: Universal handler for `catch (error)` blocks.
+  - Logs full error stack to server/CloudWatch.
+  - Returns intentional `AppError` code/message.
+  - Maps Bedrock/AI capacity limits to `CAPACITY_EXCEEDED` (429).
+  - Redacts all unexpected errors into `INTERNAL_SERVER_ERROR` (500) — **never leak `error.message`, database schemas, or AWS SDK stack traces to the client**.
+
+#### 3. Client HTTP Layer — `lib/http.ts`
+
+`http` throws a typed `ApiClientError` on non-2xx responses. Consume with `instanceof ApiClientError`:
+```typescript
+try {
+  await http.post('/api/endpoint', payload);
+} catch (err) {
+  if (err instanceof ApiClientError) {
+    console.error(err.code, err.status, err.details);
+  }
+}
+```
 
 ### Canonical Session Storage Keys — `lib/auth/storage.ts`
 

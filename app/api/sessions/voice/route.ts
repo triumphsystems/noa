@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import {
   processVoiceInput,
   generateRealTimeNotes,
@@ -12,6 +12,9 @@ import {
   isDoctorVerified,
 } from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
+import { apiError, apiSuccess, handleApiError } from '@/lib/api/response';
+import { API_ERROR_CODES } from '@/lib/types/api.types';
+
 export async function POST(request: NextRequest) {
   try {
     const guard = await requireAuth(request, ['doctor'], {
@@ -25,12 +28,10 @@ export async function POST(request: NextRequest) {
     if (auth.userType === 'doctor') {
       const verified = await isDoctorVerified(auth.sub);
       if (!verified) {
-        return NextResponse.json(
-          {
-            message:
-              'Forbidden: Your medical license is pending review. Voice consultation is locked until verified.',
-          },
-          { status: 403 }
+        return apiError(
+          API_ERROR_CODES.ACCOUNT_UNVERIFIED,
+          'Forbidden: Your medical license is pending review. Voice consultation is locked until verified.',
+          403
         );
       }
     }
@@ -188,8 +189,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       sessionId,
       chunkIndex,
       chunkTranscript,
@@ -199,13 +199,6 @@ export async function POST(request: NextRequest) {
       realTimeNotes,
     });
   } catch (error) {
-    console.error('[Voice] Error processing voice session:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to process voice session',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Failed to process voice session');
   }
 }

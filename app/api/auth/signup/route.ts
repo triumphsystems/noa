@@ -10,6 +10,8 @@ import {
 } from '@/lib/db';
 import { signUpWithCognito, getCognitoConfig } from '@/lib/auth/cognito';
 import { enforceRateLimit, getClientIdentifier } from '@/lib/ratelimit';
+import { apiError } from '@/lib/api/response';
+import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,23 +40,26 @@ export async function POST(request: NextRequest) {
 
     // Validate input
     if (!email || !password || !firstName || !lastName || !userType) {
-      return NextResponse.json(
-        { message: 'Missing required fields' },
-        { status: 400 }
+      return apiError(
+        API_ERROR_CODES.BAD_REQUEST,
+        'Missing required fields',
+        400
       );
     }
 
     if (password.length < 6) {
-      return NextResponse.json(
-        { message: 'Password must be at least 6 characters long.' },
-        { status: 400 }
+      return apiError(
+        API_ERROR_CODES.BAD_REQUEST,
+        'Password must be at least 6 characters long.',
+        400
       );
     }
 
     if (userType !== 'doctor' && userType !== 'patient') {
-      return NextResponse.json(
-        { message: 'Invalid user type. Must be doctor or patient.' },
-        { status: 400 }
+      return apiError(
+        API_ERROR_CODES.BAD_REQUEST,
+        'Invalid user type. Must be doctor or patient.',
+        400
       );
     }
 
@@ -75,11 +80,10 @@ export async function POST(request: NextRequest) {
       userSub = result.userSub;
       isConfirmed = result.isConfirmed;
     } else {
-      return NextResponse.json(
-        {
-          message: 'Registration service is currently unavailable.',
-        },
-        { status: 503 }
+      return apiError(
+        API_ERROR_CODES.SERVICE_UNAVAILABLE,
+        'Registration service is currently unavailable.',
+        503
       );
     }
 
@@ -87,12 +91,10 @@ export async function POST(request: NextRequest) {
     if (userType === 'doctor') {
       const existing = await getDoctorByEmail(email);
       if (existing) {
-        return NextResponse.json(
-          {
-            message:
-              'An account with this email address already exists. Please sign in or reset your password.',
-          },
-          { status: 409 }
+        return apiError(
+          API_ERROR_CODES.CONFLICT,
+          'An account with this email address already exists. Please sign in or reset your password.',
+          409
         );
       }
 
@@ -186,6 +188,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Registration failed';
     console.error('[Auth] Signup error:', msg);
-    return NextResponse.json({ message: msg }, { status: 400 });
+    return apiError(API_ERROR_CODES.BAD_REQUEST, msg, 400);
   }
 }

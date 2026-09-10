@@ -137,19 +137,21 @@ export async function checkRateLimit(
   };
 }
 
+import { apiError } from '@/lib/api/response';
+import { API_ERROR_CODES } from '@/lib/types/api.types';
+
 /**
  * Standard HTTP 429 Too Many Requests response with RFC rate limit headers.
- * Conforms to the project's canonical error response shape ({ message: string }).
+ * Conforms to the project's canonical error response shape ({ success: false, error: { code, message } }).
  */
 export function rateLimitResponse(result: RateLimitResult): NextResponse {
   const retryAfter = Math.max(1, result.reset - Math.floor(Date.now() / 1000));
 
-  return NextResponse.json(
+  return apiError(
+    API_ERROR_CODES.RATE_LIMIT_EXCEEDED,
+    `Rate limit exceeded. Maximum ${result.limit} requests per minute allowed on this endpoint. Please retry in ${retryAfter} seconds.`,
+    429,
     {
-      message: `Rate limit exceeded. Maximum ${result.limit} requests per minute allowed on this endpoint. Please retry in ${retryAfter} seconds.`,
-    },
-    {
-      status: 429,
       headers: {
         'Retry-After': String(retryAfter),
         'X-RateLimit-Limit': String(result.limit),

@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { confirmCognitoSignUp, getCognitoConfig } from '@/lib/auth/cognito';
 import { enforceRateLimit, getClientIdentifier } from '@/lib/ratelimit';
+import { apiError, apiSuccess } from '@/lib/api/response';
+import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,9 +18,10 @@ export async function POST(request: NextRequest) {
     if (rateLimitRes) return rateLimitRes;
 
     if (!email || !code) {
-      return NextResponse.json(
-        { message: 'Email and verification code are required' },
-        { status: 400 }
+      return apiError(
+        API_ERROR_CODES.BAD_REQUEST,
+        'Email and verification code are required',
+        400
       );
     }
 
@@ -28,19 +31,19 @@ export async function POST(request: NextRequest) {
 
     if (isConfigured) {
       await confirmCognitoSignUp(trimmedEmail, trimmedCode);
-      return NextResponse.json({
-        success: true,
+      return apiSuccess({
         message: 'Account verified successfully. You can now log in.',
       });
     }
 
-    return NextResponse.json(
-      { message: 'Authentication service is not configured' },
-      { status: 503 }
+    return apiError(
+      API_ERROR_CODES.SERVICE_UNAVAILABLE,
+      'Authentication service is not configured',
+      503
     );
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Verification failed';
     console.error('[API] Verification error:', msg);
-    return NextResponse.json({ message: msg }, { status: 400 });
+    return apiError(API_ERROR_CODES.BAD_REQUEST, msg, 400);
   }
 }

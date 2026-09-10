@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import {
   forgotPasswordWithCognito,
   getCognitoConfig,
 } from '@/lib/auth/cognito';
 import { enforceRateLimit, getClientIdentifier } from '@/lib/ratelimit';
+import { apiError, apiSuccess } from '@/lib/api/response';
+import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,9 +21,10 @@ export async function POST(request: NextRequest) {
     if (rateLimitRes) return rateLimitRes;
 
     if (!email || typeof email !== 'string' || !email.trim()) {
-      return NextResponse.json(
-        { message: 'Email address is required' },
-        { status: 400 }
+      return apiError(
+        API_ERROR_CODES.BAD_REQUEST,
+        'Email address is required',
+        400
       );
     }
 
@@ -31,40 +34,38 @@ export async function POST(request: NextRequest) {
     if (isConfigured) {
       try {
         const result = await forgotPasswordWithCognito(trimmedEmail);
-        return NextResponse.json({
-          success: true,
+        return apiSuccess({
           message: 'Password reset code sent successfully',
           destination: result.destination,
         });
-      } catch (err: any) {
-        console.error('[API] Forgot password error:', err?.message);
+      } catch (err) {
+        const errObj = err as Record<string, unknown> | undefined;
+        const errMsg = err instanceof Error ? err.message : 'Failed to send reset code';
+        console.error('[API] Forgot password error:', errMsg);
         // Prevent user enumeration: if user is not found, respond with generic success
         if (
-          err?.message?.includes('No account found') ||
-          err?.name === 'UserNotFoundException'
+          errMsg.includes('No account found') ||
+          errObj?.name === 'UserNotFoundException'
         ) {
-          return NextResponse.json({
-            success: true,
+          return apiSuccess({
             message:
               'If an account exists with this email, a verification code has been sent.',
             destination: trimmedEmail,
           });
         }
-        return NextResponse.json(
-          { message: err?.message || 'Failed to send reset code' },
-          { status: 400 }
-        );
+        return apiError(API_ERROR_CODES.BAD_REQUEST, errMsg, 400);
       }
     }
 
-    return NextResponse.json(
-      { message: 'Service is not available' },
-      { status: 503 }
+    return apiError(
+      API_ERROR_CODES.SERVICE_UNAVAILABLE,
+      'Service is not available',
+      503
     );
   } catch (error) {
     const msg =
       error instanceof Error ? error.message : 'An unexpected error occurred';
     console.error('[API] Forgot password route error:', msg);
-    return NextResponse.json({ message: msg }, { status: 500 });
+    return apiError(API_ERROR_CODES.INTERNAL_SERVER_ERROR, msg, 500);
   }
 }
