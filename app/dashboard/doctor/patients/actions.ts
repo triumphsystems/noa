@@ -124,7 +124,7 @@ export async function invitePatient(
   }
 }
 
-export async function respondToPatientLinkAction(
+export async function respondToPatientLink(
   patientId: string,
   action: 'accept' | 'decline'
 ): Promise<PatientActionResult> {
@@ -183,16 +183,16 @@ export async function respondToPatientLinkAction(
     };
   } catch (error) {
     console.error('[Actions] Failed to respond to patient link:', error);
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Failed to process connection request',
-    };
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to process connection request',
+      };
+    }
   }
 }
 
 export const invitePatientAction = invitePatient;
-export const respondToPatientLink = respondToPatientLinkAction;
-
+export const respondToPatientLinkAction = respondToPatientLink;

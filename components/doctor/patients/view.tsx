@@ -12,8 +12,8 @@ import {
   type PatientActionNotification,
 } from '@/components/doctor/patients';
 import {
-  invitePatientAction,
-  respondToPatientLinkAction,
+  invitePatient,
+  respondToPatientLink,
 } from '@/app/dashboard/doctor/patients/actions';
 
 interface PatientsViewProps {
@@ -66,7 +66,7 @@ export function PatientsView({
     setInviteMessage(null);
 
     try {
-      const res = await invitePatientAction({
+      const res = await invitePatient({
         email: inviteEmail.trim(),
         firstName: inviteFirstName.trim(),
         lastName: inviteLastName.trim(),
@@ -107,7 +107,7 @@ export function PatientsView({
     setActionNotification(null);
 
     try {
-      const res = await respondToPatientLinkAction(patientId, action);
+      const res = await respondToPatientLink(patientId, action);
       if (!res.success) {
         throw new Error(res.error || `Failed to ${action} patient request`);
       }

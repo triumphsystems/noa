@@ -169,8 +169,5 @@ export async function saveSessionAction(
   }
 }
 
-export {
-  submitLicensure,
-  submitLicensureAction,
-} from './onboarding/actions';
+export { submitLicensure, submitLicensureAction } from './onboarding/actions';
 
