@@ -18,8 +18,8 @@ import {
   type AdminUser,
 } from '@/components/admin';
 import {
-  approveDoctorAction,
-  rejectDoctorAction,
+  approveDoctor,
+  rejectDoctor,
   refreshAdminDashboard,
 } from '@/app/dashboard/admin/actions';
 
@@ -128,7 +128,7 @@ export function AdminDashboardView({
     setActionLoadingId(doctor.id);
     setNotification(null);
     try {
-      const res = await approveDoctorAction(doctor.id);
+      const res = await approveDoctor(doctor.id);
       if (res.success) {
         setNotification({
           type: 'success',
@@ -162,7 +162,7 @@ export function AdminDashboardView({
       'Medical credentials could not be verified with the issuing authority.';
 
     try {
-      const res = await rejectDoctorAction(target.id, reason);
+      const res = await rejectDoctor(target.id, reason);
       if (res.success) {
         setNotification({
           type: 'success',

@@ -19,7 +19,7 @@ export async function refreshAdminDashboard(): Promise<void> {
   revalidatePath('/dashboard/admin');
 }
 
-export async function approveDoctorAction(
+export async function approveDoctor(
   doctorId: string
 ): Promise<AdminActionResult> {
   try {
@@ -57,7 +57,9 @@ export async function approveDoctorAction(
   }
 }
 
-export async function rejectDoctorAction(
+export const approveDoctorAction = approveDoctor;
+
+export async function rejectDoctor(
   doctorId: string,
   reason: string
 ): Promise<AdminActionResult> {
@@ -91,3 +93,6 @@ export async function rejectDoctorAction(
     };
   }
 }
+
+export const rejectDoctorAction = rejectDoctor;
+
