@@ -33,6 +33,7 @@ export async function updateDoctorProfileAction(
       | 'license'
       | 'issuingAuthority'
       | 'licenseDocumentUrl'
+      | 'verificationStatus'
     >
   >
 ): Promise<ActionResult<Doctor>> {
