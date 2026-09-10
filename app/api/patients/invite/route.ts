@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { nanoid } from 'nanoid';
 import {
   getDoctorById,
@@ -7,6 +7,9 @@ import {
   updatePatient,
 } from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
+import { patientInviteSchema } from '@/lib/validations';
+import { apiError, apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,43 +18,34 @@ export async function POST(request: NextRequest) {
     const { auth } = guard;
 
     const doctorId = auth.sub;
-    if (!doctorId) {
-      return NextResponse.json(
-        { message: 'Doctor ID missing from auth token' },
-        { status: 400 }
-      );
-    }
 
     const doctor = await getDoctorById(doctorId);
     if (!doctor) {
-      return NextResponse.json(
-        { message: 'Doctor record not found' },
-        { status: 404 }
+      return apiError(
+        API_ERROR_CODES.NOT_FOUND,
+        'Doctor record not found',
+        404
       );
     }
 
     if (doctor.verificationStatus !== 'verified') {
-      return NextResponse.json(
-        {
-          message:
-            'Your medical credentials must be verified by clinical administration before inviting patients.',
-          verificationStatus: doctor.verificationStatus,
-        },
-        { status: 403 }
+      return apiError(
+        API_ERROR_CODES.ACCOUNT_UNVERIFIED,
+        'Your medical credentials must be verified by clinical administration before inviting patients.',
+        403
       );
     }
 
-    const body = await request.json();
-    const { email, firstName, lastName, phone } = body || {};
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = patientInviteSchema.safeParse(rawBody);
 
-    if (!email || !email.trim()) {
-      return NextResponse.json(
-        { message: 'Patient email is required' },
-        { status: 400 }
-      );
+    if (!parseResult.success) {
+      return zodValidationError(parseResult.error, 'Patient email is required');
     }
 
-    const cleanEmail = email.trim().toLowerCase();
+    const { email, firstName, lastName, phone } = parseResult.data;
+
+    const cleanEmail = email.toLowerCase();
     const existingPatient = await getPatientByEmail(cleanEmail);
 
     let patient;
@@ -63,14 +57,10 @@ export async function POST(request: NextRequest) {
         existingPatient.doctorId === doctorId &&
         existingPatient.linkStatus === 'linked'
       ) {
-        return NextResponse.json(
-          {
-            success: true,
-            data: existingPatient,
-            message: 'Patient is already linked to your clinic practice.',
-          },
-          { status: 200 }
-        );
+        return apiSuccess({
+          patient: existingPatient,
+          message: 'Patient is already linked to your clinic practice.',
+        });
       }
 
       // Propose link / pending patient approval
@@ -90,9 +80,9 @@ export async function POST(request: NextRequest) {
       patient = await createPatient({
         id: `patient-${nanoid()}`,
         email: cleanEmail,
-        firstName: firstName?.trim() || 'Pending',
-        lastName: lastName?.trim() || 'Patient',
-        phone: phone?.trim(),
+        firstName: firstName || 'Pending',
+        lastName: lastName || 'Patient',
+        phone,
         pendingDoctorId: doctorId,
         linkStatus: 'pending_patient_approval',
         linkRequestedBy: 'doctor',
@@ -110,20 +100,12 @@ export async function POST(request: NextRequest) {
       linkRequestedAt: patient?.linkRequestedAt,
     };
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       data: sanitizedPatient,
       isNew,
       message: `Invitation sent to ${patient?.firstName || cleanEmail}. Awaiting patient acceptance on their portal.`,
     });
   } catch (error) {
-    console.error('[API /patients/invite] Error inviting patient:', error);
-    return NextResponse.json(
-      {
-        message: 'Failed to invite patient',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Failed to invite patient');
   }
 }

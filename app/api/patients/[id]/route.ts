@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import {
   getPatientById,
   getIntakesByPatient,
@@ -6,6 +6,9 @@ import {
   type Patient,
 } from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
+import { patientProfileUpdateSchema } from '@/lib/validations';
+import { apiError, apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function GET(
   request: NextRequest,
@@ -19,16 +22,21 @@ export async function GET(
     const { id } = await params;
 
     if (!id) {
-      return NextResponse.json(
-        { error: 'Patient ID is required' },
-        { status: 400 }
+      return apiError(
+        API_ERROR_CODES.BAD_REQUEST,
+        'Patient ID is required',
+        400
       );
     }
 
     const patient = await getPatientById(id);
 
     if (!patient) {
-      return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
+      return apiError(
+        API_ERROR_CODES.NOT_FOUND,
+        'Patient not found',
+        404
+      );
     }
 
     // -----------------------------------------------------------------------
@@ -38,8 +46,7 @@ export async function GET(
     // Admins can access any patient record and their intake history
     if (auth.userType === 'admin') {
       const intakes = await getIntakesByPatient(id);
-      return NextResponse.json({
-        success: true,
+      return apiSuccess({
         patient,
         intake: intakes[0] || null,
         intakes,
@@ -49,14 +56,14 @@ export async function GET(
     // Patients can only access their own record and intakes
     if (auth.userType === 'patient') {
       if (id !== auth.sub) {
-        return NextResponse.json(
-          { error: 'Forbidden: Cannot access another patient record' },
-          { status: 403 }
+        return apiError(
+          API_ERROR_CODES.FORBIDDEN,
+          'Forbidden: Cannot access another patient record',
+          403
         );
       }
       const intakes = await getIntakesByPatient(id);
-      return NextResponse.json({
-        success: true,
+      return apiSuccess({
         patient,
         intake: intakes[0] || null,
         intakes,
@@ -71,12 +78,10 @@ export async function GET(
 
       // Deny unless the doctor has an explicit link relationship with this patient
       if (!isLinkedToDoctor && !isPendingDoctor) {
-        return NextResponse.json(
-          {
-            error:
-              'Forbidden: You do not have an active care relationship with this patient',
-          },
-          { status: 403 }
+        return apiError(
+          API_ERROR_CODES.FORBIDDEN,
+          'Forbidden: You do not have an active care relationship with this patient',
+          403
         );
       }
 
@@ -94,8 +99,7 @@ export async function GET(
           medications: [] as string[],
           conditions: [] as string[],
         };
-        return NextResponse.json({
-          success: true,
+        return apiSuccess({
           patient: sanitized,
           intake: null,
         });
@@ -103,8 +107,7 @@ export async function GET(
 
       // Doctor has consent and active link — fetch clinical intake notes
       const intakes = await getIntakesByPatient(id);
-      return NextResponse.json({
-        success: true,
+      return apiSuccess({
         patient,
         intake: intakes[0] || null,
         intakes,
@@ -112,16 +115,9 @@ export async function GET(
     }
 
     // Unknown role — deny
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return apiError(API_ERROR_CODES.FORBIDDEN, 'Forbidden', 403);
   } catch (error) {
-    console.error('[Patients] Error fetching patient:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to fetch patient',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Failed to fetch patient');
   }
 }
 
@@ -136,9 +132,10 @@ export async function PATCH(
 
     const { id } = await params;
     if (!id) {
-      return NextResponse.json(
-        { error: 'Patient ID is required' },
-        { status: 400 }
+      return apiError(
+        API_ERROR_CODES.BAD_REQUEST,
+        'Patient ID is required',
+        400
       );
     }
 
@@ -146,13 +143,21 @@ export async function PATCH(
     const isOwner = auth.userType === 'patient' && auth.sub === id;
     const isAdmin = auth.userType === 'admin';
     if (!isOwner && !isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden: Cannot modify this profile' },
-        { status: 403 }
+      return apiError(
+        API_ERROR_CODES.FORBIDDEN,
+        'Forbidden: Cannot modify this profile',
+        403
       );
     }
 
-    const body = await request.json();
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = patientProfileUpdateSchema.safeParse(rawBody);
+
+    if (!parseResult.success) {
+      return zodValidationError(parseResult.error, 'At least one field is required for update');
+    }
+
+    const body = parseResult.data;
     const allowedUpdates: Partial<Patient> = {};
 
     if (body.avatar !== undefined) allowedUpdates.avatar = body.avatar;
@@ -161,30 +166,24 @@ export async function PATCH(
     if (body.dateOfBirth !== undefined)
       allowedUpdates.dateOfBirth = body.dateOfBirth;
     if (body.address !== undefined) allowedUpdates.address = body.address;
-    if (Array.isArray(body.allergies))
+    if (body.allergies !== undefined)
       allowedUpdates.allergies = body.allergies;
-    if (Array.isArray(body.medications))
+    if (body.medications !== undefined)
       allowedUpdates.medications = body.medications;
-    if (Array.isArray(body.conditions))
+    if (body.conditions !== undefined)
       allowedUpdates.conditions = body.conditions;
 
     const updated = await updatePatient(id, allowedUpdates);
     if (!updated) {
-      return NextResponse.json(
-        { error: 'Patient not found or update failed' },
-        { status: 404 }
+      return apiError(
+        API_ERROR_CODES.NOT_FOUND,
+        'Patient not found or update failed',
+        404
       );
     }
 
-    return NextResponse.json({ success: true, patient: updated });
+    return apiSuccess({ patient: updated });
   } catch (error) {
-    console.error('[Patients] Error updating patient:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to update patient profile',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Failed to update patient profile');
   }
 }

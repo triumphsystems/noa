@@ -22,6 +22,9 @@ import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { transcribeClient, s3Client, awsConfig } from '@/lib/aws-config';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { dynamodbClient } from '@/lib/aws-config';
+import { transcribeSliceSchema } from '@/lib/validations';
+import { apiError, apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export const dynamic = 'force-dynamic';
 // Allow up to 60 seconds for Transcribe Medical job polling
@@ -29,18 +32,6 @@ export const maxDuration = 60;
 
 const docClient = DynamoDBDocumentClient.from(dynamodbClient);
 
-interface TranscribeSliceRequest {
-  /** Consultation session identifier */
-  sessionId: string;
-  /** S3 key of the audio slice (returned by /api/consultation/upload) */
-  s3Key: string;
-  /** Sequential slice index */
-  sliceIndex: number;
-  /** Medical specialty for Transcribe Medical (default: PRIMARYCARE) */
-  specialty?: string;
-  /** Conversation type: CONVERSATION (multi-speaker) or DICTATION */
-  type?: 'CONVERSATION' | 'DICTATION';
-}
 
 /**
  * Wait for a Transcribe Medical job to complete (up to 55 seconds with polling).
@@ -161,7 +152,15 @@ async function appendTranscriptSegment(
 
 export async function POST(request: NextRequest) {
   try {
-    const body: TranscribeSliceRequest = await request.json();
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = transcribeSliceSchema.safeParse(rawBody);
+
+    if (!parseResult.success) {
+      return zodValidationError(
+        parseResult.error,
+        'sessionId, s3Key, and sliceIndex are required'
+      );
+    }
 
     const {
       sessionId,
@@ -170,21 +169,11 @@ export async function POST(request: NextRequest) {
       specialty = process.env.TRANSCRIBE_MEDICAL_SPECIALTY || 'PRIMARYCARE',
       type = (process.env.TRANSCRIBE_MEDICAL_TYPE as
         'CONVERSATION' | 'DICTATION') || 'CONVERSATION',
-    } = body;
-
-    if (!sessionId || !s3Key || sliceIndex === undefined) {
-      return NextResponse.json(
-        { error: 'sessionId, s3Key, and sliceIndex are required' },
-        { status: 400 }
-      );
-    }
+    } = parseResult.data;
 
     const bucket = awsConfig.s3.bucket;
     if (!bucket) {
-      return NextResponse.json(
-        { error: 'S3_BUCKET not configured' },
-        { status: 500 }
-      );
+      return apiError(API_ERROR_CODES.SERVICE_UNAVAILABLE, 'Service unavailable', 503);
     }
 
     // Transcribe Medical requires a unique job name per request
@@ -221,7 +210,7 @@ export async function POST(request: NextRequest) {
 
     if (!completedJob?.Transcript?.TranscriptFileUri) {
       // Job is still running (unlikely for a 60s slice, but handle gracefully)
-      return NextResponse.json({
+      return apiSuccess({
         status: 'processing',
         jobName,
         message:
@@ -242,18 +231,14 @@ export async function POST(request: NextRequest) {
       jobName
     );
 
-    return NextResponse.json({
+    return apiSuccess({
       status: 'completed',
       jobName,
       sliceIndex,
       transcriptText,
       charCount: transcriptText.length,
     });
-  } catch (error: any) {
-    console.error('[Consultation/TranscribeSlice] Error:', error?.message);
-    return NextResponse.json(
-      { error: 'Failed to transcribe audio slice', details: error?.message },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error, 'Failed to transcribe audio slice');
   }
 }

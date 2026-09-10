@@ -1,6 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getPatientById, getDoctorById, updatePatient } from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
+import { doctorLinkActionSchema } from '@/lib/validations';
+import { apiError, apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 /**
  * POST /api/doctors/link
@@ -13,35 +16,22 @@ export async function POST(request: NextRequest) {
     const { auth } = guard;
 
     const doctorId = auth.sub;
-    if (!doctorId) {
-      return NextResponse.json(
-        { message: 'Doctor ID missing from auth token' },
-        { status: 400 }
-      );
+
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = doctorLinkActionSchema.safeParse(rawBody);
+
+    if (!parseResult.success) {
+      return zodValidationError(parseResult.error, 'Invalid link action request');
     }
 
-    const body = await request.json();
-    const { patientId, action } = body || {}; // action: 'accept' | 'decline'
-
-    if (!patientId) {
-      return NextResponse.json(
-        { message: 'patientId is required' },
-        { status: 400 }
-      );
-    }
-
-    if (action !== 'accept' && action !== 'decline') {
-      return NextResponse.json(
-        { message: 'Valid action (accept or decline) is required' },
-        { status: 400 }
-      );
-    }
+    const { patientId, action } = parseResult.data;
 
     const patient = await getPatientById(patientId);
     if (!patient) {
-      return NextResponse.json(
-        { message: 'Patient profile not found' },
-        { status: 404 }
+      return apiError(
+        API_ERROR_CODES.NOT_FOUND,
+        'Patient profile not found',
+        404
       );
     }
 
@@ -50,76 +40,56 @@ export async function POST(request: NextRequest) {
       patient.linkStatus !== 'pending_doctor_approval' ||
       patient.pendingDoctorId !== doctorId
     ) {
-      return NextResponse.json(
-        {
-          message:
-            'No pending connection request from this patient found for your account.',
-        },
-        { status: 400 }
+      return apiError(
+        API_ERROR_CODES.BAD_REQUEST,
+        'No pending connection request from this patient found for your account.',
+        400
       );
     }
 
     const doctor = await getDoctorById(doctorId);
     if (!doctor) {
-      return NextResponse.json(
-        { message: 'Doctor profile not found' },
-        { status: 404 }
+      return apiError(
+        API_ERROR_CODES.NOT_FOUND,
+        'Doctor profile not found',
+        404
       );
     }
 
     if (doctor.verificationStatus !== 'verified') {
-      return NextResponse.json(
-        {
-          message:
-            'Your medical credentials must be verified by clinical administration before connecting with patients.',
-          verificationStatus: doctor.verificationStatus,
-        },
-        { status: 403 }
+      return apiError(
+        API_ERROR_CODES.ACCOUNT_UNVERIFIED,
+        'Your medical credentials must be verified by clinical administration before connecting with patients.',
+        403
       );
     }
 
     if (action === 'accept') {
       const updatedPatient = await updatePatient(patient.id, {
         doctorId: doctorId,
-        pendingDoctorId: null as any,
+        pendingDoctorId: null as unknown as string,
         linkStatus: 'linked',
         linkRequestedAt: Date.now(),
       });
 
-      return NextResponse.json({
-        success: true,
-        data: {
-          patient: updatedPatient,
-          doctor,
-        },
+      return apiSuccess({
+        patient: updatedPatient,
+        doctor,
         message: `Patient ${patient.firstName} ${patient.lastName} has been approved and linked to your practice.`,
       });
     } else {
       // Decline connection request
       const updatedPatient = await updatePatient(patient.id, {
-        pendingDoctorId: null as any,
+        pendingDoctorId: null as unknown as string,
         linkStatus: 'unlinked',
       });
 
-      return NextResponse.json({
-        success: true,
-        data: {
-          patient: updatedPatient,
-        },
+      return apiSuccess({
+        patient: updatedPatient,
         message: 'Patient connection request declined.',
       });
     }
   } catch (error) {
-    console.error(
-      '[API /doctors/link] Error processing patient connection:',
-      error
-    );
-    return NextResponse.json(
-      {
-        message: 'Failed to process connection request',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Failed to process connection request');
   }
 }

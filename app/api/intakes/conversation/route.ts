@@ -24,6 +24,10 @@ import {
 
 export const dynamic = 'force-dynamic';
 
+import { intakeConversationTurnSchema } from '@/lib/validations';
+import { apiError, apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import { API_ERROR_CODES } from '@/lib/types/api.types';
+
 function mergeStringArrays(existing: string[] = [], incoming: string[] = []) {
   return Array.from(
     new Set(
@@ -215,14 +219,7 @@ export async function GET(request: NextRequest) {
         "Hi, I'm Noa. I'll ask you one short question at a time. You can answer naturally in any language. Let's get started — what's your full name?",
     });
   } catch (error) {
-    console.error('[Intake/Conversation] Error loading prefill data:', error);
-    return NextResponse.json(
-      {
-        message: 'Failed to prefill intake data',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Failed to prefill intake data');
   }
 }
 
@@ -230,27 +227,27 @@ export async function POST(request: NextRequest) {
   try {
     const auth = await getAuthenticatedUser(request);
 
-    const body = await request.json();
-    const transcript =
-      typeof body.transcript === 'string' ? body.transcript.trim() : '';
-    const language =
-      typeof body.language === 'string' && body.language
-        ? body.language
-        : 'English';
-    const history = Array.isArray(body.history)
-      ? (body.history as IntakeConversationMessage[])
-      : [];
-    const incomingDraft = (body.draft || {}) as IntakeConversationDraft;
-    const doctorInput =
-      typeof body.doctorId === 'string' ? body.doctorId.trim() : '';
-    const incomingIntakeId =
-      typeof body.intakeId === 'string' ? body.intakeId.trim() : '';
-    if (!transcript) {
-      return NextResponse.json(
-        { message: 'transcript is required' },
-        { status: 400 }
-      );
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = intakeConversationTurnSchema.safeParse(rawBody);
+
+    if (!parseResult.success) {
+      return zodValidationError(parseResult.error, 'transcript is required');
     }
+
+    const {
+      transcript,
+      language: rawLanguage,
+      history: rawHistory,
+      draft: rawDraft,
+      doctorId: rawDoctorId,
+      intakeId: rawIntakeId,
+    } = parseResult.data;
+
+    const language = rawLanguage || 'English';
+    const history = (rawHistory || []) as IntakeConversationMessage[];
+    const incomingDraft = (rawDraft || {}) as IntakeConversationDraft;
+    const doctorInput = rawDoctorId || '';
+    const incomingIntakeId = rawIntakeId || '';
 
     // SECURITY: Pre-filling known patient data from DynamoDB MUST ONLY occur
     // for verified authenticated sessions matching auth.sub.
@@ -435,13 +432,6 @@ export async function POST(request: NextRequest) {
       savedIntake,
     });
   } catch (error) {
-    console.error('Error handling intake conversation:', error);
-    return NextResponse.json(
-      {
-        message: 'Failed to process intake conversation',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Failed to process intake conversation');
   }
 }

@@ -5,6 +5,8 @@ import { nanoid } from 'nanoid';
 import { s3Client } from '@/lib/aws-config';
 import { getDoctorById, updateDoctor } from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
+import { apiError, apiSuccess, handleApiError } from '@/lib/api/response';
+import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function POST(
   request: NextRequest,
@@ -17,22 +19,16 @@ export async function POST(
 
     const { id } = await params;
     if (!id) {
-      return NextResponse.json(
-        { message: 'Doctor ID is required' },
-        { status: 400 }
-      );
+      return apiError(API_ERROR_CODES.VALIDATION_ERROR, 'Doctor ID is required', 400);
     }
 
     if (id !== auth.sub && auth.userType !== 'admin') {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+      return apiError(API_ERROR_CODES.FORBIDDEN, 'Forbidden', 403);
     }
 
     const doctor = await getDoctorById(id);
     if (!doctor) {
-      return NextResponse.json(
-        { message: 'Doctor not found' },
-        { status: 404 }
-      );
+      return apiError(API_ERROR_CODES.NOT_FOUND, 'Doctor not found', 404);
     }
 
     const formData = await request.formData();
@@ -44,10 +40,7 @@ export async function POST(
     if (file && file.size > 0) {
       // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        return NextResponse.json(
-          { message: 'File size exceeds 10MB limit' },
-          { status: 400 }
-        );
+        return apiError(API_ERROR_CODES.VALIDATION_ERROR, 'File size exceeds 10MB limit', 400);
       }
 
       const buffer = Buffer.from(await file.arrayBuffer());
@@ -89,10 +82,7 @@ export async function POST(
     }
 
     if (!finalDocumentUrl) {
-      return NextResponse.json(
-        { message: 'No file or document URL provided' },
-        { status: 400 }
-      );
+      return apiError(API_ERROR_CODES.VALIDATION_ERROR, 'No file or document URL provided', 400);
     }
 
     // Update doctor record with the license document URL
@@ -100,20 +90,12 @@ export async function POST(
       licenseDocumentUrl: finalDocumentUrl,
     });
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       message: 'License document uploaded successfully',
       licenseDocumentUrl: finalDocumentUrl,
       doctor: updated,
     });
   } catch (error) {
-    console.error('[Onboarding] Error uploading license document:', error);
-    return NextResponse.json(
-      {
-        message: 'Failed to upload license document',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Failed to upload license document');
   }
 }

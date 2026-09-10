@@ -1,14 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createIntake, getIntakesByPatient } from '@/lib/db';
 import { getAuthenticatedUser } from '@/lib/auth/jwt';
 import { requireAuth } from '@/lib/auth/guard';
-import { AUTH_COOKIE_NAMES } from '@/lib/auth/cookies';
+import { intakeSubmitSchema } from '@/lib/validations';
+import { apiError, apiSuccess, handleApiError, zodValidationError } from '@/lib/api/response';
+import { API_ERROR_CODES } from '@/lib/types/api.types';
 
 export async function POST(request: NextRequest) {
   try {
     const auth = await getAuthenticatedUser(request);
 
-    const body = await request.json();
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = intakeSubmitSchema.safeParse(rawBody);
+
+    if (!parseResult.success) {
+      return zodValidationError(parseResult.error, 'Intake submission validation failed');
+    }
+
     const {
       patientId: requestedPatientId,
       doctorId,
@@ -20,7 +28,7 @@ export async function POST(request: NextRequest) {
       surgeries,
       familyHistory,
       socialHistory,
-    } = body;
+    } = parseResult.data;
 
     const patientId =
       auth.isValid && auth.userType === 'patient' && auth.sub
@@ -28,22 +36,16 @@ export async function POST(request: NextRequest) {
         : requestedPatientId ||
           `guest-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-    if (!doctorId) {
-      return NextResponse.json(
-        { error: 'doctorId is required' },
-        { status: 400 }
-      );
-    }
-
     if (
       auth.isValid &&
       auth.userType === 'patient' &&
       requestedPatientId &&
       requestedPatientId !== auth.sub
     ) {
-      return NextResponse.json(
-        { error: 'Forbidden: Cannot submit intake for another patient' },
-        { status: 403 }
+      return apiError(
+        API_ERROR_CODES.FORBIDDEN,
+        'Forbidden: Cannot submit intake for another patient',
+        403
       );
     }
 
@@ -63,20 +65,12 @@ export async function POST(request: NextRequest) {
       completedAt: Date.now(),
     });
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       intake,
       message: 'Intake form submitted successfully',
     });
   } catch (error) {
-    console.error('[Intakes] Error saving intake:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to submit intake form',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Failed to submit intake form');
   }
 }
 
@@ -89,33 +83,25 @@ export async function GET(request: NextRequest) {
     const patientId = request.nextUrl.searchParams.get('patientId');
 
     if (!patientId) {
-      return NextResponse.json(
-        { error: 'patientId is required' },
-        { status: 400 }
+      return apiError(
+        API_ERROR_CODES.BAD_REQUEST,
+        'patientId is required',
+        400
       );
     }
 
     if (auth.userType === 'patient' && patientId !== auth.sub) {
-      return NextResponse.json(
-        { error: 'Forbidden: Cannot view another patient intake' },
-        { status: 403 }
+      return apiError(
+        API_ERROR_CODES.FORBIDDEN,
+        'Forbidden: Cannot view another patient intake',
+        403
       );
     }
 
     const intakes = await getIntakesByPatient(patientId);
 
-    return NextResponse.json({
-      success: true,
-      intakes,
-    });
+    return apiSuccess({ intakes });
   } catch (error) {
-    console.error('Error fetching intakes:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to fetch intakes',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Failed to fetch intakes');
   }
 }
