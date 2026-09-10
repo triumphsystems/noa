@@ -1,4 +1,4 @@
-﻿export * from './types';
+export * from './types';
 export { PatientHeader } from './header';
 export { PatientOverview } from './overview';
 export { PatientVisits } from './visits';
@@ -14,3 +14,4 @@ export { DoctorDirectorySearch } from './doctor-directory-search';
 export { CarePlanView } from './care-plan-view';
 export { ConsultationHeader } from './consultation-header';
 export { ConsultationsList } from './consultations-list';
+export { PatientDashboardView } from './dashboard-view';

@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { ApiSuccess } from '@/lib/types/api.types';
 import type { PatientDashboardPayload } from '@/lib/types/patient.types';
-import {
-  getPatientById,
-  getDoctorById,
-  getSessionsByPatient,
-  getIntakeById,
-  getIntakesByPatient,
-} from '@/lib/db';
+import { getPatientById } from '@/lib/db';
+import { getPatientData } from '@/lib/data/patient';
 import { requireAuth } from '@/lib/auth/guard';
 
 export async function GET(request: NextRequest) {
@@ -59,38 +54,13 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const [doctor, pendingDoctor, sessions, intakes] = await Promise.all([
-      patient.doctorId
-        ? getDoctorById(patient.doctorId)
-        : Promise.resolve(null),
-      patient.pendingDoctorId
-        ? getDoctorById(patient.pendingDoctorId)
-        : Promise.resolve(null),
-      getSessionsByPatient(patientId),
-      getIntakesByPatient(patientId),
-    ]);
-
-    const sortedSessions = [...sessions].sort(
-      (a, b) => (b.startedAt || 0) - (a.startedAt || 0)
-    );
-    const latestIntake = intakes[0] || null;
-
-    const stats = {
-      totalConsultations: sessions.length,
-      completedConsultations: sessions.filter((s) => s.status === 'completed')
-        .length,
-      activeConsultations: sessions.filter((s) => s.status === 'active').length,
-      hasIntake: Boolean(latestIntake),
-    };
-
-    const payload: PatientDashboardPayload = {
-      patient,
-      doctor,
-      pendingDoctor,
-      sessions: sortedSessions,
-      intake: latestIntake,
-      stats,
-    };
+    const payload = await getPatientData(patientId);
+    if (!payload) {
+      return NextResponse.json(
+        { message: 'Patient dashboard data not found' },
+        { status: 404 }
+      );
+    }
 
     const response: ApiSuccess<PatientDashboardPayload> = {
       success: true,
