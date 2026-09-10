@@ -2,11 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/guard';
 import { getDoctorById, updateDoctorVerification } from '@/lib/db';
 import { removeUserFromCognitoGroup } from '@/lib/auth/cognito';
-import {
-  checkRateLimit,
-  getClientIdentifier,
-  rateLimitResponse,
-} from '@/lib/ratelimit';
 
 /**
  * POST /api/admin/doctors/[id]/reject
@@ -17,18 +12,13 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const guard = await requireAuth(request, ['admin']);
-    if (!guard.ok) return guard.response;
-    const { auth } = guard;
-
-    const clientId = getClientIdentifier(request, auth.sub || auth.email);
-    const rateCheck = await checkRateLimit(`admin:action:${clientId}`, {
+    const guard = await requireAuth(request, ['admin'], {
+      prefix: 'admin:action',
       limit: 20,
       windowSeconds: 60,
     });
-    if (!rateCheck.success) {
-      return rateLimitResponse(rateCheck);
-    }
+    if (!guard.ok) return guard.response;
+    const { auth } = guard;
 
     const { id } = await params;
     const body = await request.json().catch(() => ({}));

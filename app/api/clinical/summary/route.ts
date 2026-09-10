@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generatePatientSummary } from '@/lib/bedrock-nova';
-import {
-  checkRateLimit,
-  getClientIdentifier,
-  rateLimitResponse,
-} from '@/lib/ratelimit';
 import { ClinicalAIUnavailableError } from '@/lib/ai/provider';
 import { requireAuth } from '@/lib/auth/guard';
 
 export async function POST(request: NextRequest) {
   try {
-    const guard = await requireAuth(request);
+    const guard = await requireAuth(request, undefined, {
+      prefix: 'summary',
+      limit: 20,
+      windowSeconds: 60,
+    });
     if (!guard.ok) return guard.response;
     const { auth } = guard;
 
@@ -19,19 +18,9 @@ export async function POST(request: NextRequest) {
 
     if (!soapNote) {
       return NextResponse.json(
-        { error: 'SOAP note is required' },
+        { message: 'SOAP note is required' },
         { status: 400 }
       );
-    }
-
-    // Rate limiting: max 20 requests per minute per client
-    const clientId = getClientIdentifier(request);
-    const rateCheck = await checkRateLimit(clientId, {
-      limit: 20,
-      windowSeconds: 60,
-    });
-    if (!rateCheck.success) {
-      return rateLimitResponse(rateCheck);
     }
 
     // Generate patient-friendly summary using Nova Lite
@@ -46,7 +35,6 @@ export async function POST(request: NextRequest) {
     if (error instanceof ClinicalAIUnavailableError && error.isThrottling) {
       return NextResponse.json(
         {
-          error: 'Too Many Requests',
           message:
             'Model capacity exceeded. Please retry in a few moments.',
         },
@@ -55,8 +43,10 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json(
       {
-        error: 'Failed to generate patient summary',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Failed to generate patient summary',
       },
       { status: 500 }
     );

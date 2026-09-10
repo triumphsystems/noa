@@ -3,11 +3,7 @@ import {
   forgotPasswordWithCognito,
   getCognitoConfig,
 } from '@/lib/auth/cognito';
-import {
-  checkRateLimit,
-  getClientIdentifier,
-  rateLimitResponse,
-} from '@/lib/ratelimit';
+import { enforceRateLimit, getClientIdentifier } from '@/lib/ratelimit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,13 +12,11 @@ export async function POST(request: NextRequest) {
 
     // 1. Rate limiting: max 5 requests per minute per client
     const clientId = getClientIdentifier(request, email);
-    const rateCheck = await checkRateLimit(`forgot-pwd:${clientId}`, {
+    const rateLimitRes = await enforceRateLimit(`forgot-pwd:${clientId}`, {
       limit: 5,
       windowSeconds: 60,
     });
-    if (!rateCheck.success) {
-      return rateLimitResponse(rateCheck);
-    }
+    if (rateLimitRes) return rateLimitRes;
 
     if (!email || typeof email !== 'string' || !email.trim()) {
       return NextResponse.json(

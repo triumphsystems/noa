@@ -12,34 +12,22 @@ import {
   isDoctorVerified,
 } from '@/lib/db';
 import { requireAuth } from '@/lib/auth/guard';
-import {
-  checkRateLimit,
-  getClientIdentifier,
-  rateLimitResponse,
-} from '@/lib/ratelimit';
-
 export async function POST(request: NextRequest) {
   try {
-    const guard = await requireAuth(request, ['doctor']);
-    if (!guard.ok) return guard.response;
-    const { auth } = guard;
-
-    // Rate limiting: max 30 voice chunks per minute per authenticated user
-    const clientId = `voice:${auth.sub}`;
-    const rateCheck = await checkRateLimit(clientId, {
+    const guard = await requireAuth(request, ['doctor'], {
+      prefix: 'voice',
       limit: 30,
       windowSeconds: 60,
     });
-    if (!rateCheck.success) {
-      return rateLimitResponse(rateCheck);
-    }
+    if (!guard.ok) return guard.response;
+    const { auth } = guard;
 
     if (auth.userType === 'doctor') {
       const verified = await isDoctorVerified(auth.sub);
       if (!verified) {
         return NextResponse.json(
           {
-            error:
+            message:
               'Forbidden: Your medical license is pending review. Voice consultation is locked until verified.',
           },
           { status: 403 }

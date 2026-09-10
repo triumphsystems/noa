@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateTriagePriority } from '@/lib/bedrock-nova';
-import {
-  checkRateLimit,
-  getClientIdentifier,
-  rateLimitResponse,
-} from '@/lib/ratelimit';
 import { ClinicalAIUnavailableError } from '@/lib/ai/provider';
 import { requireAuth } from '@/lib/auth/guard';
 
 export async function POST(request: NextRequest) {
   try {
-    const guard = await requireAuth(request);
+    const guard = await requireAuth(request, undefined, {
+      prefix: 'triage',
+      limit: 20,
+      windowSeconds: 60,
+    });
     if (!guard.ok) return guard.response;
     const { auth } = guard;
 
@@ -19,22 +18,10 @@ export async function POST(request: NextRequest) {
 
     if (!chiefComplaint || !symptoms) {
       return NextResponse.json(
-        { error: 'Chief complaint and symptoms are required' },
+        { message: 'Chief complaint and symptoms are required' },
         { status: 400 }
       );
     }
-
-    // Rate limiting: max 20 requests per minute per client
-    const clientId = getClientIdentifier(request);
-    const rateCheck = await checkRateLimit(clientId, {
-      limit: 20,
-      windowSeconds: 60,
-    });
-    if (!rateCheck.success) {
-      return rateLimitResponse(rateCheck);
-    }
-
-    console.log('[v0] Generating triage priority with Nova');
 
     // Generate triage priority using Nova Lite
     const triageResult = await generateTriagePriority(
@@ -48,21 +35,20 @@ export async function POST(request: NextRequest) {
       triage: triageResult,
     });
   } catch (error) {
-    console.error('[v0] Error generating triage:', error);
+    console.error('[Triage] Error generating triage:', error);
     if (error instanceof ClinicalAIUnavailableError && error.isThrottling) {
       return NextResponse.json(
         {
-          error: 'Too Many Requests',
           message:
-            'AWS Bedrock model capacity exceeded. Please retry in a few moments.',
+            'Model capacity exceeded. Please retry in a few moments.',
         },
         { status: 429, headers: { 'Retry-After': '5' } }
       );
     }
     return NextResponse.json(
       {
-        error: 'Failed to generate triage',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message:
+          error instanceof Error ? error.message : 'Failed to generate triage',
       },
       { status: 500 }
     );

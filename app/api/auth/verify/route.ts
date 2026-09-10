@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { confirmCognitoSignUp, getCognitoConfig } from '@/lib/auth/cognito';
-import {
-  checkRateLimit,
-  getClientIdentifier,
-  rateLimitResponse,
-} from '@/lib/ratelimit';
+import { enforceRateLimit, getClientIdentifier } from '@/lib/ratelimit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,13 +9,11 @@ export async function POST(request: NextRequest) {
 
     // 1. Rate limiting: max 5 attempts per minute per client
     const clientId = getClientIdentifier(request, email);
-    const rateCheck = await checkRateLimit(`verify:${clientId}`, {
+    const rateLimitRes = await enforceRateLimit(`verify:${clientId}`, {
       limit: 5,
       windowSeconds: 60,
     });
-    if (!rateCheck.success) {
-      return rateLimitResponse(rateCheck);
-    }
+    if (rateLimitRes) return rateLimitRes;
 
     if (!email || !code) {
       return NextResponse.json(

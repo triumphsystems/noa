@@ -5,11 +5,6 @@ import {
   getAllDoctors,
   DoctorVerificationStatus,
 } from '@/lib/db';
-import {
-  checkRateLimit,
-  getClientIdentifier,
-  rateLimitResponse,
-} from '@/lib/ratelimit';
 
 /**
  * GET /api/admin/doctors
@@ -18,18 +13,13 @@ import {
  */
 export async function GET(request: NextRequest) {
   try {
-    const guard = await requireAuth(request, ['admin']);
-    if (!guard.ok) return guard.response;
-    const { auth } = guard;
-
-    const clientId = getClientIdentifier(request, auth.sub || auth.email);
-    const rateCheck = await checkRateLimit(`admin:list:${clientId}`, {
+    const guard = await requireAuth(request, ['admin'], {
+      prefix: 'admin:list',
       limit: 30,
       windowSeconds: 60,
     });
-    if (!rateCheck.success) {
-      return rateLimitResponse(rateCheck);
-    }
+    if (!guard.ok) return guard.response;
+    const { auth } = guard;
 
     const statusParam = request.nextUrl.searchParams.get(
       'status'

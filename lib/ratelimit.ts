@@ -37,6 +37,9 @@ const localFallbackMap = new Map<string, { count: number; reset: number }>();
 /**
  * Extract client identifier from NextRequest (IP or Authenticated User)
  */
+/**
+ * Extract client identifier from NextRequest (IP address fallback or explicit customId)
+ */
 export function getClientIdentifier(
   req: NextRequest,
   customId?: string
@@ -45,26 +48,7 @@ export function getClientIdentifier(
     return customId.trim();
   }
 
-  // Check auth session cookie
-  const sessionCookie = req.cookies.get('noa_session')?.value;
-  if (sessionCookie) {
-    try {
-      const parsed = JSON.parse(sessionCookie);
-      if (parsed.userType === 'doctor' && (parsed.doctorId || parsed.id)) {
-        return `doctor:${parsed.doctorId || parsed.id}`;
-      }
-      if (parsed.userType === 'patient' && (parsed.patientId || parsed.id)) {
-        return `patient:${parsed.patientId || parsed.id}`;
-      }
-      if (parsed.doctorId) return `doctor:${parsed.doctorId}`;
-      if (parsed.patientId) return `patient:${parsed.patientId}`;
-      if (parsed.email) return `user:${parsed.email}`;
-    } catch {
-      // Ignore parse failure
-    }
-  }
-
-  // Fallback to IP address
+  // Resolve client IP address
   const forwarded = req.headers.get('x-forwarded-for');
   const ip = forwarded
     ? forwarded.split(',')[0].trim()
@@ -154,14 +138,14 @@ export async function checkRateLimit(
 }
 
 /**
- * Standard HTTP 429 Too Many Requests response with RFC rate limit headers
+ * Standard HTTP 429 Too Many Requests response with RFC rate limit headers.
+ * Conforms to the project's canonical error response shape ({ message: string }).
  */
-export function rateLimitResponse(result: RateLimitResult) {
+export function rateLimitResponse(result: RateLimitResult): NextResponse {
   const retryAfter = Math.max(1, result.reset - Math.floor(Date.now() / 1000));
 
   return NextResponse.json(
     {
-      error: 'Too Many Requests',
       message: `Rate limit exceeded. Maximum ${result.limit} requests per minute allowed on this endpoint. Please retry in ${retryAfter} seconds.`,
     },
     {
@@ -175,3 +159,19 @@ export function rateLimitResponse(result: RateLimitResult) {
     }
   );
 }
+
+/**
+ * Convenience helper to enforce rate limiting on an identifier.
+ * Returns a 429 NextResponse if rate limit exceeded, or null if allowed.
+ */
+export async function enforceRateLimit(
+  identifier: string,
+  config?: RateLimitConfig
+): Promise<NextResponse | null> {
+  const result = await checkRateLimit(identifier, config);
+  if (!result.success) {
+    return rateLimitResponse(result);
+  }
+  return null;
+}
+

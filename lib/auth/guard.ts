@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Canonical Server-Side Auth Guard
  *
  * Every protected API route must call requireAuth() at the top of its handler.
@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser, type VerifiedAuthPayload } from './jwt';
 import { isValidRole, type Role } from './roles';
+import { enforceRateLimit, type RateLimitConfig } from '@/lib/ratelimit';
 
 /** The auth payload guaranteed to have sub and userType when ok: true */
 export type VerifiedAuth = Required<
@@ -16,10 +17,16 @@ export type VerifiedAuth = Required<
   VerifiedAuthPayload;
 
 export type AuthGuardResult =
-  { ok: true; auth: VerifiedAuth } | { ok: false; response: NextResponse };
+  | { ok: true; auth: VerifiedAuth }
+  | { ok: false; response: NextResponse };
+
+export interface GuardRateLimitOptions extends RateLimitConfig {
+  /** Optional namespace prefix for the rate limit key. Defaults to 'api'. */
+  prefix?: string;
+}
 
 /**
- * Verifies authentication and optionally enforces role-based authorization.
+ * Verifies authentication and optionally enforces role-based authorization and rate limiting.
  *
  * Returns a discriminated union:
  * - { ok: true, auth }  → auth.sub and auth.userType are non-optional strings
@@ -27,17 +34,19 @@ export type AuthGuardResult =
  *
  * @param request      The incoming NextRequest
  * @param allowedRoles If provided, verified userType must be in this list
+ * @param rateLimit    If provided, atomically enforces rate limiting against the verified auth.sub
  *
  * @example
  * export async function GET(request: NextRequest) {
- *   const guard = await requireAuth(request, ['doctor', 'admin']);
+ *   const guard = await requireAuth(request, ['doctor', 'admin'], { prefix: 'doctor-list', limit: 30 });
  *   if (!guard.ok) return guard.response;
  *   const { auth } = guard; // auth.sub, auth.userType guaranteed non-undefined
  * }
  */
 export async function requireAuth(
   request: NextRequest,
-  allowedRoles?: ReadonlyArray<Role>
+  allowedRoles?: ReadonlyArray<Role>,
+  rateLimit?: GuardRateLimitOptions
 ): Promise<AuthGuardResult> {
   const auth = await getAuthenticatedUser(request);
 
@@ -53,6 +62,17 @@ export async function requireAuth(
       ok: false,
       response: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
     };
+  }
+
+  if (rateLimit) {
+    const key = `${rateLimit.prefix ?? 'api'}:${auth.sub}`;
+    const rateLimitRes = await enforceRateLimit(key, rateLimit);
+    if (rateLimitRes) {
+      return {
+        ok: false,
+        response: rateLimitRes,
+      };
+    }
   }
 
   return {

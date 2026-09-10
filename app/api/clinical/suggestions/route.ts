@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getClinicaSuggestions } from '@/lib/voice-service';
-import {
-  checkRateLimit,
-  getClientIdentifier,
-  rateLimitResponse,
-} from '@/lib/ratelimit';
 import { ClinicalAIUnavailableError } from '@/lib/ai/provider';
 import { requireAuth } from '@/lib/auth/guard';
 
 export async function POST(request: NextRequest) {
   try {
-    const guard = await requireAuth(request);
+    const guard = await requireAuth(request, undefined, {
+      prefix: 'suggestions',
+      limit: 20,
+      windowSeconds: 60,
+    });
     if (!guard.ok) return guard.response;
     const { auth } = guard;
 
@@ -19,19 +18,9 @@ export async function POST(request: NextRequest) {
 
     if (!transcript) {
       return NextResponse.json(
-        { error: 'Transcript is required' },
+        { message: 'Transcript is required' },
         { status: 400 }
       );
-    }
-
-    // Rate limiting: max 20 requests per minute per client
-    const clientId = getClientIdentifier(request);
-    const rateCheck = await checkRateLimit(clientId, {
-      limit: 20,
-      windowSeconds: 60,
-    });
-    if (!rateCheck.success) {
-      return rateLimitResponse(rateCheck);
     }
 
     // Generate suggestions using Nova Sonic
@@ -51,17 +40,18 @@ export async function POST(request: NextRequest) {
     if (error instanceof ClinicalAIUnavailableError && error.isThrottling) {
       return NextResponse.json(
         {
-          error: 'Too Many Requests',
           message:
-            'AWS Bedrock model capacity exceeded. Please retry in a few moments.',
+            'Model capacity exceeded. Please retry in a few moments.',
         },
         { status: 429, headers: { 'Retry-After': '5' } }
       );
     }
     return NextResponse.json(
       {
-        error: 'Failed to generate suggestions',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Failed to generate suggestions',
       },
       { status: 500 }
     );
