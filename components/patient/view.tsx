@@ -55,11 +55,12 @@ export function PatientDashboardView({
     usePatientStore((state) => state.patient) || initialData.patient;
   const doctor = useDoctorStoreDoctor(initialData.doctor);
   const pendingDoctor =
-    (usePatientStore((state) => state.pendingDoctor) ?? initialData.pendingDoctor) ?? null;
+    usePatientStore((state) => state.pendingDoctor) ??
+    initialData.pendingDoctor ??
+    null;
   const sessions =
     usePatientStore((state) => state.sessions) || initialData.sessions;
-  const intake =
-    usePatientStore((state) => state.intake) ?? initialData.intake;
+  const intake = usePatientStore((state) => state.intake) ?? initialData.intake;
   const stats = usePatientStore((state) => state.stats) || initialData.stats;
   const patientId = patient?.id || initialData.patient.id;
 

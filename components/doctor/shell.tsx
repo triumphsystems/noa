@@ -71,7 +71,10 @@ interface DoctorLayoutShellProps {
   children: React.ReactNode;
 }
 
-export function DoctorLayoutShell({ doctor, children }: DoctorLayoutShellProps) {
+export function DoctorLayoutShell({
+  doctor,
+  children,
+}: DoctorLayoutShellProps) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);

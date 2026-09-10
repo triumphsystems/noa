@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
       try {
         const result = await forgotPasswordWithCognito(trimmedEmail);
         return apiSuccess({
-          message: 'If an account exists with this email, a verification code has been sent',
+          message:
+            'If an account exists with this email, a verification code has been sent',
           destination: result.destination,
         });
       } catch (err) {

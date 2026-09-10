@@ -11,7 +11,9 @@ interface SessionPageProps {
 
 export default async function SessionPage({ params }: SessionPageProps) {
   const auth = await requireServerAuth(['doctor']);
-  const unwrappedParams = await (params instanceof Promise ? params : Promise.resolve(params));
+  const unwrappedParams = await (params instanceof Promise
+    ? params
+    : Promise.resolve(params));
   const sessionId = unwrappedParams.id;
 
   const data = await getDoctorSessionDetail(auth.sub, sessionId);

@@ -56,7 +56,8 @@ export async function forgotPasswordAction(
       const result = await forgotPasswordWithCognito(trimmedEmail);
       return { success: true, data: { destination: result.destination } };
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : 'Failed to send reset code';
+      const errMsg =
+        err instanceof Error ? err.message : 'Failed to send reset code';
       const errObj = err as Record<string, unknown> | undefined;
 
       // Prevent user enumeration
@@ -72,7 +73,8 @@ export async function forgotPasswordAction(
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'An unexpected error occurred',
+      error:
+        error instanceof Error ? error.message : 'An unexpected error occurred',
     };
   }
 }
@@ -90,7 +92,10 @@ export async function resetPasswordAction(
     const trimmedCode = code.trim();
 
     if (!trimmedEmail || !trimmedCode || !newPassword) {
-      return { success: false, error: 'Email, code, and new password are required' };
+      return {
+        success: false,
+        error: 'Email, code, and new password are required',
+      };
     }
 
     const { isConfigured } = getCognitoConfig();
@@ -111,7 +116,8 @@ export async function resetPasswordAction(
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to reset password',
+      error:
+        error instanceof Error ? error.message : 'Failed to reset password',
     };
   }
 }

@@ -120,12 +120,15 @@ Noa is an AI-Powered Medical Intelligence Platform that transforms medical consu
 > Single sources of truth: `lib/auth/roles.ts` (routing/RBAC), `lib/auth/server.ts` (RSC/Server Actions auth), `lib/auth/guard.ts` (API routes).
 
 ### 1. Role Contract & Routing (`lib/auth/roles.ts`)
+
 - AWS Cognito RS256 token claim `custom:user_type` is the cryptographic source of truth.
 - Roles are strictly `'doctor' | 'patient' | 'admin'` (`Role` type from `lib/auth/roles.ts`).
 - Dashboard routes are deterministic: use `getDashboardPath(role)` (`/dashboard/<role>`). Never hardcode dashboard redirect paths inline.
 
 ### 2. Server-Side Auth in React Server Components & Server Actions (`lib/auth/server.ts`)
+
 For RSC pages, layouts, and Server Actions, always use the canonical server helpers:
+
 - `requireServerAuth(allowedRoles?, redirectTo?)`: Validates session from cookies/headers directly on the server; redirects automatically if invalid or unauthorized.
 - `getServerAuth()`: Returns `{ isValid: true, sub, userType, ... }` or `{ isValid: false }`.
 - `getServerProfile()`: Enriches the authenticated session with display info directly from DynamoDB.
@@ -140,16 +143,19 @@ export default async function DoctorDashboardPage() {
 ```
 
 ### 3. API Route Guard (`lib/auth/guard.ts`) & Standard Responses (`lib/api/response.ts`)
+
 - All remaining REST/API routes must call `const guard = await requireAuth(request, allowedRoles)`.
 - Use canonical API response helpers: `apiSuccess(data)`, `apiError(code, message, status)`, `handleApiError(error)`.
 - Never leak raw stack traces, database details, or AWS SDK errors to clients.
 
 ### 4. Client-Side Authentication (`lib/auth-context.tsx` & `lib/http.ts`)
+
 - `useAuth()` in `lib/auth-context.tsx` is the client gateway for browser login/logout.
 - Client requests that need automatic 401 refresh token retry must use `http` from `lib/http.ts` instead of raw `fetch`.
 - Local storage auth keys must be accessed solely through `lib/auth/storage.ts` (`clearAuthStorage()`, `setStoredUserId()`).
 
 ### 5. Strictness Rules
+
 - **No `catch (error: any)`**: Always narrow with `error instanceof Error ? error.message : '...'`.
 - **No double casts**: Avoid `as unknown as Type`.
 - **No inline role unions**: Always import `type { Role }` from `@/lib/auth/roles`.

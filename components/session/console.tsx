@@ -357,7 +357,9 @@ export function SessionConsole({
       }, 1000);
     } catch (err) {
       console.error('Recording initialization error:', err);
-      alert('Unable to access microphone. Please ensure microphone permissions are granted.');
+      alert(
+        'Unable to access microphone. Please ensure microphone permissions are granted.'
+      );
     }
   };
 

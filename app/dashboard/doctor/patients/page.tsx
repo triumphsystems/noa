@@ -16,9 +16,6 @@ export default async function PatientsPage() {
   }
 
   return (
-    <PatientsView
-      initialDoctor={data.doctor}
-      initialPatients={data.patients}
-    />
+    <PatientsView initialDoctor={data.doctor} initialPatients={data.patients} />
   );
 }

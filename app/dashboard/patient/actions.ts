@@ -29,7 +29,9 @@ export async function refreshPatientDashboard(): Promise<void> {
  * Server Action to fetch patient dashboard data directly.
  */
 export async function getPatientDashboardData(): Promise<
-  PatientActionResult<import('@/lib/types/patient.types').PatientDashboardPayload>
+  PatientActionResult<
+    import('@/lib/types/patient.types').PatientDashboardPayload
+  >
 > {
   try {
     const auth = await requireServerAuth(['patient']);
@@ -262,7 +264,8 @@ export async function linkDoctorCareCode(
           name: targetDoctor.name,
           specialty: targetDoctor.specialty,
           clinic: targetDoctor.clinic,
-          careCode: targetDoctor.careCode || computeDoctorCareCode(targetDoctor),
+          careCode:
+            targetDoctor.careCode || computeDoctorCareCode(targetDoctor),
           email: targetDoctor.email,
         },
       },
@@ -293,7 +296,8 @@ export async function searchDoctors(
 ): Promise<PatientActionResult<SanitizedDoctorDirectoryItem[]>> {
   try {
     await requireServerAuth(['patient']);
-    const { searchDoctors: dbSearchDoctors, getAllDoctors } = await import('@/lib/db');
+    const { searchDoctors: dbSearchDoctors, getAllDoctors } =
+      await import('@/lib/db');
 
     const q = (queryStr || '').trim();
     let doctors: Doctor[] = [];
@@ -329,4 +333,3 @@ export async function searchDoctors(
 export const searchDoctorsAction = searchDoctors;
 
 export { saveIntakeDraft } from '@/app/intake/actions';
-

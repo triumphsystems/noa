@@ -95,4 +95,3 @@ export async function rejectDoctor(
 }
 
 export const rejectDoctorAction = rejectDoctor;
-

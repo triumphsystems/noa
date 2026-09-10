@@ -49,9 +49,8 @@ export const usePatientStore = create<PatientState>((set, get) => ({
     set({ isLoading: true, error: null, patientId: activeId });
 
     try {
-      const { getPatientDashboardDataAction } = await import(
-        '@/app/dashboard/patient/actions'
-      );
+      const { getPatientDashboardDataAction } =
+        await import('@/app/dashboard/patient/actions');
       const res = await getPatientDashboardDataAction();
 
       let payload: PatientDashboardPayload;

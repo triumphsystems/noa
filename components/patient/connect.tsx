@@ -49,7 +49,10 @@ export function DoctorConnectCard({
       if (!res.success) {
         throw new Error(res.error || 'Failed to respond to invitation');
       }
-      setFeedback({ type: 'success', message: res.data?.message || 'Invitation processed.' });
+      setFeedback({
+        type: 'success',
+        message: res.data?.message || 'Invitation processed.',
+      });
       await onRefresh();
     } catch (err: unknown) {
       setFeedback({

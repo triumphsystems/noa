@@ -55,8 +55,11 @@ export function AdminDashboardView({
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   // Dialog states
-  const [approvingDoctor, setApprovingDoctor] = useState<DoctorItem | null>(null);
-  const [rejectionModalDoctor, setRejectionModalDoctor] = useState<DoctorItem | null>(null);
+  const [approvingDoctor, setApprovingDoctor] = useState<DoctorItem | null>(
+    null
+  );
+  const [rejectionModalDoctor, setRejectionModalDoctor] =
+    useState<DoctorItem | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [revokingDoctor, setRevokingDoctor] = useState<DoctorItem | null>(null);
   const [dossierDoctor, setDossierDoctor] = useState<DoctorItem | null>(null);
@@ -139,7 +142,9 @@ export function AdminDashboardView({
         setApprovingDoctor(null);
         if (dossierDoctor?.id === doctor.id) setDossierDoctor(null);
       } else {
-        throw new Error(res.error || 'Failed to approve clinician verification.');
+        throw new Error(
+          res.error || 'Failed to approve clinician verification.'
+        );
       }
     } catch (err) {
       const message =
@@ -283,12 +288,12 @@ export function AdminDashboardView({
           {notification.type === 'info' && (
             <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
           )}
-          <div className="flex-1 text-xs sm:text-sm font-medium">
+          <div className="flex-1 text-xs font-medium sm:text-sm">
             {notification.message}
           </div>
           <button
             onClick={() => setNotification(null)}
-            className="hover:bg-deep-ink/5 -mr-1 -mt-1 cursor-pointer rounded-lg p-1 transition-colors"
+            className="hover:bg-deep-ink/5 -mt-1 -mr-1 cursor-pointer rounded-lg p-1 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -363,8 +368,7 @@ export function AdminDashboardView({
         doctor={rejectionModalDoctor || revokingDoctor}
         isRevocation={Boolean(revokingDoctor)}
         actionLoading={
-          actionLoadingId ===
-          (rejectionModalDoctor?.id || revokingDoctor?.id)
+          actionLoadingId === (rejectionModalDoctor?.id || revokingDoctor?.id)
         }
         reason={rejectionReason}
         onReasonChange={setRejectionReason}
@@ -398,7 +402,8 @@ export function AdminDashboardView({
             setActiveTab(tab as 'pending' | 'verified' | 'rejected' | 'all')
           }
           badgeCounts={{
-            pending: initialCounts.pending > 0 ? initialCounts.pending : undefined,
+            pending:
+              initialCounts.pending > 0 ? initialCounts.pending : undefined,
           }}
           floatingDockOnDesktop={false}
         />

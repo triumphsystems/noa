@@ -35,7 +35,9 @@ export function SessionDetail({
 }: SessionDetailProps) {
   const [isPending, startTransition] = useTransition();
   const [session, setSession] = React.useState<Session>(initialSession);
-  const [activeTab, setActiveTab] = React.useState<'soap' | 'transcript'>('soap');
+  const [activeTab, setActiveTab] = React.useState<'soap' | 'transcript'>(
+    'soap'
+  );
   const [editingNote, setEditingNote] = React.useState(false);
 
   const [soapNote, setSoapNote] = React.useState<SoapNote>(
@@ -76,9 +78,10 @@ export function SessionDetail({
   const patientName =
     patientNameParts.length > 0
       ? patientNameParts.join(' ').trim()
-      : initialPatient?.email ||
-        `Patient #${session.patientId.slice(-6)}`;
-  const doctorName = doctor?.name ? `Dr. ${doctor.name}` : 'Attending Physician';
+      : initialPatient?.email || `Patient #${session.patientId.slice(-6)}`;
+  const doctorName = doctor?.name
+    ? `Dr. ${doctor.name}`
+    : 'Attending Physician';
   const sessionDate = session.startedAt
     ? new Date(session.startedAt).toLocaleDateString('en-US', {
         month: 'long',

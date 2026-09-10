@@ -33,7 +33,7 @@ describe('Server Action Mutations Suite', () => {
 
     it('should normalize input whether provided as FormData or plain object', () => {
       function normalizeInviteInput(input) {
-        if (input instanceof Map || (typeof input?.get === 'function')) {
+        if (input instanceof Map || typeof input?.get === 'function') {
           return {
             email: input.get('email')?.trim().toLowerCase() || '',
             firstName: input.get('firstName')?.trim() || undefined,
@@ -71,26 +71,31 @@ describe('Server Action Mutations Suite', () => {
 
     it('should ensure unverified doctors cannot issue patient invitations', () => {
       function checkDoctorCanInvite(doctor) {
-        if (!doctor) return { allowed: false, error: 'Doctor record not found' };
+        if (!doctor)
+          return { allowed: false, error: 'Doctor record not found' };
         if (doctor.verificationStatus !== 'verified') {
           return {
             allowed: false,
-            error: 'Your medical credentials must be verified by clinical administration before inviting patients.',
+            error:
+              'Your medical credentials must be verified by clinical administration before inviting patients.',
           };
         }
         return { allowed: true };
       }
 
       assert.equal(
-        checkDoctorCanInvite({ id: 'doc-1', verificationStatus: 'pending' }).allowed,
+        checkDoctorCanInvite({ id: 'doc-1', verificationStatus: 'pending' })
+          .allowed,
         false
       );
       assert.equal(
-        checkDoctorCanInvite({ id: 'doc-2', verificationStatus: 'rejected' }).allowed,
+        checkDoctorCanInvite({ id: 'doc-2', verificationStatus: 'rejected' })
+          .allowed,
         false
       );
       assert.equal(
-        checkDoctorCanInvite({ id: 'doc-3', verificationStatus: 'verified' }).allowed,
+        checkDoctorCanInvite({ id: 'doc-3', verificationStatus: 'verified' })
+          .allowed,
         true
       );
     });
@@ -144,7 +149,10 @@ describe('Server Action Mutations Suite', () => {
   describe('Respond to Doctor Link: respondToDoctorLink', () => {
     it('should transition to linked when approved', () => {
       function processDoctorLinkResponse(patient, action) {
-        if (patient.linkStatus !== 'pending_patient_approval' || !patient.pendingDoctorId) {
+        if (
+          patient.linkStatus !== 'pending_patient_approval' ||
+          !patient.pendingDoctorId
+        ) {
           throw new Error('No pending doctor connection request found.');
         }
 
@@ -189,7 +197,10 @@ describe('Server Action Mutations Suite', () => {
       };
 
       assert.throws(() => {
-        if (unlinkedPatient.linkStatus !== 'pending_patient_approval' || !unlinkedPatient.pendingDoctorId) {
+        if (
+          unlinkedPatient.linkStatus !== 'pending_patient_approval' ||
+          !unlinkedPatient.pendingDoctorId
+        ) {
           throw new Error('No pending doctor connection request found.');
         }
       }, /No pending doctor connection request found/);
@@ -203,12 +214,16 @@ describe('Server Action Mutations Suite', () => {
     it('should require non-empty license and issuing authority', () => {
       function validateLicensureInput(license, issuingAuthority) {
         if (!license || !license.trim()) {
-          return { valid: false, error: 'Please enter your medical license number.' };
+          return {
+            valid: false,
+            error: 'Please enter your medical license number.',
+          };
         }
         if (!issuingAuthority || !issuingAuthority.trim()) {
           return {
             valid: false,
-            error: 'Please specify the issuing medical licensing authority or board.',
+            error:
+              'Please specify the issuing medical licensing authority or board.',
           };
         }
         return { valid: true };
@@ -216,7 +231,10 @@ describe('Server Action Mutations Suite', () => {
 
       assert.equal(validateLicensureInput('', 'GMC').valid, false);
       assert.equal(validateLicensureInput('MD-12345', '').valid, false);
-      assert.equal(validateLicensureInput('MD-12345', 'California Medical Board').valid, true);
+      assert.equal(
+        validateLicensureInput('MD-12345', 'California Medical Board').valid,
+        true
+      );
     });
 
     it('should update verification status to pending', () => {
@@ -226,7 +244,8 @@ describe('Server Action Mutations Suite', () => {
           license: input.license,
           issuingAuthority: input.issuingAuthority,
           verificationStatus: 'pending',
-          licenseDocumentUrl: input.licenseDocumentUrl || doctor.licenseDocumentUrl,
+          licenseDocumentUrl:
+            input.licenseDocumentUrl || doctor.licenseDocumentUrl,
           updatedAt: Date.now(),
         };
       }
@@ -246,7 +265,10 @@ describe('Server Action Mutations Suite', () => {
       assert.equal(updated.verificationStatus, 'pending');
       assert.equal(updated.license, 'MED-998877');
       assert.equal(updated.issuingAuthority, 'Texas Medical Board');
-      assert.equal(updated.licenseDocumentUrl, 'https://s3.amazonaws.com/licenses/doc-7/cert.pdf');
+      assert.equal(
+        updated.licenseDocumentUrl,
+        'https://s3.amazonaws.com/licenses/doc-7/cert.pdf'
+      );
     });
 
     it('should reject files exceeding 10MB', () => {
@@ -269,8 +291,10 @@ describe('Server Action Mutations Suite', () => {
         return {
           patientId,
           doctorId: input.doctorId || '',
-          chiefComplaint: input.chiefComplaint || input.summary || 'Clinical intake draft',
-          summary: input.summary || input.chiefComplaint || 'Clinical intake draft',
+          chiefComplaint:
+            input.chiefComplaint || input.summary || 'Clinical intake draft',
+          summary:
+            input.summary || input.chiefComplaint || 'Clinical intake draft',
           medicalHistory: input.medicalHistory || '',
           medications: input.medications || [],
           allergies: input.allergies || [],
@@ -305,7 +329,10 @@ describe('Server Action Mutations Suite', () => {
 
     it('should update existing intake if intakeId is supplied', () => {
       const existingIntakes = new Map([
-        ['intake-1', { id: 'intake-1', chiefComplaint: 'Headache', completed: false }],
+        [
+          'intake-1',
+          { id: 'intake-1', chiefComplaint: 'Headache', completed: false },
+        ],
       ]);
 
       function persistDraft(intakeId, payload) {
@@ -323,7 +350,10 @@ describe('Server Action Mutations Suite', () => {
         chiefComplaint: 'Severe Migraine with Aura',
       });
       assert.equal(resultUpdate.action, 'updated');
-      assert.equal(resultUpdate.intake.chiefComplaint, 'Severe Migraine with Aura');
+      assert.equal(
+        resultUpdate.intake.chiefComplaint,
+        'Severe Migraine with Aura'
+      );
 
       const resultCreate = persistDraft(undefined, {
         chiefComplaint: 'Knee pain',
@@ -339,7 +369,15 @@ describe('Server Action Mutations Suite', () => {
   describe('Admin Governance Actions', () => {
     it('should verify doctor and trigger status transition to verified', () => {
       const mockDoctors = new Map([
-        ['doc-1', { id: 'doc-1', name: 'Gregory House', email: 'house@ppth.org', verificationStatus: 'pending' }],
+        [
+          'doc-1',
+          {
+            id: 'doc-1',
+            name: 'Gregory House',
+            email: 'house@ppth.org',
+            verificationStatus: 'pending',
+          },
+        ],
       ]);
 
       function approveDoctor(doctorId, adminId) {
@@ -373,7 +411,15 @@ describe('Server Action Mutations Suite', () => {
 
     it('should reject doctor credentials with specified audit reason', () => {
       const mockDoctors = new Map([
-        ['doc-2', { id: 'doc-2', name: 'John Doe', email: 'doe@clinic.org', verificationStatus: 'pending' }],
+        [
+          'doc-2',
+          {
+            id: 'doc-2',
+            name: 'John Doe',
+            email: 'doe@clinic.org',
+            verificationStatus: 'pending',
+          },
+        ],
       ]);
 
       function rejectDoctor(doctorId, adminId, reason) {
@@ -385,7 +431,8 @@ describe('Server Action Mutations Suite', () => {
           verificationStatus: 'rejected',
           verifiedAt: Date.now(),
           verifiedBy: adminId,
-          rejectionReason: reason || 'Medical credentials could not be verified.',
+          rejectionReason:
+            reason || 'Medical credentials could not be verified.',
         };
         mockDoctors.set(doctorId, updated);
         return {
@@ -395,12 +442,18 @@ describe('Server Action Mutations Suite', () => {
         };
       }
 
-      const res = rejectDoctor('doc-2', 'admin-sub', 'Invalid State Medical Board license certificate.');
+      const res = rejectDoctor(
+        'doc-2',
+        'admin-sub',
+        'Invalid State Medical Board license certificate.'
+      );
       assert.equal(res.success, true);
       assert.equal(res.doctor.verificationStatus, 'rejected');
-      assert.equal(res.doctor.rejectionReason, 'Invalid State Medical Board license certificate.');
+      assert.equal(
+        res.doctor.rejectionReason,
+        'Invalid State Medical Board license certificate.'
+      );
       assert.match(res.message, /Dr\. John Doe/);
     });
   });
 });
-

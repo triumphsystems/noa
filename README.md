@@ -1,11 +1,11 @@
 # Noa
 
 <p align="center">
-  <strong>AI-Powered Ambient Clinical Intelligence Platform</strong>
+  <strong>AI-Powered Clinical Intelligence Platform</strong>
 </p>
 
 <p align="center">
-  Transforming medical consultations into structured, actionable clinical records in real time using AWS Bedrock, ambient voice processing, and autonomous clinical workflows.
+  Transforming medical consultations into structured, actionable medical records in real time, ambient voice processing, and autonomous clinical workflows.
 </p>
 
 <p align="center">
@@ -13,52 +13,99 @@
   <img src="https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react" alt="React 19" />
   <img src="https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/AWS-Bedrock%20%C2%B7%20DynamoDB%20%C2%B7%20Cognito-orange?style=flat-square&logo=amazon-aws" alt="AWS" />
-  <img src="https://img.shields.io/badge/Compliance-HIPAA--Ready-emerald?style=flat-square" alt="HIPAA Ready" />
+  <img src="https://img.shields.io/badge/Security-HIPAA--Aligned-emerald?style=flat-square" alt="HIPAA Aligned" />
 </p>
 
 ---
 
-## Overview
+## What is Noa?
 
-**Noa** is an ambient clinical intelligence engine built for modern healthcare. During clinical encounters, Noa captures consultation dialogue, synthesizes structured SOAP notes with zero mock data, suggests real-time differential diagnoses, and streamlines interactive patient intake — enabling doctors to focus on care rather than documentation.
+**Noa** is an ambient clinical intelligence platform designed to eliminate the documentation burden in modern healthcare. Clinicians spend hours each day manually entering consultation notes into Electronic Health Record (EHR) systems—time taken away from direct patient care.
 
-### Core Highlights
+Noa runs unobtrusively during clinical encounters. It ambiently captures natural dialogue between doctor and patient, synthesizes structured clinical notes (SOAP format), generates real-time differential suggestions, and automates patient intake questionnaires.
 
-- 🩺 **Ambient Clinical Scribe** — Hands-free audio recording with multi-speaker diarization and automated SOAP note generation via Amazon Nova.
-- ⚡ **Real-Time Clinical Suggestions** — Live, in-consultation diagnostic and differential prompts powered by Amazon Nova Lite.
-- 🗣️ **Conversational Patient Intake** — Voice-driven intake questionnaire with Amazon Nova Sonic, loop-prevention, and clinical draft normalization.
-- 🛡️ **Zero-Mock Safety & WebMCP** — Zero simulated fallbacks in clinical paths; model execution backed by WebMCP (Model Context Protocol).
-- 🔐 **HIPAA-Ready Architecture** — Cryptographic RS256 token verification with AWS Cognito, IAM-enforced role access (`doctor`, `patient`, `admin`), and tamper-proof httpOnly session cookies.
-- 🚀 **Next.js 16 & Server Actions** — Modern React 19 Server Components (RSC) and Server Action mutations for direct DynamoDB data streaming without boilerplate REST layers.
+### Key Capabilities
+
+- 🩺 **Ambient Clinical Scribing**  
+  Passively captures doctor-patient consultations and automatically drafts comprehensive SOAP (Subjective, Objective, Assessment, Plan) notes in real time using Amazon Nova models.
+- ⚡ **Real-Time Clinical Decision Support**  
+  Surfaces live diagnostic prompts, potential drug interaction warnings, and differential considerations during the encounter without interrupting clinical rapport.
+- 🗣️ **Interactive Voice Intake**  
+  Conducts interactive, voice-driven pre-visit check-ins powered by Amazon Nova Sonic to capture chief complaints, symptom timelines, and medical history before the patient enters the exam room.
+- 📋 **Patient-Friendly Care Summaries**  
+  Translates complex clinical jargon into clear, accessible visit summaries and actionable care instructions for patients and their families.
+- ⚖️ **Clinical Governance & Credentialing**  
+  Provides an administrative workspace for medical license verification, credential auditing, and organizational privilege management.
+- 🔌 **WebMCP Tool Integration**  
+  Implements the Model Context Protocol (MCP) in the browser and server, providing structured tool calling, clinical resources, and standardized context exchange for AI models.
 
 ---
 
 ## Architecture
 
+Noa uses a **Hybrid Multi-Model AI Architecture** that routes clinical tasks to the optimal model based on latency, reasoning depth, and modality:
+
 ```
                                   ┌────────────────────────┐
                                   │      Client Layer      │
-                                  │  React 19 / Tailwind   │
+                                  │         NextJS         │
                                   └───────────┬────────────┘
                                               │
-                   ┌──────────────────────────┴──────────────────────────┐
-                   │                                                     │
-                   ▼                                                     ▼
-     ┌────────────────────────────┐                        ┌────────────────────────────┐
-     │  React Server Components   │                        │       Server Actions       │
-     │  Direct DynamoDB Streaming │                        │  Strict Mutations & RBAC   │
-     └─────────────┬──────────────┘                        └─────────────┬──────────────┘
-                   │                                                     │
-                   └──────────────────────────┬──────────────────────────┘
+                    ┌─────────────────────────┴─────────────────────────┐
+                    │                                                   │
+                    ▼                                                   ▼
+      ┌────────────────────────────┐                      ┌────────────────────────────┐
+      │  React Server Components   │                      │       Server Actions       │
+      │  Direct DynamoDB Streaming │                      │  Strict Mutations & RBAC   │
+      └─────────────┬──────────────┘                      └─────────────┬──────────────┘
+                    │                                                   │
+                    └─────────────────────────┬─────────────────────────┘
                                               │
-                   ┌──────────────────────────┼──────────────────────────┐
-                   ▼                          ▼                          ▼
-        ┌────────────────────┐     ┌────────────────────┐     ┌────────────────────┐
-        │    AWS Bedrock     │     │    AWS DynamoDB    │     │    AWS Cognito     │
-        │ Nova Lite · Nova   │     │ Single-Table Store │     │  RS256 JWT Verify  │
-        │ Pro · Nova Sonic   │     │  Encryption at Rest│     │  RBAC Groups Gate  │
-        └────────────────────┘     └────────────────────┘     └────────────────────┘
+                    ┌─────────────────────────┼─────────────────────────┐
+                    ▼                         ▼                         ▼
+         ┌────────────────────┐    ┌────────────────────┐    ┌────────────────────┐
+         │    AWS Bedrock     │    │    AWS DynamoDB    │    │    AWS Cognito     │
+         │ Nova Lite · Nova   │    │ Single-Table Store │    │  RS256 JWT Verify  │
+         │ Pro · Nova Sonic   │    │ Encryption at Rest │    │  RBAC Group Gate   │
+         └────────────────────┘    └────────────────────┘    └────────────────────┘
 ```
+
+### Model Allocation
+
+| Model                 | Amazon Bedrock Identifier | Role & Responsibilities                                                                    |
+| :-------------------- | :------------------------ | :----------------------------------------------------------------------------------------- |
+| **Amazon Nova Sonic** | `amazon.nova-sonic-v1:0`  | Real-time bidirectional voice intake and speech-to-speech patient interaction.             |
+| **Amazon Nova Lite**  | `amazon.nova-lite-v2:0`   | Low-latency live suggestions, intake field extraction, and triage assessments.             |
+| **Amazon Nova Pro**   | `amazon.nova-pro-v2:0`    | In-depth SOAP synthesis, differential diagnosis reasoning, and complex clinical summaries. |
+
+---
+
+## Role-Based Access Control (RBAC)
+
+Access is strictly partitioned using AWS Cognito RS256 token claims (`custom:user_type`):
+
+| Role          | Landing Route        | Key Capabilities                                                                                                  |
+| :------------ | :------------------- | :---------------------------------------------------------------------------------------------------------------- |
+| **`doctor`**  | `/dashboard/doctor`  | Live ambient recording, SOAP drafting, clinical history review, patient invitations, and consultation management. |
+| **`patient`** | `/dashboard/patient` | Voice intake check-in, personal visit summaries, care team communication, and medical records access.             |
+| **`admin`**   | `/dashboard/admin`   | Clinician license verification, compliance audit logging, credential reviews, and provider onboarding.            |
+
+---
+
+## Security, Privacy & Compliance
+
+Noa is engineered with clinical-grade technical safeguards to protect Electronic Protected Health Information (ePHI) in alignment with HIPAA requirements:
+
+- **End-to-End Encryption**  
+  All data in transit is encrypted using TLS 1.3. Persistent clinical data is encrypted at rest using AWS KMS-managed AES-256 across DynamoDB tables and Amazon S3 buckets.
+- **Access Control & Least Privilege**  
+  Authentication is enforced via AWS Cognito with RS256 cryptographic signature verification. Backend operations adhere to AWS IAM least-privilege policies.
+- **Secure Session Management**  
+  Session tokens are transported via strictly partitioned `httpOnly`, `Secure`, and `SameSite=Strict` cookies, protecting against cross-site scripting (XSS) token extraction.
+- **Clinical Data Integrity & Fail-Safe Architecture**  
+  Clinical workflows enforce strict schema validation (Zod) and explicit error boundaries. If an AI service is unreachable, encounters transition gracefully into explicit manual review states rather than generating unverified or hallucinated documentation.
+- **Audit Logging & Traceability**  
+  Clinical record modifications, clinician credential reviews, and patient data accesses maintain immutable, timestamped audit entries via AWS CloudWatch.
 
 ---
 
@@ -67,7 +114,7 @@
 ### 1. Prerequisites
 
 - **Node.js 20+** and **pnpm 9+**
-- **AWS Account** with active Bedrock model access (Amazon Nova Lite, Nova Pro, Sonic) and DynamoDB/Cognito permissions.
+- **AWS Account** with access to Amazon Bedrock models (Nova Lite, Nova Pro, Nova Sonic), DynamoDB, S3, and Cognito.
 
 ### 2. Installation
 
@@ -79,49 +126,29 @@ pnpm install
 
 ### 3. Configure Environment
 
-Copy the example configuration:
+Copy the example environment configuration:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Populate `.env.local` with your AWS credentials and resource names:
-
-```env
-# AWS Core
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your-key-id
-AWS_SECRET_ACCESS_KEY=your-secret-key
-
-# DynamoDB
-DYNAMODB_TABLE_NAME=noa-data
-
-# AWS Bedrock
-BEDROCK_REGION=us-east-1
-BEDROCK_NOVA_LITE_MODEL=global.amazon.nova-2-lite-v1:0
-BEDROCK_NOVA_PRO_MODEL=global.amazon.nova-pro-v1:0
-BEDROCK_SONIC_MODEL=amazon.nova-2-sonic-v1:0
-
-# AWS Cognito
-COGNITO_USER_POOL_ID=us-east-1_xxxxxxxxx
-COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
-```
+Populate `.env.local` with your AWS credentials, Cognito user pool parameters, and Bedrock model IDs.
 
 ### 4. Seed Superadmin (Optional)
 
-Provision the initial admin user and security groups in Cognito and DynamoDB:
+Initialize an administrative account for provider verification and governance:
 
 ```bash
 pnpm seed:admin
 ```
 
-### 5. Run Development Server
+### 5. Start Development Server
 
 ```bash
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to access the application.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ---
 
@@ -130,44 +157,46 @@ Open [http://localhost:3000](http://localhost:3000) to access the application.
 ```
 noa/
 ├── app/                      # Next.js 16 App Router
-│   ├── auth/                 # Sign in, registration & Cognito authentication
+│   ├── auth/                 # Authentication flows (Sign in, registration, verification)
 │   ├── dashboard/
-│   │   ├── doctor/           # Doctor console, live sessions & patients registry
-│   │   ├── patient/          # Patient portal, care team & medical history
-│   │   └── admin/            # Superadmin clinical governance & credential verification
-│   ├── intake/               # Voice-assisted patient intake flow
-│   └── api/                  # Specialized APIs (WebMCP dispatcher & streaming voice)
+│   │   ├── doctor/           # Clinician workspace, active consultations & patient records
+│   │   ├── patient/          # Patient portal, care plans & consultation history
+│   │   └── admin/            # Provider credential verification & clinical governance
+│   ├── intake/               # Voice-assisted patient pre-visit intake
+│   └── api/                  # Specialized APIs (WebMCP dispatcher & streaming endpoints)
 ├── components/               # Modular UI components (single-word naming)
 │   ├── doctor/               # Clinician workspace components
 │   ├── patient/              # Patient portal & care cards
 │   ├── session/              # Consultation console, audio recorder & SOAP cards
 │   ├── admin/                # Governance metrics, tables & approval dialogs
-│   └── ui/                   # Primitive design system components
+│   └── ui/                   # Shared UI component primitives
 ├── lib/
-│   ├── auth/                 # Server auth guards (requireServerAuth), JWT verify & cookies
-│   ├── bedrocks/             # Amazon Nova Lite, Nova Pro & Sonic AI provider engine
-│   ├── data/                 # Direct DynamoDB RSC data loaders
-│   ├── db/                   # DynamoDB client, types & query operations
-│   └── webmcp/               # Model Context Protocol protocol & tools runtime
-├── scripts/                  # Administrative and seeding CLI utilities
-├── terraform/                # Infrastructure as Code (S3, DynamoDB, IAM)
-└── tests/                    # Unit and integration test suites
+│   ├── ai/                   # AI provider wrappers and model definitions
+│   ├── auth/                 # Server auth guards (requireServerAuth), JWT verification
+│   ├── bedrock.ts            # AWS Bedrock runtime client
+│   ├── data/                 # Direct DynamoDB data loaders for React Server Components
+│   ├── db/                   # DynamoDB single-table client, types & queries
+│   ├── voice/                # Voice processing and audio streaming services
+│   └── webmcp/               # Model Context Protocol (MCP) tools, prompts & registry
+├── scripts/                  # Administration and database seeding scripts
+├── terraform/                # Infrastructure as Code (S3, DynamoDB, IAM, CloudWatch)
+└── tests/                    # Automated unit and integration test suites
 ```
 
 ---
 
-## Development & Testing
+## Quality Assurance & Testing
 
-Run the built-in Node test suite:
+Run the test suite using Node's native test runner:
 
 ```bash
-# Run all automated unit & integration tests
+# Run unit and integration tests
 pnpm test
 
-# Run TypeScript compilation check
+# Run TypeScript type checks
 npx tsc --noEmit
 
-# Code quality and formatting
+# Code quality and formatting checks
 pnpm lint
 pnpm format:check
 pnpm format
@@ -175,24 +204,11 @@ pnpm format
 
 ---
 
-## Role-Based Access Control (RBAC)
+## Documentation
 
-Noa utilizes deterministic, role-gated routes backed by AWS Cognito RS256 token claims (`custom:user_type`):
-
-| Role          | Landing Route        | Key Capabilities                                                                                        |
-| :------------ | :------------------- | :------------------------------------------------------------------------------------------------------ |
-| **`doctor`**  | `/dashboard/doctor`  | Ambient recording, live consultation SOAP drafting, clinical history, patient invitations & care codes. |
-| **`patient`** | `/dashboard/patient` | Voice intake questionnaire, clinical visit summaries, care team connection, medical records.            |
-| **`admin`**   | `/dashboard/admin`   | Clinician licensure verification, credential audit log, clinical privilege management.                  |
-
----
-
-## Security & Compliance
-
-- **Data Protection** — TLS 1.3 in transit; AES-256 encryption at rest across DynamoDB and S3.
-- **HIPAA-Ready Sessions** — Strictly partitioned authentication cookies (`httpOnly`, `secure`, `sameSite: strict`).
-- **Zero-Mock Policy** — Production and staging workflows fail-fast if AWS Bedrock is unreachable rather than substituting synthesized clinical data.
-- **Audit Logging** — All clinician verification actions and clinical notes record permanent audit timestamps and actor IDs.
+- [System Architecture & Data Model](./docs/architecture.md) — Detailed guide to the single-table DynamoDB schema and voice pipelines.
+- [Deployment & Infrastructure Runbook](./docs/deployment.md) — Guide for provisioning AWS resources with Terraform and deploying to Vercel.
+- [WebMCP Specification](./docs/webmcp.md) — Documentation for Model Context Protocol tools and browser integration.
 
 ---
 

@@ -15,7 +15,9 @@ export default async function PatientConsultationPage({
   params,
 }: PatientConsultationPageProps) {
   const auth = await requireServerAuth(['patient']);
-  const unwrappedParams = await (params instanceof Promise ? params : Promise.resolve(params));
+  const unwrappedParams = await (params instanceof Promise
+    ? params
+    : Promise.resolve(params));
   const sessionId = unwrappedParams.id;
 
   const data = await getPatientSessionDetail(auth.sub, sessionId);
@@ -31,7 +33,10 @@ export default async function PatientConsultationPage({
           <span>Back to Consultations</span>
         </Link>
         <Card className="border-dashed p-8 text-center">
-          <p className="text-slate text-sm">Consultation summary not found or you do not have permission to view it.</p>
+          <p className="text-slate text-sm">
+            Consultation summary not found or you do not have permission to view
+            it.
+          </p>
         </Card>
       </div>
     );

@@ -30,7 +30,8 @@ export function DoctorSettingsView({ initialDoctor }: DoctorSettingsViewProps) {
     avatar: initialDoctor.avatar || '',
   });
 
-  const [currentDoctor, setCurrentDoctor] = React.useState<Doctor>(initialDoctor);
+  const [currentDoctor, setCurrentDoctor] =
+    React.useState<Doctor>(initialDoctor);
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string>('');
 

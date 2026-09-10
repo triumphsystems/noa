@@ -54,7 +54,9 @@ export async function getDoctorSessionDetail(
   }
 
   const [patient, doctor] = await Promise.all([
-    session.patientId ? getPatientById(session.patientId) : Promise.resolve(null),
+    session.patientId
+      ? getPatientById(session.patientId)
+      : Promise.resolve(null),
     getDoctorById(doctorId),
   ]);
 

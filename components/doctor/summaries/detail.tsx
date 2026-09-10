@@ -14,7 +14,9 @@ interface SummaryDetailViewProps {
 
 export function SummaryDetailView({ initialData }: SummaryDetailViewProps) {
   const { session, patient, doctor } = initialData;
-  const [activeTab, setActiveTab] = React.useState<'clinical' | 'patient'>('clinical');
+  const [activeTab, setActiveTab] = React.useState<'clinical' | 'patient'>(
+    'clinical'
+  );
   const [shareSuccess, setShareSuccess] = React.useState(false);
 
   const handleDownloadPDF = () => {
@@ -34,7 +36,8 @@ export function SummaryDetailView({ initialData }: SummaryDetailViewProps) {
   const patientName =
     patientNameParts.length > 0
       ? patientNameParts.join(' ').trim()
-      : patient?.email || `Patient #${session.patientId?.slice(-6) || 'Unknown'}`;
+      : patient?.email ||
+        `Patient #${session.patientId?.slice(-6) || 'Unknown'}`;
   const doctorName = doctor?.name
     ? `Dr. ${doctor.name}`
     : 'Attending Physician';
@@ -55,7 +58,7 @@ export function SummaryDetailView({ initialData }: SummaryDetailViewProps) {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8 font-sans">
+    <div className="mx-auto max-w-7xl space-y-6 p-4 font-sans sm:p-6 lg:p-8">
       {/* Top Breadcrumb & Actions */}
       <div className="space-y-1">
         <Link

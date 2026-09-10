@@ -3,11 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { nanoid } from 'nanoid';
 import { getServerAuth } from '@/lib/auth/server';
-import {
-  createIntake,
-  getIntakeById,
-  updateIntake,
-} from '@/lib/db';
+import { createIntake, getIntakeById, updateIntake } from '@/lib/db';
 import type { PatientIntake } from '@/lib/db/types';
 
 export interface IntakeActionResult {
@@ -60,7 +56,8 @@ export async function saveIntakeDraft(
 
       raw = {
         intakeId: ((input.get('intakeId') as string) || '').trim() || undefined,
-        patientId: ((input.get('patientId') as string) || '').trim() || undefined,
+        patientId:
+          ((input.get('patientId') as string) || '').trim() || undefined,
         doctorId: ((input.get('doctorId') as string) || '').trim() || undefined,
         chiefComplaint:
           ((input.get('chiefComplaint') as string) || '').trim() || undefined,
@@ -73,7 +70,9 @@ export async function saveIntakeDraft(
           ((input.get('familyHistory') as string) || '').trim() || undefined,
         socialHistory:
           ((input.get('socialHistory') as string) || '').trim() || undefined,
-        medications: rawMeds ? rawMeds.split(',').map((s) => s.trim()) : undefined,
+        medications: rawMeds
+          ? rawMeds.split(',').map((s) => s.trim())
+          : undefined,
         allergies: rawAllergies
           ? rawAllergies.split(',').map((s) => s.trim())
           : undefined,
@@ -93,7 +92,8 @@ export async function saveIntakeDraft(
     const intakeId = raw.intakeId?.trim();
     const chiefComplaint =
       raw.chiefComplaint || raw.summary || 'Clinical intake draft';
-    const summary = raw.summary || raw.chiefComplaint || 'Clinical intake draft';
+    const summary =
+      raw.summary || raw.chiefComplaint || 'Clinical intake draft';
     const completed = Boolean(raw.completed);
 
     const intakePayload = {

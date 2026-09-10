@@ -64,9 +64,10 @@ export async function submitLicensure(
       clinic = ((input.get('clinic') as string) || '').trim() || undefined;
       phone = ((input.get('phone') as string) || '').trim() || undefined;
       directUrl =
-        ((input.get('licenseDocumentUrl') as string) ||
-          (input.get('documentUrl') as string) ||
-          '') || undefined;
+        (input.get('licenseDocumentUrl') as string) ||
+        (input.get('documentUrl') as string) ||
+        '' ||
+        undefined;
 
       const rawFile = input.get('file');
       if (rawFile && typeof rawFile === 'object' && 'size' in rawFile) {
@@ -105,7 +106,8 @@ export async function submitLicensure(
       if (file.size > 10 * 1024 * 1024) {
         return {
           success: false,
-          error: 'File size exceeds 10MB limit. Please upload a smaller PDF or image.',
+          error:
+            'File size exceeds 10MB limit. Please upload a smaller PDF or image.',
         };
       }
 

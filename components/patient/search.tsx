@@ -20,7 +20,9 @@ export function DoctorDirectorySearch({
   isSubmitting,
 }: DoctorDirectorySearchProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SanitizedDoctorDirectoryItem[]>([]);
+  const [searchResults, setSearchResults] = useState<
+    SanitizedDoctorDirectoryItem[]
+  >([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 

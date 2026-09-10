@@ -88,7 +88,8 @@ export async function saveSession(
   try {
     const auth = await requireServerAuth(['doctor']);
 
-    const { getSessionById, createSession, updateSession } = await import('@/lib/db');
+    const { getSessionById, createSession, updateSession } =
+      await import('@/lib/db');
 
     const targetId = input.sessionId;
     let savedSessionId = targetId || '';
@@ -97,7 +98,10 @@ export async function saveSession(
       const existing = await getSessionById(targetId);
       if (existing) {
         if (existing.doctorId !== auth.sub) {
-          return { success: false, error: 'Unauthorized to modify this consultation' };
+          return {
+            success: false,
+            error: 'Unauthorized to modify this consultation',
+          };
         }
         await updateSession(targetId, {
           patientId: input.patientId,
@@ -166,8 +170,7 @@ export async function saveSession(
     console.error('[Actions] Failed to save clinical session:', error);
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : 'Failed to save session',
+      error: error instanceof Error ? error.message : 'Failed to save session',
     };
   }
 }
@@ -175,4 +178,3 @@ export async function saveSession(
 export const saveSessionAction = saveSession;
 
 export { submitLicensure, submitLicensureAction } from './onboarding/actions';
-

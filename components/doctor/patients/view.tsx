@@ -129,7 +129,8 @@ export function PatientsView({
 
   const filteredPatients = patients.filter((patient) => {
     const term = searchTerm.toLowerCase();
-    const fullName = `${patient.firstName || ''} ${patient.lastName || ''}`.toLowerCase();
+    const fullName =
+      `${patient.firstName || ''} ${patient.lastName || ''}`.toLowerCase();
     const email = (patient.email || '').toLowerCase();
     const phone = (patient.phone || '').toLowerCase();
     return (
@@ -166,7 +167,9 @@ export function PatientsView({
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         totalCount={patients.length}
-        withConditionsCount={patients.filter((p) => (p.conditions?.length || 0) > 0).length}
+        withConditionsCount={
+          patients.filter((p) => (p.conditions?.length || 0) > 0).length
+        }
       />
 
       <PatientsTable
