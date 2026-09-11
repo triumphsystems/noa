@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
@@ -30,23 +30,23 @@ export function DoctorHeader({
             : 'Welcome back to your practice'}
         </p>
       </div>
-      <div className="flex flex-wrap items-center gap-2.5 sm:flex-nowrap sm:gap-3">
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-nowrap sm:items-center sm:gap-3">
         <Button
           variant="outline"
           size="sm"
           onClick={onRefresh}
-          className="gap-2 rounded-lg text-xs font-medium"
+          className="w-full justify-center gap-2 rounded-lg text-xs font-medium sm:w-auto"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           <span>Refresh</span>
         </Button>
         <Link
           href="/dashboard/doctor/settings"
-          className="flex-1 sm:flex-initial"
+          className="w-full sm:w-auto"
         >
           <Button
             size="sm"
-            className="w-full rounded-lg text-xs font-semibold sm:w-auto"
+            className="w-full justify-center rounded-lg text-xs font-semibold sm:w-auto"
           >
             Edit Profile
           </Button>

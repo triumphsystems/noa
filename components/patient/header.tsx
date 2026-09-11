@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
@@ -74,10 +74,6 @@ export function PatientHeader({
                   {patientName || 'Patient'}
                 </span>
               </h1>
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-                Active Portal
-              </span>
             </div>
             <p className="text-slate text-xs">
               Your encrypted personal AI health records and consultation

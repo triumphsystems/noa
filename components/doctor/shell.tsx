@@ -1,9 +1,8 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import {
   FileText,
   LayoutDashboard,
@@ -15,10 +14,12 @@ import {
   Users,
   X,
 } from 'lucide-react';
-
+import { Button } from '@/components/ui/button';
 import type { Doctor } from '@/lib/db/types';
 import { useDoctorStore } from '@/lib/stores/doctor.store';
 import { cn } from '@/lib/utils';
+import { DoctorTopBar } from './topbar';
+import { DoctorBottomNav } from './bottom';
 
 interface NavItemConfig {
   href: string;
@@ -91,11 +92,6 @@ export function DoctorLayoutShell({
   useEffect(() => {
     setMobileNavOpen(false);
   }, [pathname]);
-
-  const doctorInitial = useMemo(() => {
-    const source = doctor?.name?.trim() || 'Doctor';
-    return source.charAt(0).toUpperCase();
-  }, [doctor?.name]);
 
   return (
     <div className="bg-canvas text-deep-ink flex min-h-screen flex-col md:h-dvh md:flex-row md:overflow-hidden">
@@ -237,71 +233,21 @@ export function DoctorLayoutShell({
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <main className="flex min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
-        <header className="border-deep-ink/10 sticky top-0 z-20 shrink-0 border-b bg-white">
-          <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
-            <div className="flex items-center gap-3">
-              {/* Mobile menu hamburger button */}
-              <button
-                onClick={() => setMobileNavOpen(true)}
-                className="hover:bg-soft-meadow text-deep-ink -ml-1 rounded-full p-2 transition-colors md:hidden"
-                aria-label="Open navigation menu"
-              >
-                <Menu className="h-5 w-5" />
-              </button>
-              <h2 className="truncate font-serif text-lg font-semibold sm:text-xl">
-                Doctor Dashboard
-              </h2>
-            </div>
+        <DoctorTopBar
+          doctor={doctor}
+          onOpenMobileMenu={() => setMobileNavOpen(true)}
+        />
 
-            <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-              {doctor?.verificationStatus &&
-                doctor.verificationStatus !== 'verified' && (
-                  <Link href="/dashboard/doctor/onboarding">
-                    <span
-                      className={cn(
-                        'flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors',
-                        doctor.verificationStatus === 'pending'
-                          ? 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100'
-                          : 'border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100'
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          'h-2 w-2 rounded-full',
-                          doctor.verificationStatus === 'pending'
-                            ? 'animate-pulse bg-amber-500'
-                            : 'bg-rose-500'
-                        )}
-                      />
-                      <span>
-                        {doctor.verificationStatus === 'pending'
-                          ? 'Verification Pending'
-                          : 'Action Required'}
-                      </span>
-                    </span>
-                  </Link>
-                )}
-              <div className="border-deep-ink/15 flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border shadow-2xs sm:h-10 sm:w-10">
-                {doctor?.avatar ? (
-                  <img
-                    src={doctor.avatar}
-                    alt={doctor.name || 'Doctor'}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="bg-soft-meadow text-deep-ink flex h-full w-full items-center justify-center font-serif text-sm font-bold sm:text-base">
-                    {doctorInitial}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <div className="min-w-0 flex-1">{children}</div>
+        <div className="min-w-0 flex-1 pb-20 md:pb-6">{children}</div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <DoctorBottomNav
+        doctor={doctor}
+        onOpenMenu={() => setMobileNavOpen(true)}
+      />
     </div>
   );
 }

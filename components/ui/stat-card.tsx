@@ -20,7 +20,7 @@ export function StatCard({
   return (
     <Card
       className={cn(
-        'border-deep-ink/8 shadow-editorial bg-white p-5 sm:p-6',
+        'border-deep-ink/8 shadow-editorial bg-white p-4 sm:p-6',
         className
       )}
     >
