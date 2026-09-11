@@ -16,3 +16,5 @@ export { ConsultationHeader } from './consultation-header';
 export { ConsultationsList } from './consultations-list';
 export { ConsultationDetailView } from './detail';
 export { PatientDashboardView } from './view';
+export { PatientRefreshButton } from './refresh';
+export { PatientFab } from './fab';

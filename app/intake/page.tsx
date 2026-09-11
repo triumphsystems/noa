@@ -91,7 +91,7 @@ function PatientIntakeContent() {
           </section>
 
           {/* Clinical Card & Collapsible Drawer */}
-          <aside className="min-h-0 overflow-visible lg:overflow-hidden">
+          <aside className="min-h-0 w-full min-w-0 overflow-hidden">
             <ClinicalIntakeCard
               draft={draft}
               chatItems={chatItems}

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { IntakeConversationDraft } from '@/lib/voice-service';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   CheckCircle2,
   Clock,
@@ -10,6 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type RightPanelProps = {
   draft: IntakeConversationDraft;
@@ -31,6 +33,7 @@ export function ClinicalIntakeCard({
   onFinalize,
 }: RightPanelProps) {
   const [showHistory, setShowHistory] = useState(false);
+  const [isMobileExpanded, setIsMobileExpanded] = useState(true);
 
   const safeFormatList = (val: unknown): string => {
     if (Array.isArray(val)) return val.filter(Boolean).join(', ');
@@ -47,51 +50,52 @@ export function ClinicalIntakeCard({
   const fields = [
     {
       label: 'Full Name',
-      value:
-        `${safeFormatText(draft?.firstName)} ${safeFormatText(draft?.lastName)}`.trim(),
+      value: `${safeFormatText(draft?.firstName)} ${safeFormatText(draft?.lastName)}`.trim(),
     },
     { label: 'Date of Birth', value: safeFormatText(draft?.dateOfBirth) },
     {
       label: 'Phone',
-      value:
-        safeFormatText(draft?.phone) ||
-        (draft?.email ? 'Optional / Not provided' : ''),
+      value: safeFormatText(draft?.phone) || (draft?.email ? 'Optional / Not provided' : ''),
     },
     {
       label: 'Email',
-      value:
-        safeFormatText(draft?.email) ||
-        (draft?.phone ? 'Optional / Not provided' : ''),
+      value: safeFormatText(draft?.email) || (draft?.phone ? 'Optional / Not provided' : ''),
     },
-    {
-      label: 'Reason for Visit',
-      value: safeFormatText(draft?.chiefComplaint),
-    },
+    { label: 'Reason for Visit', value: safeFormatText(draft?.chiefComplaint) },
     { label: 'Conditions', value: safeFormatList(draft?.medicalConditions) },
     { label: 'Medications', value: safeFormatList(draft?.currentMedications) },
     { label: 'Allergies', value: safeFormatList(draft?.allergies) },
-    {
-      label: 'Emergency Contact',
-      value: safeFormatText(draft?.emergencyContactName),
-    },
+    { label: 'Emergency Contact', value: safeFormatText(draft?.emergencyContactName) },
   ];
 
-  const capturedCount = fields.filter((f) =>
-    Boolean(f.value && f.value.length > 0)
-  ).length;
+  const capturedCount = fields.filter((f) => Boolean(f.value && f.value.length > 0)).length;
   const percentComplete = Math.round((capturedCount / fields.length) * 100);
 
   return (
-    <div className="border-deep-ink/10 flex h-full flex-col justify-between rounded-2xl border bg-white p-3 shadow-sm sm:rounded-3xl sm:p-4">
-      {/* Header & Progress */}
+    <div className="border-deep-ink/10 flex h-full w-full min-w-0 flex-col justify-between overflow-hidden rounded-2xl border bg-white p-3 shadow-sm sm:rounded-3xl sm:p-4">
+      {/* Header & Progress with Mobile Accordion Toggle */}
       <div className="space-y-1.5 pb-2">
-        <div className="flex items-center justify-between">
-          <h2 className="text-deep-ink font-serif text-xs font-bold sm:text-sm">
-            Captured Information
-          </h2>
-          <span className="text-deep-ink bg-hi-yellow/35 border-hi-yellow/60 rounded-full border px-2 py-0.5 text-[10px] font-bold sm:text-[11px]">
+        <div
+          onClick={() => setIsMobileExpanded((prev) => !prev)}
+          className="flex cursor-pointer items-center justify-between sm:cursor-default"
+          role="button"
+          tabIndex={0}
+          aria-expanded={isMobileExpanded}
+        >
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-deep-ink font-serif text-xs font-bold sm:text-sm">
+              Captured Information
+            </h2>
+            <ChevronDown
+              className={cn(
+                'text-slate h-3.5 w-3.5 transition-transform duration-200 sm:hidden',
+                isMobileExpanded && 'rotate-180'
+              )}
+            />
+          </div>
+          <Badge variant="default" className="text-[10px] font-bold sm:text-[11px]">
             {capturedCount} of {fields.length} ({percentComplete}%)
-          </span>
+          </Badge>
         </div>
 
         <div className="bg-soft-meadow h-1.5 w-full overflow-hidden rounded-full">
@@ -110,41 +114,41 @@ export function ClinicalIntakeCard({
           >
             <CheckCircle2 className="h-4 w-4" />
             <span>
-              {isComplete
-                ? 'Intake Complete — Finalizing…'
-                : 'Finalize Intake & View Summary'}
+              {isComplete ? 'Intake Complete — Finalizing…' : 'Finalize Intake & View Summary'}
             </span>
           </Button>
         )}
       </div>
 
-      {/* Extracted Fields Table */}
-      <div className="max-h-56 flex-1 space-y-1 overflow-y-auto py-1 sm:max-h-none sm:space-y-1.5">
+      {/* Extracted Fields Table: Responsive wrapping without horizontal overflow */}
+      <div
+        className={cn(
+          'min-w-0 flex-1 space-y-1 overflow-x-hidden overflow-y-auto py-1 sm:block sm:space-y-1.5',
+          isMobileExpanded ? 'block max-h-60 sm:max-h-none' : 'hidden'
+        )}
+      >
         {fields.map((field) => {
           const isCaptured = Boolean(field.value && field.value.trim());
           return (
             <div
               key={field.label}
-              className="bg-canvas flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-colors sm:px-3"
+              className="bg-canvas flex min-w-0 w-full items-start justify-between gap-2.5 rounded-xl px-2.5 py-1.5 text-xs transition-colors sm:px-3"
             >
-              <div className="flex shrink-0 items-center gap-1.5">
+              <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
                 {isCaptured ? (
-                  <CheckCircle2 className="text-moss-green h-3.5 w-3.5" />
+                  <CheckCircle2 className="text-moss-green h-3.5 w-3.5 shrink-0" />
                 ) : (
-                  <Clock className="text-slate/40 h-3.5 w-3.5" />
+                  <Clock className="text-slate/40 h-3.5 w-3.5 shrink-0" />
                 )}
-                <span
-                  className={
-                    isCaptured ? 'text-deep-ink font-medium' : 'text-slate'
-                  }
-                >
+                <span className={isCaptured ? 'text-deep-ink font-medium' : 'text-slate'}>
                   {field.label}
                 </span>
               </div>
               <span
-                className={`max-w-[55%] truncate text-right font-medium ${
+                className={cn(
+                  'min-w-0 max-w-[62%] text-right font-medium break-words',
                   isCaptured ? 'text-deep-ink' : 'text-slate/40 italic'
-                }`}
+                )}
               >
                 {field.value || 'Pending'}
               </span>
@@ -154,7 +158,7 @@ export function ClinicalIntakeCard({
       </div>
 
       {/* History Drawer Toggle at Bottom */}
-      <div className="border-deep-ink/8 shrink-0 border-t pt-2">
+      <div className="border-deep-ink/8 min-w-0 shrink-0 border-t pt-2">
         <Button
           type="button"
           variant="ghost"
@@ -173,15 +177,16 @@ export function ClinicalIntakeCard({
         </Button>
 
         {showHistory && (
-          <div className="mt-2 max-h-32 space-y-1.5 overflow-y-auto pr-1 sm:max-h-40">
+          <div className="mt-2 max-h-32 min-w-0 space-y-1.5 overflow-x-hidden overflow-y-auto pr-1 sm:max-h-40">
             {chatItems.map((item) => (
               <div
                 key={item.id}
-                className={`rounded-lg px-2.5 py-1.5 text-[11px] leading-snug ${
+                className={cn(
+                  'min-w-0 rounded-lg px-2.5 py-1.5 text-[11px] leading-snug break-words',
                   item.role === 'assistant'
                     ? 'bg-soft-meadow/70 text-deep-ink'
                     : 'bg-canvas text-deep-ink border-deep-ink/10 border'
-                }`}
+                )}
               >
                 <span className="text-slate block text-[10px] font-semibold uppercase">
                   {item.role === 'assistant' ? 'Noa' : 'You'}

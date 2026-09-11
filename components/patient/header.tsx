@@ -60,8 +60,15 @@ export function PatientHeader({
 
   return (
     <div className="space-y-4">
-      {/* Top Page Action & Greeting Bar */}
-      <div className="flex flex-col justify-between gap-4 pb-1 sm:flex-row sm:items-center">
+      {/* Top Page Action & Greeting Bar: On mobile, only shown for 'home' tab to save vertical space */}
+      <div
+        className={cn(
+          'pb-1 sm:flex sm:flex-row sm:items-center sm:justify-between sm:gap-4',
+          activeTab === 'home'
+            ? 'flex flex-col justify-between gap-4'
+            : 'hidden sm:flex'
+        )}
+      >
         <div className="flex items-center gap-3">
           <div className="bg-hi-yellow/30 border-hi-yellow/60 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border shadow-2xs">
             <Sparkles className="text-deep-ink h-5 w-5" />
@@ -82,13 +89,16 @@ export function PatientHeader({
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2.5 self-end sm:self-auto">
-          <button
+        {/* Desktop actions: on mobile, Refresh is in top nav and New Intake is the FAB */}
+        <div className="hidden shrink-0 items-center gap-2.5 sm:flex">
+          <Button
+            variant="outline"
+            size="sm"
             onClick={onRefresh}
             disabled={isLoading}
             title="Refresh Dashboard"
             aria-label="Refresh Dashboard"
-            className="border-deep-ink/10 hover:bg-soft-meadow text-slate hover:text-deep-ink flex cursor-pointer items-center gap-1.5 rounded-full border bg-white px-3 py-1.5 text-xs shadow-2xs transition-colors"
+            className="rounded-full px-3 text-xs shadow-2xs"
           >
             <RefreshCw
               className={cn(
@@ -96,8 +106,8 @@ export function PatientHeader({
                 isLoading && 'text-deep-ink animate-spin'
               )}
             />
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
+            <span>Refresh</span>
+          </Button>
 
           <Link href="/intake">
             <Button

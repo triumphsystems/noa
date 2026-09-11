@@ -1,9 +1,11 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Bell, LogOut } from 'lucide-react';
 import { requireServerAuth } from '@/lib/auth/server';
 import { getPatientById } from '@/lib/db';
+import { PatientRefreshButton } from '@/components/patient';
 
 export default async function PatientDashboardLayout({
   children,
@@ -42,13 +44,16 @@ export default async function PatientDashboardLayout({
               Patient Portal
             </Badge>
           </div>
-          <div className="flex shrink-0 items-center gap-2.5 sm:gap-4">
-            <button
-              className="hover:bg-soft-meadow text-slate hover:text-deep-ink cursor-pointer rounded-lg p-1.5 transition-colors"
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+            <PatientRefreshButton />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="hover:bg-soft-meadow text-slate hover:text-deep-ink cursor-pointer transition-colors"
               aria-label="Notifications"
             >
               <Bell className="h-4 w-4" />
-            </button>
+            </Button>
             <div className="border-deep-ink/10 flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border shadow-2xs">
               {patient?.avatar ? (
                 <img

@@ -13,6 +13,7 @@ import {
   PatientVisits,
   PatientCare,
   PatientRecords,
+  PatientFab,
   type PatientScreenTab,
 } from '@/components/patient';
 
@@ -165,6 +166,7 @@ export function PatientDashboardView({
       </main>
 
       <div className="sm:hidden">
+        <PatientFab />
         <BottomNav
           role="patient"
           activeTab={activeTab}

@@ -45,6 +45,7 @@ Noa is an AI-Powered Medical Intelligence Platform that transforms medical consu
   - Check formatting: `pnpm format:check`
 - **File Naming Convention:** As much as possible, keep file names to **one word** (e.g., `console.tsx`, `view.tsx`, `dossier.tsx`, `detail.tsx`, `shell.tsx`, `form.tsx`, `status.tsx`). Avoid multi-word hyphenated filenames unless absolutely necessary for clarity or domain disambiguation.
 - **File Length & Modularity:** Keep files concise and focused (aim under ~200 lines). Break large files down into domain-specific modules. For Server Actions, avoid massive monolithic `actions.ts` files—split them logically by domain or route module (e.g., within route folders or dedicated single-word action modules).
+- **UI Primitives (`@/components/ui`):** Always use our custom UI primitives from `@/components/ui` (such as `Button`, `Badge`, `Card`, `Input`, `Dialog`, etc.) instead of raw HTML elements (e.g., raw `<button>`, `<input>`) for interactive buttons, FABs, refresh toggles, and form controls.
 - **TypeScript:** `tsconfig.json` is configured for Next.js and modern JS standards. The `compilerOptions.paths` alias `@/*` is used for imports (e.g., `import {...} from '@/lib/utils'`).
 
 ### Testing
@@ -159,6 +160,7 @@ export default async function DoctorDashboardPage() {
 - **No `catch (error: any)`**: Always narrow with `error instanceof Error ? error.message : '...'`.
 - **No double casts**: Avoid `as unknown as Type`.
 - **No inline role unions**: Always import `type { Role }` from `@/lib/auth/roles`.
+- **UI Primitives Only**: Do not use bare HTML `<button>` or `<input>` for interactive triggers—use `<Button>`, `<Input>`, etc. from `@/components/ui`.
 - **One-Word Component Files**: Keep file names to one word (e.g., `view.tsx`, `console.tsx`, `dossier.tsx`, `detail.tsx`, `shell.tsx`).
 - **File Length**: Aim under ~200 lines per file; modularize server actions by route or domain instead of monolithic files.
 
