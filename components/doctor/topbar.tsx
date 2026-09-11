@@ -3,12 +3,7 @@
 import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  ChevronRight,
-  Menu,
-  Plus,
-  Search,
-} from 'lucide-react';
+import { ChevronRight, Menu, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Doctor } from '@/lib/db/types';
 import { cn } from '@/lib/utils';
@@ -97,7 +92,10 @@ export function DoctorTopBar({ doctor, onOpenMobileMenu }: TopBarProps) {
 
         {/* Desktop View Left: Breadcrumbs + Practice Pill (>= md) */}
         <div className="hidden min-w-0 items-center gap-3 md:flex">
-          <nav aria-label="Breadcrumbs" className="flex items-center gap-1.5 text-xs">
+          <nav
+            aria-label="Breadcrumbs"
+            className="flex items-center gap-1.5 text-xs"
+          >
             <span className="text-slate/70 font-medium">Noa</span>
             {trail.map((item, idx) => (
               <React.Fragment key={idx}>
@@ -125,7 +123,9 @@ export function DoctorTopBar({ doctor, onOpenMobileMenu }: TopBarProps) {
             className="border-deep-ink/10 bg-canvas/70 hover:bg-soft-meadow/40 text-slate hover:text-deep-ink flex w-full max-w-xs items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs shadow-2xs transition-colors"
           >
             <Search className="text-slate/70 h-3.5 w-3.5 shrink-0" />
-            <span className="flex-1 text-left">Search patients or charts...</span>
+            <span className="flex-1 text-left">
+              Search patients or charts...
+            </span>
             <kbd className="border-deep-ink/10 text-slate/70 rounded border bg-white px-1.5 py-0.5 font-mono text-[10px]">
               ⌘K
             </kbd>
@@ -174,7 +174,9 @@ export function DoctorTopBar({ doctor, onOpenMobileMenu }: TopBarProps) {
                       : 'Action Required'}
                   </span>
                   <span className="sm:hidden">
-                    {doctor.verificationStatus === 'pending' ? 'Pending' : 'Alert'}
+                    {doctor.verificationStatus === 'pending'
+                      ? 'Pending'
+                      : 'Alert'}
                   </span>
                 </span>
               </Link>

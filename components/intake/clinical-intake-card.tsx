@@ -50,25 +50,35 @@ export function ClinicalIntakeCard({
   const fields = [
     {
       label: 'Full Name',
-      value: `${safeFormatText(draft?.firstName)} ${safeFormatText(draft?.lastName)}`.trim(),
+      value:
+        `${safeFormatText(draft?.firstName)} ${safeFormatText(draft?.lastName)}`.trim(),
     },
     { label: 'Date of Birth', value: safeFormatText(draft?.dateOfBirth) },
     {
       label: 'Phone',
-      value: safeFormatText(draft?.phone) || (draft?.email ? 'Optional / Not provided' : ''),
+      value:
+        safeFormatText(draft?.phone) ||
+        (draft?.email ? 'Optional / Not provided' : ''),
     },
     {
       label: 'Email',
-      value: safeFormatText(draft?.email) || (draft?.phone ? 'Optional / Not provided' : ''),
+      value:
+        safeFormatText(draft?.email) ||
+        (draft?.phone ? 'Optional / Not provided' : ''),
     },
     { label: 'Reason for Visit', value: safeFormatText(draft?.chiefComplaint) },
     { label: 'Conditions', value: safeFormatList(draft?.medicalConditions) },
     { label: 'Medications', value: safeFormatList(draft?.currentMedications) },
     { label: 'Allergies', value: safeFormatList(draft?.allergies) },
-    { label: 'Emergency Contact', value: safeFormatText(draft?.emergencyContactName) },
+    {
+      label: 'Emergency Contact',
+      value: safeFormatText(draft?.emergencyContactName),
+    },
   ];
 
-  const capturedCount = fields.filter((f) => Boolean(f.value && f.value.length > 0)).length;
+  const capturedCount = fields.filter((f) =>
+    Boolean(f.value && f.value.length > 0)
+  ).length;
   const percentComplete = Math.round((capturedCount / fields.length) * 100);
 
   return (
@@ -93,7 +103,10 @@ export function ClinicalIntakeCard({
               )}
             />
           </div>
-          <Badge variant="default" className="text-[10px] font-bold sm:text-[11px]">
+          <Badge
+            variant="default"
+            className="text-[10px] font-bold sm:text-[11px]"
+          >
             {capturedCount} of {fields.length} ({percentComplete}%)
           </Badge>
         </div>
@@ -114,7 +127,9 @@ export function ClinicalIntakeCard({
           >
             <CheckCircle2 className="h-4 w-4" />
             <span>
-              {isComplete ? 'Intake Complete — Finalizing…' : 'Finalize Intake & View Summary'}
+              {isComplete
+                ? 'Intake Complete — Finalizing…'
+                : 'Finalize Intake & View Summary'}
             </span>
           </Button>
         )}
@@ -132,7 +147,7 @@ export function ClinicalIntakeCard({
           return (
             <div
               key={field.label}
-              className="bg-canvas flex min-w-0 w-full items-start justify-between gap-2.5 rounded-xl px-2.5 py-1.5 text-xs transition-colors sm:px-3"
+              className="bg-canvas flex w-full min-w-0 items-start justify-between gap-2.5 rounded-xl px-2.5 py-1.5 text-xs transition-colors sm:px-3"
             >
               <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
                 {isCaptured ? (
@@ -140,13 +155,17 @@ export function ClinicalIntakeCard({
                 ) : (
                   <Clock className="text-slate/40 h-3.5 w-3.5 shrink-0" />
                 )}
-                <span className={isCaptured ? 'text-deep-ink font-medium' : 'text-slate'}>
+                <span
+                  className={
+                    isCaptured ? 'text-deep-ink font-medium' : 'text-slate'
+                  }
+                >
                   {field.label}
                 </span>
               </div>
               <span
                 className={cn(
-                  'min-w-0 max-w-[62%] text-right font-medium break-words',
+                  'max-w-[62%] min-w-0 text-right font-medium break-words',
                   isCaptured ? 'text-deep-ink' : 'text-slate/40 italic'
                 )}
               >

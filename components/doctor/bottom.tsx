@@ -3,13 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  FileText,
-  LayoutDashboard,
-  Menu,
-  Mic,
-  Users,
-} from 'lucide-react';
+import { FileText, LayoutDashboard, Menu, Mic, Users } from 'lucide-react';
 import type { Doctor } from '@/lib/db/types';
 import { cn } from '@/lib/utils';
 
@@ -36,7 +30,7 @@ export function DoctorBottomNav({ doctor, onOpenMenu }: DoctorBottomNavProps) {
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="border-deep-ink/10 bg-white/95 fixed right-0 bottom-0 left-0 z-40 border-t backdrop-blur-md transition-all duration-200 md:hidden"
+      className="border-deep-ink/10 fixed right-0 bottom-0 left-0 z-40 border-t bg-white/95 backdrop-blur-md transition-all duration-200 md:hidden"
       style={{
         paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.5rem)',
       }}
@@ -44,7 +38,9 @@ export function DoctorBottomNav({ doctor, onOpenMenu }: DoctorBottomNavProps) {
       <div className="grid h-16 grid-cols-5 items-center px-1">
         {/* 1. Dashboard */}
         <Link
-          href={isRestricted ? '/dashboard/doctor/onboarding' : '/dashboard/doctor'}
+          href={
+            isRestricted ? '/dashboard/doctor/onboarding' : '/dashboard/doctor'
+          }
           className={cn(
             'flex flex-col items-center justify-center gap-1 py-1 transition-colors',
             isDashboardActive
